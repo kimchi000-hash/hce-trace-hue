@@ -1,3 +1,5 @@
+Thành viên 1:
+Họ tên: Nguyễn Thị Kim Chi - 23K4300025
 # ECO2432 Web3 Starter
 
 Kho khởi đầu dùng xuyên suốt 15 bài thực hành.
