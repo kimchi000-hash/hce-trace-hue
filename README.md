@@ -2,6 +2,29 @@ Thành viên 1:
 Họ tên: Nguyễn Thị Kim Chi - 23K4300025
 Thành viên 2:
 Họ tên: Võ Thị Thư - 23K4300038
+## 📌 Bảng theo dõi tiến độ và Nghiệm thu các bài Lab (ECO2432)
+
+### Thông tin dự án
+- **Đề tài:** Hệ thống Bỏ phiếu Ban cán sự Lớp on-chain (Club Voting)
+- **Nhóm sinh viên thực hiện:**
+  - **Nguyễn Thị Kim Chi** (23K4300025) — Đặc tả (BA), Smart Contract Dev
+  - **Võ Thị Thu** (23K4300038) — Tester, Giao diện (Frontend)[cite: 10]
+
+---
+
+### Danh mục sản phẩm bàn giao (Deliverables)
+
+| Bài Lab | Hạng mục sản phẩm | Đường dẫn tệp / Artifact kiểm tra | Người phụ trách chính | Trạng thái nghiệm thu |
+| :--- | :--- | :--- | :--- | :---: |
+| **Lab 08** | **Kế hoạch dự án & Phân vai** | [`docs/PROJECT_PLAN.md`](docs/PROJECT_PLAN.md) | Kim Chi & Võ Thu[cite: 10] | ✅ Đã hoàn thành[cite: 10] |
+| **Lab 08** | **Đặc tả nghiệp vụ v0.1** | [`docs/SPEC.md`](docs/SPEC.md) | Kim Chi[cite: 10] | ✅ Đã hoàn thành[cite: 10] |
+| **Lab 08** | **Quy tắc kinh tế & Chống lạm dụng** | [`docs/ECONOMIC_RULES.md`](docs/ECONOMIC_RULES.md) | Kim Chi[cite: 10] | ✅ Đã hoàn thành[cite: 10] |
+| **Lab 08** | **Commit khởi tạo codebase nhóm** | Commit message: `lab-08: khoi tao codebase nhom va dac ta v0.1` | Cả hai thành viên[cite: 10] | ✅ Đã đóng dấu[cite: 10] |
+| **Lab 09** | **Hợp đồng cốt lõi sản phẩm** | [`contracts/project/ProjectCore.sol`](contracts/project/ProjectCore.sol) | Kim Chi[cite: 10] | ✅ Biên dịch thành công (Remix 0.8.20+) |
+| **Lab 09** | **Nhật ký AI & Đối soát lỗi cú pháp** | [`docs/AI_JOURNAL.md`](docs/AI_JOURNAL.md) | Kim Chi[cite: 10] | ✅ Đã ghi nhận (sửa lỗi dòng 21)[cite: 10, 14] |
+| **Lab 09** | **Thực nghiệm kỹ thuật & Bảng đo Gas** | [`evidence/lab-09/gas_report.md`](evidence/lab-09/gas_report.md) | Võ Thu[cite: 10, 11] | ✅ Đủ 3 mốc gas trên Remix VM[cite: 10, 11] |
+| **Lab 09** | **Minh chứng chu trình TimeLockVault** | [`evidence/lab-09/`](evidence/lab-09/) (Ảnh 01–04) | Võ Thu[cite: 10] | ✅ Đã nộp ảnh Deploy, Deposit, Withdraw[cite: 10] |
+| **Lab 09** | **Commit nghiệm thu hợp đồng** | Commit message: `lab-09: contract loi bien dich duoc` | Cả hai thành viên[cite: 10] | ✅ Đã đóng dấu[cite: 10] |
 # ECO2432 Web3 Starter
 
 Kho khởi đầu dùng xuyên suốt 15 bài thực hành.
