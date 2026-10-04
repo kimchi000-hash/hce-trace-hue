@@ -50,6 +50,9 @@ contract ProjectCore {
     // Ung cu vien khong hop le hoac khong ton tai
     error InvalidCandidate();
 
+    // Danh sach cu tri dang ky bi rong
+    error EmptyVoterList();
+
     // --- SU KIEN (EVENTS) ---
 
     // Phat khi mot cu tri duoc dang ky thanh cong
@@ -96,9 +99,15 @@ contract ProjectCore {
      * @param voters Danh sach dia chi cu tri
      */
     function registerVoters(address[] calldata voters) external onlyAdmin {
+        // Checks: Kiem tra danh sach cu tri khong duoc rong
+        if (voters.length == 0) {
+            revert EmptyVoterList();
+        }
+
         for (uint256 i = 0; i < voters.length; ) {
             address voter = voters[i];
-            if (!isVoter[voter]) {
+            // Bo qua dia chi address(0) va cu tri da duoc cap quyen truoc do
+            if (voter != address(0) && !isVoter[voter]) {
                 isVoter[voter] = true;
                 emit VoterRegistered(voter);
             }

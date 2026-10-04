@@ -22,3 +22,14 @@
 - **Cách sửa:** Sửa thủ công thành `address public admin;`.
 - **Ai phát hiện:** Sinh viên phát hiện.
 - **Kết quả biên dịch:** Biên dịch thành công trên Remix IDE với compiler 0.8.20+, sinh đủ ABI và Bytecode trong artifacts/.
+
+
+## Lab 10 — Rà soát mã nguồn do AI sinh ra (Audit ProjectCore.sol & VaultBuggy.sol)
+
+### Bảng ghi nhận lỗi rà soát
+| Lỗi | Mô tả | Ai phát hiện | Cách khắc phục |
+| :---: | :--- | :---: | :--- |
+| **1** | `VaultBuggy.sol`: Rút tiền chuyển ETH trước khi cập nhật số dư (Lỗ hổng Reentrancy). | AI / Sinh viên | Áp dụng Checks-Effects-Interactions: trừ số dư trước khi gửi tiền. |
+| **2** | `VaultBuggy.sol`: Hàm khẩn cấp thiếu kiểm tra quyền `onlyOwner`. | AI | Bổ sung modifier `onlyOwner` kiểm tra quyền `msg.sender`. |
+| **3** | `ProjectCore.sol`: Hàm `registerVoters` nhận mảng rỗng gây lãng phí gas không cần thiết. | AI | Bổ sung điều kiện kiểm tra `if (voters.length == 0) revert EmptyVoterList();`. |
+| **4** | `ProjectCore.sol`: Hàm `vote()` chưa kiểm tra giới hạn `candidateId` bằng custom error. | **Sinh viên** | Bổ sung kiểm tra `if (candidateId >= candidates.length) revert InvalidCandidate();`. |
