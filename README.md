@@ -25,6 +25,11 @@ Họ tên: Võ Thị Thư - 23K4300038
 | **Lab 09** | **Thực nghiệm kỹ thuật & Bảng đo Gas** | [`evidence/lab-09/gas_report.md`](evidence/lab-09/gas_report.md) | Võ Thu[cite: 10, 11] | ✅ Đủ 3 mốc gas trên Remix VM[cite: 10, 11] |
 | **Lab 09** | **Minh chứng chu trình TimeLockVault** | [`evidence/lab-09/`](evidence/lab-09/) (Ảnh 01–04) | Võ Thu[cite: 10] | ✅ Đã nộp ảnh Deploy, Deposit, Withdraw[cite: 10] |
 | **Lab 09** | **Commit nghiệm thu hợp đồng** | Commit message: `lab-09: contract loi bien dich duoc` | Cả hai thành viên[cite: 10] | ✅ Đã đóng dấu[cite: 10] |
+| **Lab 10** | **Bản vá hợp đồng cốt lõi** | [`contracts/project/ProjectCore.sol`](contracts/project/ProjectCore.sol) | Kim Chi | ✅ Đã vá lỗi mảng rỗng và candidateId (CEI, Custom Error) |
+| **Lab 10** | **Nhật ký Audit & Phân định lỗi AI** | [`docs/AI_JOURNAL.md`](docs/AI_JOURNAL.md) | Kim Chi | ✅ Đủ bảng 4 lỗi (ghi rõ lỗi số 4 do Sinh viên phát hiện) |
+| **Lab 10** | **Bảng phân tích & Bản vá lỗi két rút tiền** | [`contracts/training/VaultBuggy.sol`](contracts/training/VaultBuggy.sol) | Võ Thu | ✅ Đã khắc phục 4 lỗi an ninh (Reentrancy, onlyOwner, logic mốc thời gian) |
+| **Lab 10** | **Bằng chứng thực nghiệm rà soát** | [`evidence/lab-10/`](evidence/lab-10/) | Võ Thu | ✅ Đã lưu ảnh minh chứng khai thác và kiểm thử Remix VM |
+| **Lab 10** | **Commit nghiệm thu chốt buổi** | Commit message: `lab-10: audit va sua loi project core` | Cả hai thành viên | ✅ Đã đóng dấu |
 # ECO2432 Web3 Starter
 
 Kho khởi đầu dùng xuyên suốt 15 bài thực hành.
