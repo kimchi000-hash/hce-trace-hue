@@ -8,7 +8,7 @@ Họ tên: Võ Thị Thư - 23K4300038
 - **Đề tài:** Hệ thống Bỏ phiếu Ban cán sự Lớp on-chain (Club Voting)
 - **Nhóm sinh viên thực hiện:**
   - **Nguyễn Thị Kim Chi** (23K4300025) — Đặc tả (BA), Smart Contract Dev
-  - **Võ Thị Thu** (23K4300038) — Tester, Giao diện (Frontend)[cite: 10]
+  - **Võ Thị Thư** (23K4300038) — Tester, Giao diện (Frontend)[cite: 10]
 
 ---
 
