@@ -67,7 +67,7 @@ Hợp đồng được biên dịch bằng Solidity `0.8.20` và triển khai th
   - **Cơ chế phòng vệ:** Hợp đồng lập tức hoàn tác giao dịch ở tầng EVM, chặn đứng hành vi gian lận nộp cam kết nhiều lần của cử tri.
   - **Đánh giá:** Giao dịch bị đào và ghi nhận thất bại trên chuỗi, bảo toàn tính bất biến của cam kết ban đầu và giữ nguyên cấu trúc dữ liệu của hợp đồng.
 
-![Ca 2 Vi phạm](./02_revert_duplicate_commit_sepolia.png)
+![Ca 2 Vi phạm](./02_revert_violation_sepolia.png)
 
 ---
 
