@@ -30,6 +30,10 @@ Họ tên: Võ Thị Thư - 23K4300038
 | **Lab 10** | **Bảng phân tích & Bản vá lỗi két rút tiền** | [`contracts/training/VaultBuggy.sol`](contracts/training/VaultBuggy.sol) | Võ Thu | ✅ Đã khắc phục 4 lỗi an ninh (Reentrancy, onlyOwner, logic mốc thời gian) |
 | **Lab 10** | **Bằng chứng thực nghiệm rà soát** | [`evidence/lab-10/`](evidence/lab-10/) | Võ Thu | ✅ Đã lưu ảnh minh chứng khai thác và kiểm thử Remix VM |
 | **Lab 10** | **Commit nghiệm thu chốt buổi** | Commit message: `lab-10: audit va sua loi project core` | Cả hai thành viên | ✅ Đã đóng dấu |
+| **Lab 11** | **Hợp đồng Bầu cử kín Commit-Reveal** | [`contracts/project/ProjectCore.sol`](contracts/project/ProjectCore.sol) | Kim Chi | ✅ Đã nâng cấp 4 pha, Quorum basis points |
+| **Lab 11** | **Đặc tả & Quy tắc kinh tế V2.0** | [`docs/SPEC.md`](docs/SPEC.md), [`docs/ECONOMIC_RULES.md`](docs/ECONOMIC_RULES.md) | Kim Chi | ✅ Khớp 100% 5 quy tắc R1-R5, chống Copy-voting |
+| **Lab 11** | **Minh chứng thực nghiệm Sepolia** | [`evidence/lab-11/README.md`](evidence/lab-11/README.md) | Võ Thu | ✅ Đạt 1 ca hợp lệ (Block 11899220) & 1 ca vi phạm bị revert (Block 11899237) |
+| **Lab 11** | **Commit nghiệm thu kiểm thử** | Commit message: `lab-11: kiem thu thuc nghiem sepolia thanh cong` | Cả hai thành viên | ✅ Đã đóng dấu |
 # ECO2432 Web3 Starter
 
 Kho khởi đầu dùng xuyên suốt 15 bài thực hành.
