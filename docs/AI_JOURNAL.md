@@ -33,3 +33,21 @@
 | **2** | `VaultBuggy.sol`: Hàm khẩn cấp thiếu kiểm tra quyền `onlyOwner`. | AI | Bổ sung modifier `onlyOwner` kiểm tra quyền `msg.sender`. |
 | **3** | `ProjectCore.sol`: Hàm `registerVoters` nhận mảng rỗng gây lãng phí gas không cần thiết. | AI | Bổ sung điều kiện kiểm tra `if (voters.length == 0) revert EmptyVoterList();`. |
 | **4** | `ProjectCore.sol`: Hàm `vote()` chưa kiểm tra giới hạn `candidateId` bằng custom error. | **Sinh viên** | Bổ sung kiểm tra `if (candidateId >= candidates.length) revert InvalidCandidate();`. |
+
+## Lab 11 — Nâng cấp Bầu cử kín Commit - Reveal có Quorum & Thực nghiệm Sepolia
+- **Công cụ:** Antigravity IDE (Gemini).
+- **Yêu cầu:** Nâng cấp kiến trúc hợp đồng `ProjectCore.sol` lên bầu cử kín 2 pha (Commit - Reveal) kết hợp Quorum basis points, chuẩn bị triển khai mạng Sepolia Testnet.
+- **Đánh giá:** Dùng được sau khi tinh chỉnh logic bảo mật hàm băm.
+- **Chỗ sai / Rủi ro bảo mật:** Ban đầu hàm băm `commitment` chưa ràng buộc địa chỉ ví `msg.sender`, dẫn đến nguy cơ cử tri khác sao chép mã băm trong mempool để bỏ phiếu theo (Copy-voting). Ngoài ra, tham số `_quorumBps` chưa chặn giới hạn trên 10,000 bps.
+- **Cách sửa:** Sinh viên yêu cầu AI cập nhật mã băm thành `keccak256(abi.encodePacked(candidateId, salt, msg.sender))` và thêm điều kiện `if (_quorumBps > 10_000) revert InvalidParams();`.
+- **Ai phát hiện:** Sinh viên phát hiện và yêu cầu khắc phục.
+- **Kết quả thực nghiệm:** Triển khai thành công trên Sepolia (`0x7D3bC21A8532d2011cF970C0701413C236C53Ddd`), ghi nhận 1 ca hợp lệ (Block 11899220) và 1 ca vi phạm bị revert (Block 11899237).
+
+## Lab 12 — Thẩm định Hồ sơ Gate Review 1 & Khóa Phạm vi (Scope Lock)
+- **Công cụ:** Antigravity IDE (Gemini).
+- **Yêu cầu:** Rà soát toàn bộ codebase, đối soát 5/5 tiêu chuẩn sức khỏe repo, xây dựng kịch bản thuyết trình demo 3 phút và khóa phạm vi cho giai đoạn Lab 13–15.
+- **Đánh giá:** Dùng được, hỗ trợ lập cấu trúc biên bản Gate Review 1 chuẩn xác.
+- **Điểm cần lưu ý:** AI đề xuất thêm các tính năng mở rộng như token quản trị ERC-20 và bầu cử nhiều vòng. Nhóm nhận định các tính năng này làm phình to mã nguồn vượt mức 150 dòng và tạo rủi ro phân tán nguồn lực.
+- **Cách sửa:** Sinh viên chủ động quyết định cắt bỏ các tính năng đầu cơ (Out-of-scope), giữ hợp đồng tinh gọn 125 dòng mã, tập trung kiểm thử chuyên sâu và giao diện Web DApp cho giai đoạn Lab 13–15.
+- **Ai phát hiện:** Sinh viên chủ động ra quyết định quản trị phạm vi (Scope Lock).
+- **Kết quả nghiệm thu:** Đạt 5/5 tiêu chuẩn sức khỏe Repo, đề tài được phê duyệt ở mức Nâng cao (Qua / Approved).
