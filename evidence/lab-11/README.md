@@ -52,7 +52,7 @@ Hợp đồng được biên dịch bằng Solidity `0.8.20` và triển khai th
     ```
   - **Đánh giá:** Trạng thái cam kết được lưu trữ thành công vào mapping `commitments`, lá phiếu được bảo mật hoàn toàn trên mạng lưới.
 
-![Ca 1 Hợp lệ](./01_valid_commit_sepolia.png)
+![Ca 1 Hợp lệ](./01_valid_commit_sepolia.png.png)
 
 ---
 
