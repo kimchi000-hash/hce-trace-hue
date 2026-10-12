@@ -1,167 +1,130 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-/**
- * @title ProjectCore
- * @dev He thong bo phieu on-chain (Club Voting) tuan thu tieu chuan SimpleVoting.sol
- * va quy uoc du an ECO2432 (AGENTS.md).
- */
+/// @title Bau cu kin 2 pha (commit - reveal) co quorum
 contract ProjectCore {
-    // --- CAU TRUC DU LIEU ---
+    enum Phase { Registration, Commit, Reveal, Ended }
 
-    // Thong tin ung cu vien
-    struct Candidate {
-        string name;
-        uint256 voteCount;
-    }
+    uint256 public constant MAX_CANDIDATES = 20;
+    uint256 public constant MAX_BATCH = 200;
 
-    // --- BIEN TRANG THAI ---
-
-    // Dia chi quan tri vien (Admin)
     address public admin;
+    uint256 public regEnd;
+    uint256 public commitEnd;
+    uint256 public revealEnd;
+    uint256 public quorumBps; // 5000 = 50% cu tri phai tiet lo phieu
+    uint256 public voterCount;
+    uint256 public revealedCount;
 
-    // Moc thoi gian bat dau va ket thuc bau cu
-    uint256 public startTime;
-    uint256 public endTime;
+    string[] public candidates;
+    uint256[] public votes;
 
-    // Danh sach ung cu vien
-    Candidate[] public candidates;
-
-    // Danh sach cu tri hop le (duoc cap quyen bo phieu)
     mapping(address => bool) public isVoter;
+    mapping(address => bytes32) public commitments;
+    mapping(address => bool) public hasRevealed;
 
-    // Danh sach cu tri da thuc hien bo phieu (chong bau lap)
-    mapping(address => bool) public hasVoted;
-
-    // --- KHAI BAO LOI TUY BIEN (CUSTOM ERRORS) ---
-
-    // Nguoi goi khong phai la admin
-    error NotAdmin();
-
-    // Cu tri khong co trong danh sach hop le
-    error NotEligible();
-
-    // Cu tri da bo phieu truoc do
-    error AlreadyVoted();
-
-    // Ngoai thoi gian bau cu cho phep
-    error NotInVotingPeriod();
-
-    // Ung cu vien khong hop le hoac khong ton tai
-    error InvalidCandidate();
-
-    // Danh sach cu tri dang ky bi rong
-    error EmptyVoterList();
-
-    // --- SU KIEN (EVENTS) ---
-
-    // Phat khi mot cu tri duoc dang ky thanh cong
     event VoterRegistered(address indexed voter);
+    event Committed(address indexed voter);
+    event Revealed(address indexed voter, uint256 indexed candidateId);
 
-    // Phat khi cu tri hoan tat bo phieu
-    event Voted(address indexed voter, uint256 indexed candidateId);
+    error NotAdmin();
+    error WrongPhase(Phase current);
+    error NotEligible();
+    error AlreadyCommitted();
+    error NoCommitment();
+    error AlreadyRevealed();
+    error BadReveal();
+    error InvalidCandidate();
+    error InvalidParams();
+    error BatchTooLarge();
 
-    // --- MODIFIER PHAN QUYEN ---
-
-    // Kiem tra quyen quan tri vien
     modifier onlyAdmin() {
-        if (msg.sender != admin) {
-            revert NotAdmin();
-        }
+        if (msg.sender != admin) revert NotAdmin();
         _;
     }
 
-    // --- CONSTRUCTOR ---
+    modifier inPhase(Phase p) {
+        Phase cur = phase();
+        if (cur != p) revert WrongPhase(cur);
+        _;
+    }
 
-    /**
-     * @dev Khoi tao hop dong bau cu
-     * @param names Danh sach ten ung cu vien ban dau
-     * @param durationMinutes Thoi gian mo hom phieu tinh theo phut
-     */
-    constructor(string[] memory names, uint256 durationMinutes) {
+    constructor(
+        string[] memory names,
+        uint256 regMinutes,
+        uint256 commitMinutes,
+        uint256 revealMinutes,
+        uint256 _quorumBps
+    ) {
+        if (names.length < 2 || names.length > MAX_CANDIDATES) revert InvalidParams();
+        if (_quorumBps > 10_000) revert InvalidParams();
         admin = msg.sender;
-        startTime = block.timestamp;
-        endTime = block.timestamp + (durationMinutes * 1 minutes);
-
-        // Nap danh sach ung cu vien ban dau
-        for (uint256 i = 0; i < names.length; ) {
-            candidates.push(Candidate({name: names[i], voteCount: 0}));
-            unchecked {
-                ++i;
-            }
+        regEnd = block.timestamp + regMinutes * 1 minutes;
+        commitEnd = regEnd + commitMinutes * 1 minutes;
+        revealEnd = commitEnd + revealMinutes * 1 minutes;
+        quorumBps = _quorumBps;
+        for (uint256 i = 0; i < names.length; i++) {
+            candidates.push(names[i]);
+            votes.push(0);
         }
     }
 
-    // --- CAC HAM NGHIEP VU COT LOI ---
+    function phase() public view returns (Phase) {
+        if (block.timestamp <= regEnd) return Phase.Registration;
+        if (block.timestamp <= commitEnd) return Phase.Commit;
+        if (block.timestamp <= revealEnd) return Phase.Reveal;
+        return Phase.Ended;
+    }
 
-    /**
-     * @dev Cap quyen cho danh sach cu tri theo lo (batch)
-     * @param voters Danh sach dia chi cu tri
-     */
-    function registerVoters(address[] calldata voters) external onlyAdmin {
-        // Checks: Kiem tra danh sach cu tri khong duoc rong
-        if (voters.length == 0) {
-            revert EmptyVoterList();
-        }
-
-        for (uint256 i = 0; i < voters.length; ) {
-            address voter = voters[i];
-            // Bo qua dia chi address(0) va cu tri da duoc cap quyen truoc do
-            if (voter != address(0) && !isVoter[voter]) {
-                isVoter[voter] = true;
-                emit VoterRegistered(voter);
-            }
-            unchecked {
-                ++i;
-            }
+    function registerVoters(address[] calldata voters)
+        external onlyAdmin inPhase(Phase.Registration)
+    {
+        if (voters.length > MAX_BATCH) revert BatchTooLarge();
+        for (uint256 i = 0; i < voters.length; i++) {
+            address v = voters[i];
+            if (v == address(0)) revert InvalidParams();
+            if (isVoter[v]) continue; // tranh dem trung
+            isVoter[v] = true;
+            voterCount++;
+            emit VoterRegistered(v);
         }
     }
 
-    /**
-     * @dev Cu tri thuc hien bo phieu cho mot ung cu vien
-     * @param candidateId So thu tu cua ung cu vien duoc bau
-     */
-    function vote(uint256 candidateId) external {
-        // Checks: Kiem tra thoi gian hop le
-        if (block.timestamp < startTime || block.timestamp > endTime) {
-            revert NotInVotingPeriod();
-        }
-
-        // Checks: Kiem tra tu cach cu tri
-        if (!isVoter[msg.sender]) {
-            revert NotEligible();
-        }
-
-        // Checks: Kiem tra chong bau lap
-        if (hasVoted[msg.sender]) {
-            revert AlreadyVoted();
-        }
-
-        // Checks: Kiem tra ung cu vien hop le
-        if (candidateId >= candidates.length) {
-            revert InvalidCandidate();
-        }
-
-        // Effects: Cap nhat trang thai da bo phieu truoc khi tang phieu
-        hasVoted[msg.sender] = true;
-        candidates[candidateId].voteCount++;
-
-        // Interactions / Events: Phat su kien sau khi hoan tat thay doi trang thai
-        emit Voted(msg.sender, candidateId);
+    /// @param commitment keccak256(abi.encodePacked(candidateId, salt, voterAddress))
+    function commit(bytes32 commitment) external inPhase(Phase.Commit) {
+        if (!isVoter[msg.sender]) revert NotEligible();
+        if (commitments[msg.sender] != bytes32(0)) revert AlreadyCommitted();
+        if (commitment == bytes32(0)) revert InvalidParams();
+        commitments[msg.sender] = commitment;
+        emit Committed(msg.sender);
     }
 
-    /**
-     * @dev Doc cong khai toan bo ket qua bau cu hien tai (view function, khong ton gas khi doc off-chain)
-     * @return Danh sach toan bo ung cu vien cung so phieu
-     */
-    function getResults() external view returns (Candidate[] memory) {
-        return candidates;
+    function reveal(uint256 candidateId, bytes32 salt) external inPhase(Phase.Reveal) {
+        bytes32 c = commitments[msg.sender];
+        if (c == bytes32(0)) revert NoCommitment();
+        if (hasRevealed[msg.sender]) revert AlreadyRevealed();
+        if (candidateId >= candidates.length) revert InvalidCandidate();
+        if (keccak256(abi.encodePacked(candidateId, salt, msg.sender)) != c) revert BadReveal();
+
+        hasRevealed[msg.sender] = true; // Effects truoc
+        votes[candidateId] += 1;
+        revealedCount += 1;
+        emit Revealed(msg.sender, candidateId);
     }
 
-    /**
-     * @dev Tra ve tong so luong ung cu vien hien co
-     * @return So luong ung cu vien
-     */
+    /// @return valid dat quorum va co nguoi thang duy nhat
+    function result() external view inPhase(Phase.Ended)
+        returns (bool valid, uint256 winnerId, uint256 topVotes)
+    {
+        if (revealedCount * 10_000 < voterCount * quorumBps) return (false, 0, 0);
+        uint256 tied;
+        for (uint256 i = 0; i < votes.length; i++) {
+            if (votes[i] > topVotes) { topVotes = votes[i]; winnerId = i; tied = 1; }
+            else if (votes[i] == topVotes) { tied++; }
+        }
+        valid = (tied == 1 && topVotes > 0);
+    }
+
     function candidateCount() external view returns (uint256) {
         return candidates.length;
     }
