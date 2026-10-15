@@ -1,26 +1,40 @@
-# NHIỆM VỤ RÀ SOÁT CHÉO (CROSS-AUDIT ASSIGNMENT) — LAB 14
+# BÁO CÁO RÀ SOÁT CHÉO (CROSS-AUDIT REPORT) — LAB 14
 
-- **Nhóm thực hiện (Auditor):** Nhóm [Tên nhóm của bạn]
-- **Nhóm được rà soát (Target):** Nhóm [Tên nhóm được phân công]
-- **Mục tiêu:** Kiểm tra chéo mã nguồn `contracts/project/ProjectCore.sol` và tệp đặc tả `docs/SPEC.md` của nhóm bạn theo danh mục kiểm tra an ninh bắt buộc.
-
----
-
-## 📋 Danh mục Kiểm tra Nhiệm vụ (Audit Checklist)
-Nhóm thực hiện rà soát sẽ đối chiếu mã nguồn dựa trên các tiêu chí kỹ thuật cốt lõi sau đây, bắt buộc phải **trích dẫn số dòng** cho mọi phát hiện[cite: 8]:
-
-1. **Phân quyền (Access Control):** Mọi hàm nhạy cảm có kiểm tra người gọi không? Có hàm nào quên kiểm tra không?[cite: 8]
-2. **Thứ tự thao tác (State Updates & CEI):** Có hàm nào chuyển tiền ra ngoài *trước* khi cập nhật biến trạng thái không? (Kiểm tra chống Reentrancy)[cite: 8]
-3. **Điều kiện thời gian (Time Conditions):** Dấu so sánh thời gian có đúng chiều không? (Kiểm tra trường hợp đúng bằng mốc)[cite: 8]
-4. **Phép chia (Division Safety):** Có phép chia nào làm tròn xuống thành 0 với số nhỏ không?[cite: 8]
-5. **Cách chuyển ETH (Transfer Method):** Dùng `call` hay `transfer`? Có kiểm tra kết quả trả về không?[cite: 8]
-6. **Dữ liệu riêng tư (Visibility):** Có dữ liệu nào tưởng là bí mật trên chuỗi nhưng thực ra ai cũng đọc được không?[cite: 8]
-7. **Vòng lặp (Loops & Gas Limit):** Có vòng lặp nào chạy trên danh sách dài không giới hạn nguy cơ gây tràn giới hạn phí (Out of Gas) không?[cite: 8]
-8. **Sự kiện (Events):** Mọi thay đổi trạng thái quan trọng có ghi lại sự kiện (Event) để tra cứu không?[cite: 8]
-9. **Trường hợp số 0 (Edge Cases):** Nạp 0 đồng, rút khi số dư 0, danh sách rỗng — hệ thống xử lý thế nào?[cite: 8]
-10. **Địa chỉ rỗng (Zero-Address Check):** Có kiểm tra tham số địa chỉ khác `address(0)` không?[cite: 8]
+- **Nhóm thực hiện rà soát (Auditor):** Nhóm DETAI7
+- **Nhóm có sản phẩm được rà soát (Target):** Nhóm VotaChain
+- **Đối tượng rà soát:** Hợp đồng `ProjectCore.sol` (HCE Soulbound Achievement Badge v0.2)
+- **Ngày thực hiện:** 15/10/2026
 
 ---
 
-## 📝 Nhật ký Phát hiện & Phản hồi (Findings & Feedback Log)
-*(Phần này sẽ được điền chi tiết trong quá trình rà soát trực tiếp tại lớp theo vòng tròn phân công của giảng viên).*
+## 1. Tóm tắt kết quả (Executive Summary)
+Đã tiến hành rà soát toàn bộ tệp mã nguồn `ProjectCore.sol`. Đánh giá chung: Hợp đồng có chất lượng tốt, đã tuân thủ mô hình CEI để chống Reentrancy và có cơ chế giới hạn vòng lặp `issueBatch` hợp lý. Tuy nhiên, quá trình kiểm tra chuyên sâu ghi nhận tổng số **2 vấn đề logic** cần lưu ý:
+- **Nghiêm trọng (Critical):** 0
+- **Trung bình (Medium):** 1
+- **Nhẹ / Khuyến nghị (Low/Info):** 1
+
+---
+
+## 2. Chi tiết các phát hiện (Findings)
+
+### Phát hiện 1 — Lỗ hổng cấp phát sai loại huy hiệu (Missing Badge Type Validation)
+- **Mức độ:** Trung bình (Medium)
+- **Vị trí:** Dòng 81-83, trong hàm `issueBadge()`.
+- **Mô tả:** Hàm `issueBadge` có kiểm tra giới hạn `limit = maxSupplyPerType[badgeType]`. Tuy nhiên, nếu một `badgeType` chưa từng được cấu hình (limit mặc định bằng `0`), hệ thống sẽ bỏ qua câu lệnh `if (limit > 0...)` và vẫn tiến hành cấp phát bình thường.
+- **Tình huống gây thiệt hại:** Một Issuer (CLB/Khoa) có thể gõ nhầm mã loại huy hiệu (ví dụ thay vì `1` lại gõ `999`). Do không có bước kiểm tra tính tồn tại của `badgeType`, hệ thống vẫn in ra một SBT rác với `badgeType = 999` ghi vĩnh viễn lên blockchain, làm hỏng tính toàn vẹn của dữ liệu thành tích.
+- **Khuyến nghị:** Cần thêm một cấu trúc `mapping(uint256 => bool) public isValidBadgeType;` để quản trị viên (Owner) định nghĩa trước các loại huy hiệu hợp lệ. Trong hàm `issueBadge`, bổ sung kiểm tra: `require(isValidBadgeType[badgeType], "Loai huy hieu khong ton tai");`
+
+---
+
+### Phát hiện 2 — Rủi ro hoàn tác toàn bộ giao dịch lô (All-or-Nothing Batch Revert)
+- **Mức độ:** Nhẹ (Low / Logic Edge Case)
+- **Vị trí:** Dòng 115-117, vòng lặp `for` trong hàm `issueBatch()`.
+- **Mô tả:** Hàm gọi lặp lại `issueBadge()` cho từng địa chỉ trong mảng `students`. Nếu chỉ có **một** địa chỉ trong mảng vi phạm điều kiện (ví dụ: bị trùng `hasBadgeType` hoặc là `address(0)`), toàn bộ giao dịch chứa 50 sinh viên sẽ bị `Revert` lập tức.
+- **Tình huống gây thiệt hại:** Gây tốn kém gas vô ích cho Issuer và làm gián đoạn quy trình trao giải tự động, vì quản trị viên phải dò tìm bằng tay xem sinh viên nào bị lỗi để loại ra khỏi mảng rồi mới gửi lại giao dịch.
+- **Khuyến nghị (Không bắt buộc sửa ngay):** Thay vì dùng `revert` trực tiếp trong `issueBadge`, có thể cân nhắc bắt lỗi ngầm (silently skip) các địa chỉ không hợp lệ trong lô, hoặc phát ra một Event `BadgeIssueFailed` cho địa chỉ đó để tiếp tục chạy nốt phần còn lại của danh sách.
+
+---
+
+## 3. Phản hồi và Xử lý từ Nhóm được Rà soát (Target Team Feedback)
+- **Trạng thái xử lý:** *(Nhóm bạn điền vào đây sau khi gửi báo cáo cho họ)*
+- **Hành động khắc phục:** *(Chờ nhóm bạn cập nhật)*
