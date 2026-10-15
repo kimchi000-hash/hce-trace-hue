@@ -51,3 +51,12 @@
 - **Cách sửa:** Sinh viên chủ động quyết định cắt bỏ các tính năng đầu cơ (Out-of-scope), giữ hợp đồng tinh gọn 125 dòng mã, tập trung kiểm thử chuyên sâu và giao diện Web DApp cho giai đoạn Lab 13–15.
 - **Ai phát hiện:** Sinh viên chủ động ra quyết định quản trị phạm vi (Scope Lock).
 - **Kết quả nghiệm thu:** Đạt 5/5 tiêu chuẩn sức khỏe Repo, đề tài được phê duyệt ở mức Nâng cao (Qua / Approved).
+
+## Lab 13 — Thẩm định An ninh, Phân tích Lỗ hổng Reentrancy & Kiểm thử Phân quyền (Negative Test)
+- **Công cụ:** Antigravity IDE (Gemini).
+- **Yêu cầu:** Phân tích cơ chế khai thác Reentrancy qua hàm `receive()` trong `VulnerableBank.sol`, so sánh 2 phương án khắc phục (CEI vs ReentrancyGuard), vá lỗi bằng mô hình Checks-Effects-Interactions, và xây dựng kịch bản kiểm thử Hardhat bắt mã lỗi `NotAdmin()` cho `ProjectCore.sol`.
+- **Đánh giá:** Dùng được, hỗ trợ chuẩn hóa nguyên tắc Checks-Effects-Interactions và kịch bản test tự động.
+- **Chỗ sai / Rủi ro an ninh đối chiếu:** Trong `VulnerableBank.sol`, lệnh `msg.sender.call{value: balance}("")` nằm trước `balances[msg.sender] = 0;`, cho phép `Attacker.receive()` gọi tái nhập hàm `withdraw()` rút cạn toàn bộ 6 ETH. Đối chiếu với hợp đồng đồ án `ProjectCore.sol`, nhóm kiểm tra thấy hàm `reveal()` đã tuân thủ đúng nguyên tắc CEI khi gán `hasRevealed[msg.sender] = true;` trước khi ghi nhận cộng dồn phiếu bầu.
+- **Cách sửa:** Đưa lệnh `balances[msg.sender] = 0;` lên trước lệnh `call` trong `VulnerableBank.sol`. Viết kịch bản test tự động `test/ProjectCore.test.js` sử dụng `expect(...).to.be.revertedWithCustomError(projectCore, "NotAdmin")` để chứng minh cơ chế phân quyền hoạt động tin cậy.
+- **Ai phát hiện:** Sinh viên và AI phối hợp rà soát thực nghiệm trên Remix VM.
+- **Kết quả nghiệm thu:** Bản vá triệt tiêu hoàn toàn lỗ hổng Reentrancy; kịch bản test tự động bắt chính xác lỗi `NotAdmin()` khi tài khoản lạ cố can thiệp danh sách cử tri.

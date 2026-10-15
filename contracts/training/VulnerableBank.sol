@@ -47,4 +47,3 @@ contract Attacker {
         require(ok, "Chuyen that bai");
     }
 }
-

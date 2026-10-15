@@ -42,6 +42,10 @@
 | **Lab 12** | **Hồ sơ Gate Review 1 (Duyệt Codebase & Khóa phạm vi)** | [`docs/GATE_REVIEW_1.md`](docs/GATE_REVIEW_1.md), [`evidence/lab-12/README.md`](evidence/lab-12/README.md) | Cả hai thành viên | ✅ ĐẠT (5/5 tiêu chí sức khỏe Repo, Đề tài Nâng cao) |
 | **Lab 12** | **Cập nhật kế hoạch & Xoay vai trò Lab 13–15** | [`docs/PROJECT_PLAN.md`](docs/PROJECT_PLAN.md) | Cả hai thành viên | ✅ Đã phân vai chi tiết & Khóa phạm vi sản phẩm |
 | **Lab 12** | **Commit nghiệm thu Gate Review 1** | Commit message: `lab-12: thong qua gate review 1 khoa pham vi de tai` | Cả hai thành viên | ✅ Đã đóng dấu |
+| **Lab 13** | **Bản vá Reentrancy VulnerableBank** | [`contracts/training/VulnerableBank.sol`](contracts/training/VulnerableBank.sol) | Kim Chi | ✅ Áp dụng chuẩn Checks-Effects-Interactions |
+| **Lab 13** | **Kịch bản kiểm thử phân quyền Hardhat** | [`test/ProjectCore.test.js`](test/ProjectCore.test.js) | Kim Chi | ✅ Bắt chính xác lỗi NotAdmin() bằng Custom Error |
+| **Lab 13** | **Báo cáo thẩm định & Bằng chứng Lab 13** | [`evidence/lab-13/README.md`](evidence/lab-13/README.md) | Võ Thư | ✅ Đủ 4 ảnh minh chứng Remix VM (6 ETH, 0 ETH, Revert, NotAdmin) |
+| **Lab 13** | **Commit nghiệm thu an ninh & kiểm thử** | Commit message: `lab-13: tham dinh reentrancy va kiem thu phan quyen` | Cả hai thành viên | ✅ Đã đóng dấu |
 
 ---
 
@@ -76,3 +80,4 @@ Hợp đồng được triển khai tại địa chỉ [`0x7D3bC21A8532d2011cF97
   - [`evidence/lab-10/`](evidence/lab-10/): Minh chứng audit và khắc phục lỗi VaultBuggy.
   - [`evidence/lab-11/`](evidence/lab-11/): Minh chứng thực nghiệm Sepolia 1 ca hợp lệ và 1 ca vi phạm bị revert.
   - [`evidence/lab-12/`](evidence/lab-12/): Biên bản nghiệm thu Gate Review 1 và phê duyệt phạm vi đề tài.
+  - [`evidence/lab-13/`](evidence/lab-13/): Thẩm định an ninh Reentrancy và kiểm thử phân quyền Negative Test.
