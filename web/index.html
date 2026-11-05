@@ -3270,6 +3270,37 @@ pre.code {
 .vc-consent li { margin: 3px 0; }
 .vc-consent label { display: flex; gap: 8px; align-items: flex-start; font-weight: 600; cursor: pointer; }
 .vc-consent input[type="checkbox"] { margin-top: 3px; width: auto; }
+
+/* ---- thống kê trực quan ---- */
+.viz-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 16px; margin-top: 4px; }
+.viz-card { min-width: 0; margin-top: 0 !important; }
+.viz-empty { display: flex; gap: 10px; align-items: center; padding: 18px 14px; border: 1px dashed var(--line-strong); border-radius: var(--radius); background: var(--surface-2); color: var(--muted); font-size: 14px; }
+.viz-row { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; align-items: center; padding: 9px 0; }
+.viz-row + .viz-row { border-top: 1px solid var(--line); }
+.viz-row .avatar { width: 36px; height: 36px; font-size: 13px; }
+.viz-name { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; font-weight: 600; color: var(--ink); }
+.viz-name span:last-child { font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; }
+.viz-name .lead { color: var(--teal-600); }
+.viz-track { height: 10px; border-radius: 99px; background: var(--gray-100); margin-top: 6px; overflow: hidden; }
+.viz-fill { height: 100%; width: 0; border-radius: 99px; background: linear-gradient(90deg, var(--brand-200), var(--brand)); transition: width .7s cubic-bezier(.2, .8, .2, 1); }
+.viz-fill.lead { background: linear-gradient(90deg, #7fd8cb, var(--teal)); }
+.viz-part { display: flex; flex-wrap: wrap; gap: 18px 24px; align-items: center; justify-content: center; padding: 6px 0 2px; }
+.viz-ring { width: 168px; height: 168px; flex: none; }
+.viz-ring .t { fill: none; stroke: var(--gray-100); stroke-width: 14; }
+.viz-ring .c, .viz-ring .r { fill: none; stroke-width: 14; stroke-linecap: round; transition: stroke-dasharray .8s cubic-bezier(.2, .8, .2, 1); }
+.viz-ring .c { stroke: var(--brand-200); }
+.viz-ring .r { stroke: var(--brand); }
+.viz-ring .q { stroke: var(--amber); stroke-width: 3; stroke-linecap: round; }
+.viz-ring text { font-family: var(--sans); text-anchor: middle; fill: var(--ink); }
+.viz-ring .big { font-size: 25px; font-weight: 800; }
+.viz-ring .sm { font-size: 11px; fill: var(--muted); }
+.viz-legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; min-width: 170px; font-size: 14px; }
+.viz-legend li { display: grid; grid-template-columns: 12px 1fr auto; gap: 9px; align-items: center; color: var(--ink-2); }
+.viz-legend i { width: 12px; height: 12px; border-radius: 4px; display: block; }
+.viz-legend b { font-variant-numeric: tabular-nums; color: var(--ink); }
+.viz-note { flex-basis: 100%; text-align: center; font-size: 13px; color: var(--muted); }
+.viz-note.ok { color: var(--teal-600); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .viz-fill, .viz-ring .c, .viz-ring .r { transition: none; } }
 </style>
 </head>
 
@@ -3902,6 +3933,24 @@ pre.code {
       </div>
     </div>
     <div class="cgrid" id="candGrid"></div>
+
+    <!-- thống kê trực quan -->
+    <div class="section-head" style="margin-top:28px">
+      <div>
+        <h2><svg class="ic lg" style="color:var(--brand)"><use href="#i-activity"/></svg>Thống kê trực quan</h2>
+        <p>Số liệu đọc trực tiếp từ hợp đồng. Phiếu chỉ hiện từ pha mở phiếu để không lộ kết quả sớm.</p>
+      </div>
+    </div>
+    <div class="viz-grid">
+      <div class="card viz-card" aria-labelledby="vizResT">
+        <div class="card-head"><div><h3 id="vizResT">Kết quả theo ứng viên</h3><div class="sub" id="vizResSub"></div></div></div>
+        <div id="vizResults"></div>
+      </div>
+      <div class="card viz-card" aria-labelledby="vizPartT">
+        <div class="card-head"><div><h3 id="vizPartT">Mức tham gia và quorum</h3><div class="sub" id="vizPartSub"></div></div></div>
+        <div id="vizPart" class="viz-part"></div>
+      </div>
+    </div>
 
     <!-- timeline -->
     <div class="grid g-main" style="margin-top:24px">
@@ -5523,7 +5572,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
    *   - Điều kiện nhận thẻ do HỢP ĐỒNG kiểm tra (ProjectCore.hasRevealed), giao diện chỉ hiển thị.
    *   - Thẻ không chứa lựa chọn / salt. Nhận thẻ là tùy chọn, không ảnh hưởng phiếu.
    * ------------------------------------------------------------------ */
-  const MASCOT_NAMES = ["Mèo phi hành gia", "Gấu tốt nghiệp", "Thỏ hoa tím", "Rùa mũ VoteChain", "Chim cánh cụt loa", "Corgi hoodie", "Rồng khiên", "Cừu khăn quàng"];
+  const MASCOT_NAMES = ["Mèo phi hành gia", "Gấu tốt nghiệp", "Thỏ hoa tím", "Rùa mũ VoteChain", "Chim cánh cụt loa", "Corgi hoodie", "Rồng khiên", "Cừu khăn quàng", "Cáo cầm phiếu", "Gấu trúc mầm non", "Gà con đeo kính", "Kỳ lân cánh trắng"];
   // Dự phòng của hợp đồng khi KHÔNG cấu hình ảnh ngoài (khớp _face/_bg/_fg trong VoterCardSBT.sol): emoji, màu nền, màu vòng
   const EMOJI_FACE = [["🐱", "#e0f2fe", "#7dd3fc"], ["🐼", "#dcfce7", "#86efac"], ["🦊", "#fef3c7", "#fcd34d"], ["🐰", "#fce7f3", "#f9a8d4"], ["🦉", "#ede9fe", "#c4b5fd"], ["🐸", "#ffedd5", "#fdba74"]];
   const IPFS_GATEWAYS = ["https://ipfs.io/ipfs/", "https://dweb.link/ipfs/", "https://w3s.link/ipfs/"];
@@ -6757,6 +6806,29 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       const a = l.candidates[i] || {}, b = f.candidates[i] || {};
       out.candidates.push({ title: a.title || b.title || "", bio: a.bio || b.bio || "", history: a.history || b.history || "", program: a.program || b.program || "", photo: a.photo || b.photo || "" });
     }
+    // Nội dung từ Supabase đã băm lại và khớp hash trên chuỗi: ưu tiên cao nhất
+    const mv = S.metaVerify;
+    if (mv && mv.res && String(mv.id) === k) {
+      const ve = mv.res.election;
+      if (ve.state === "ok" && ve.content) {
+        const c = ve.content;
+        out.description = cleanText(c.description, META_LIMITS.description) || out.description;
+        out.purpose = cleanText(c.purpose, META_LIMITS.purpose) || out.purpose;
+        out.cover = safeImg(c.cover && c.cover.url) || out.cover;
+        out.verified = true;
+      }
+      mv.res.candidates.forEach((x) => {
+        if (x.state !== "ok" || !x.content) return;
+        const c = x.content, cur = out.candidates[x.index] || { title: "", bio: "", history: "", program: "", photo: "" };
+        out.candidates[x.index] = {
+          title: cur.title,
+          bio: cleanText(c.bio, META_LIMITS.bio) || cur.bio,
+          history: cleanText([c.experience, c.achievements].filter(Boolean).join("\n\n"), META_LIMITS.history) || cur.history,
+          program: cleanText(c.manifesto, META_LIMITS.program) || cur.program,
+          photo: safeImg(c.avatar && c.avatar.url) || cur.photo,
+        };
+      });
+    }
     return out;
   }
   const candMeta = (id, i) => (elMeta(id).candidates[i] || { title: "", bio: "", history: "", program: "", photo: "" });
@@ -7037,6 +7109,13 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   function renderDetailPage() {
     const e = S.election;
     if (!e) return;
+    if (!S.metaVerify || S.metaVerify.id !== e.id) {
+      if (S.mvPending !== e.id && readReady()) {
+        S.mvPending = e.id;
+        const done = () => { S.mvPending = null; if (S.election && S.election.id === e.id) renderDetailPage(); };
+        refreshMetaVerify().then(done).catch(() => { S.metaVerify = { id: e.id, res: null }; done(); });
+      }
+    }
     const m = elMeta(e.id);
     const s = { phase: e.phase, isActivated: e.isActivated };
 
@@ -7060,9 +7139,79 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     $("tileBar").style.width = (e.voterCount === 0n ? 0 : Math.min(100, Number((e.revealedCount * 10000n) / e.voterCount) / 100)) + "%";
 
     renderCandGrid();
+    renderViz();
     renderTimeline();
     renderAgg();
     renderMetaEditor(false);
+  }
+
+
+  /* ----- Thống kê trực quan (biểu đồ thanh + vòng tham gia), toàn bộ từ dữ liệu on-chain ----- */
+  function renderViz() {
+    const e = S.election;
+    if (!e || !$("vizResults")) return;
+    // 1) kết quả theo ứng viên
+    const box = $("vizResults"); clear(box);
+    const shown = !!(e.votes && e.phase >= 2);
+    const votes = shown ? e.votes.map((v) => Number(v)) : [];
+    const total = votes.reduce((a, b) => a + b, 0), max = Math.max(0, ...votes);
+    $("vizResSub").textContent = shown ? total + " phiếu đã mở" + (e.phase === 2 ? " · đang cập nhật theo từng lượt mở phiếu" : "") : "Đang giữ kín";
+    if (!shown) {
+      const d = el("div", "viz-empty"); d.appendChild(icon("lock", "sm"));
+      d.appendChild(document.createTextNode("Phiếu được giữ kín đến pha mở phiếu. Biểu đồ sẽ hiện khi cử tri bắt đầu công khai lựa chọn."));
+      box.appendChild(d);
+    } else {
+      const bars = [];
+      e.candidates.forEach((name, i) => {
+        const c = candMeta(e.id, i), v = votes[i];
+        const lead = max > 0 && v === max && votes.filter((x) => x === max).length === 1;
+        const row = el("div", "viz-row");
+        row.appendChild(avatarEl(name, i, c.photo));
+        const body = el("div");
+        const nm = el("div", "viz-name");
+        nm.appendChild(el("span", lead ? "lead" : "", name));
+        nm.appendChild(el("span", lead ? "lead" : "", v + " phiếu · " + (total ? ((v / total) * 100).toFixed(1).replace(".", ",") : "0") + "%"));
+        const tr = el("div", "viz-track"); tr.setAttribute("role", "img");
+        tr.setAttribute("aria-label", name + ": " + v + " phiếu");
+        const fill = el("div", "viz-fill" + (lead ? " lead" : ""));
+        tr.appendChild(fill); body.appendChild(nm); body.appendChild(tr); row.appendChild(body); box.appendChild(row);
+        bars.push([fill, max ? (v / max) * 100 : 0]);
+      });
+      requestAnimationFrame(() => requestAnimationFrame(() => bars.forEach(([f, w]) => { f.style.width = w + "%"; })));
+    }
+
+    // 2) vòng tham gia + quorum
+    const pb = $("vizPart"); clear(pb);
+    const elig = Number(e.voterCount), rev = Number(e.revealedCount), q = Number(e.quorumBps) / 10000;
+    const ee = S.ee && S.ee.id === e.id && !S.ee.error ? S.ee : null;
+    const com = ee ? Math.max(ee.commits, rev) : null;
+    const pct = (n) => (elig ? Math.min(1, n / elig) : 0);
+    const R = 66, C = 2 * Math.PI * R, NS = "http://www.w3.org/2000/svg";
+    const mk = (tag, attrs, parent) => { const n = document.createElementNS(NS, tag); Object.keys(attrs).forEach((k) => n.setAttribute(k, attrs[k])); if (parent) parent.appendChild(n); return n; };
+    const svg = mk("svg", { viewBox: "0 0 168 168", class: "viz-ring", role: "img", "aria-label": "Đã mở phiếu " + rev + " trên " + elig + " cử tri đủ điều kiện, quorum yêu cầu " + (q * 100).toFixed(1).replace(".", ",") + "%" });
+    const g = mk("g", { transform: "rotate(-90 84 84)" }, svg);
+    mk("circle", { class: "t", cx: 84, cy: 84, r: R }, g);
+    const cArc = mk("circle", { class: "c", cx: 84, cy: 84, r: R, "stroke-dasharray": "0 " + C }, g);
+    const rArc = mk("circle", { class: "r", cx: 84, cy: 84, r: R, "stroke-dasharray": "0 " + C }, g);
+    const ang = q * 2 * Math.PI - Math.PI / 2, x1 = 84 + (R - 11) * Math.cos(ang), y1 = 84 + (R - 11) * Math.sin(ang), x2 = 84 + (R + 11) * Math.cos(ang), y2 = 84 + (R + 11) * Math.sin(ang);
+    mk("line", { class: "q", x1, y1, x2, y2 }, svg);
+    mk("text", { class: "big", x: 84, y: 90 }, svg).textContent = pctStr(rev, elig) + "%";
+    mk("text", { class: "sm", x: 84, y: 108 }, svg).textContent = "đã mở phiếu";
+    pb.appendChild(svg);
+    const ul = el("ul", "viz-legend");
+    const li = (color, label, val) => { const l = el("li"); const i = el("i"); i.style.background = color; l.appendChild(i); l.appendChild(el("span", "", label)); l.appendChild(el("b", "", val)); ul.appendChild(l); };
+    li("var(--gray-100)", "Đủ điều kiện", String(elig));
+    li("var(--brand-200)", "Đã commit", com === null ? "—" : String(com));
+    li("var(--brand)", "Đã mở phiếu", String(rev));
+    li("var(--amber)", "Quorum yêu cầu", bpsStr(e.quorumBps));
+    pb.appendChild(ul);
+    const met = e.revealedCount * 10000n >= e.voterCount * e.quorumBps && elig > 0;
+    pb.appendChild(el("div", "viz-note" + (met ? " ok" : ""), met ? "Đã đạt quorum" : "Chưa đạt quorum: cần ≥ " + bpsStr(e.quorumBps) + " số cử tri mở phiếu"));
+    $("vizPartSub").textContent = elig + " cử tri đủ điều kiện";
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (com !== null) cArc.setAttribute("stroke-dasharray", (pct(com) * C) + " " + C);
+      rArc.setAttribute("stroke-dasharray", (pct(rev) * C) + " " + C);
+    }));
   }
 
   function renderCandGrid() {
@@ -7179,7 +7328,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       };
     } catch (_) { S.ee = { id, stamp: Date.now(), error: true }; }
     S.eeLoading = false;
-    if (S.election && S.election.id === id) { renderTimeline(); renderAgg(); }
+    if (S.election && S.election.id === id) { renderTimeline(); renderAgg(); renderViz(); }
   }
   function ensureEE() {
     const e = S.election;

@@ -132,7 +132,7 @@ npx.cmd hardhat verify --network sepolia <CORE_ADDRESS> <REGISTRY_ADDRESS>
 | :-- | :-- |
 | `projectCore_` | địa chỉ ProjectCore đã deploy |
 | `avatarBaseURI_` | `ipfs://<CID>/` (có dấu `/` cuối). Để trống `""` nếu muốn dùng emoji dự phòng |
-| `avatarCount_` | `8` (bị bỏ qua khi để trống baseURI) |
+| `avatarCount_` | `12` (bị bỏ qua khi để trống baseURI) |
 | `avatarExt_` | `png` |
 
 Ba giá trị mascot **không đổi được sau khi deploy**; muốn đổi phải deploy lại, và các thẻ đã cấp ở bản cũ không chuyển sang bản mới.

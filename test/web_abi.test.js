@@ -137,8 +137,8 @@ describe("web/index.html khop voi VoterCardSBT (the cu tri)", function () {
     });
   });
 
-  it("8 anh mascot du phong ton tai va la PNG hop le", function () {
-    for (let i = 0; i < 8; i++) {
+  it("12 anh mascot du phong ton tai va la PNG hop le", function () {
+    for (let i = 0; i < 12; i++) {
       const f = path.join(__dirname, "..", "web", "mascots", i + ".png");
       const b = fs.readFileSync(f);
       expect(b.slice(0, 8).toString("hex"), f).to.equal("89504e470d0a1a0a");
