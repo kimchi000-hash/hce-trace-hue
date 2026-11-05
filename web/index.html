@@ -1716,6 +1716,50 @@ textarea::placeholder {
   font-weight: 650;
 }
 
+.cand .cmain {
+  min-width: 0;
+  flex: 1;
+}
+
+.cand .cbio {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-top: 2px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.cand .cprof {
+  flex: none;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--brand-700);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cand .cprof:hover {
+  border-color: var(--brand-200);
+  background: var(--brand-50);
+}
+
+.cand .cvt {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+  color: var(--teal-700, #0f766e);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
 .cand .vt {
   margin-left: auto;
   font-family: var(--mono);
@@ -4447,6 +4491,11 @@ Trần Thị B</textarea><div class="help">2–20 ứng viên, mỗi tên 1–64
     <div id="approveMeta"><div class="small muted">Chọn một cuộc bầu cử rồi bấm Đối chiếu.</div></div>
   </div>
 
+  <div class="card" style="margin-top:16px">
+    <div class="card-head"><div><h3><svg class="ic"><use href="#i-users"/></svg>Ứng viên của cuộc đang chọn</h3><div class="sub">Xem ảnh và hồ sơ trước khi ký. Bấm vào ứng viên để xem đầy đủ.</div></div></div>
+    <div id="approveCands"><div class="small muted">Chọn một cuộc bầu cử để xem ứng viên.</div></div>
+  </div>
+
   <div class="grid g2" style="margin-top:16px;align-items:start">
     <div class="card">
       <div class="card-head"><div><h3><svg class="ic"><use href="#i-shield"/></svg>Ký duyệt cuộc đang chọn</h3><div class="sub" id="approveTarget">—</div></div></div>
@@ -5446,9 +5495,19 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       inp.disabled = locked && false;                     // vẫn cho chọn để người dùng xem; nút Commit tự khóa theo pha
       inp.onchange = () => { S.pick = i; sel.value = String(i); highlightCand(); renderVoteFlow(); };
       lab.appendChild(inp);
+      const cm = candMeta(e.id, i);
       lab.appendChild(el("span", "ix", String(i + 1)));
-      lab.appendChild(el("span", "nm", name));
+      lab.appendChild(avatarEl(name, i, cm.photo));
+      const main = el("span", "cmain");
+      const nm = el("span", "nm", name);
+      if (cm.verified) { const v = el("span", "cvt", "✓ Đã xác thực hash"); v.title = "Nội dung hồ sơ khớp hash ghi trên chuỗi"; nm.appendChild(v); }
+      main.appendChild(nm);
+      if (cm.bio) main.appendChild(el("span", "cbio", cm.bio));
+      lab.appendChild(main);
       if (e.votes && e.phase >= 2) lab.appendChild(el("span", "vt", e.votes[i] + " phiếu"));
+      const pb = el("button", "cprof", "Xem hồ sơ"); pb.type = "button";
+      pb.onclick = (ev) => { ev.preventDefault(); ev.stopPropagation(); openCandidate(i); };
+      lab.appendChild(pb);
       list.appendChild(lab);
     });
     if (S.pick !== null && S.pick < e.candidates.length) {
@@ -6266,6 +6325,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     if (route === "approve") { renderPending(); if (S.election && readReady()) refreshMetaVerify().catch(() => {}); }
     if (route === "election") { ensureEE(); if (S.election && readReady()) refreshMetaVerify().catch(() => {}); }
     if (route === "org" && !S.orgs && readReady()) loadOrgs().catch(() => {});
+    if (route === "vote" && S.election && readReady() && !(S.metaVerify && String(S.metaVerify.id) === String(S.election.id))) refreshMetaVerify().catch(() => {});
     if (route === "card") queueCardRefresh();
     if (route === "create" && S.account && !S.orgs && readReady()) loadOrgs().catch(() => {});
   }
@@ -6766,6 +6826,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     renderResultPreview();
     const e = S.election;
     $("approveTarget").textContent = "#" + e.id + " · " + e.title + " — " + e.approvalCount + "/" + e.requiredApprovals + " chữ ký";
+    renderApproveCands();
     syncChain();
   }
 
@@ -7344,6 +7405,30 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     }));
   }
 
+  /** Trang Phê duyệt: danh sách ứng viên (ảnh + tiểu sử rút gọn) của cuộc đang chọn, để người duyệt xem trước khi ký. */
+  function renderApproveCands() {
+    const box = $("approveCands"), e = S.election;
+    if (!box) return;
+    clear(box);
+    if (!e) { box.appendChild(el("div", "small muted", "Chọn một cuộc bầu cử để xem ứng viên.")); return; }
+    const grid = el("div", "cgrid");
+    e.candidates.forEach((name, i) => {
+      const c = candMeta(e.id, i);
+      const b = el("button", "ccard"); b.type = "button";
+      b.setAttribute("aria-label", "Xem hồ sơ ứng viên " + name);
+      b.onclick = () => openCandidate(i);
+      const top = el("div", "top");
+      top.appendChild(avatarEl(name, i, c.photo));
+      const t = el("div");
+      t.appendChild(el("h4", "", name));
+      t.appendChild(el("div", "role", c.verified ? "✓ Đã xác thực hash" : (c.title || "Ứng viên #" + i)));
+      top.appendChild(t); b.appendChild(top);
+      b.appendChild(el("div", "bio" + (c.bio ? "" : " none"), c.bio || "Ban tổ chức chưa cung cấp tiểu sử."));
+      grid.appendChild(b);
+    });
+    box.appendChild(grid);
+  }
+
   function renderCandGrid() {
     const e = S.election, grid = $("candGrid");
     clear(grid);
@@ -7391,7 +7476,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     const body = el("div", "modal-body");
     const sec = (title, text) => {
       const s = el("section");
-      const h4 = el("h4"); h4.appendChild(document.createTextNode(title)); h4.appendChild(c.verified ? srcTag("on", "Đã xác thực hash") : srcTag("off"));
+      const h4 = el("h4"); h4.appendChild(document.createTextNode(title)); if (!(c.verified && !text)) h4.appendChild(c.verified ? srcTag("on", "Đã xác thực hash") : srcTag("off"));   // mục trống thì không gắn nhãn xác thực
       s.appendChild(h4);
       s.appendChild(el("div", "prose" + (text ? "" : " none"), text || "Ban tổ chức chưa cung cấp thông tin này."));
       body.appendChild(s);
@@ -8339,6 +8424,9 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     S.metaVerify = { id: e.id, res };
     renderMetaVerify("approveMeta", res);
     renderMetaVerify("eeMeta", res);
+    renderApproveCands();
+    renderCandidates();   // trang Bỏ phiếu: cập nhật ảnh/tiểu sử vừa được xác thực
+    if (S.election) renderCandGrid();
   }
 
   /* ----- Phê duyệt: từ chối, rút, giải phóng hạn mức ----- */

@@ -151,6 +151,22 @@ async function sbHandler(route) {
   await pv.waitForFunction(() => window.__votechain.S.election && document.querySelector("#elDescription").textContent.includes("Mô tả cũ"), null, { timeout: 20000 });
   check("vi cu tri (vi 3): hien noi dung da xac thuc, KHONG co khung soan", !(await pv.locator("#metaOrg").evaluate((n) => !n.classList.contains("hidden"))) && (await pv.locator("#metaCands, #btnMetaSave, #mDesc").count()) === 0);
   check("nhan trong ho so ung vien: 'Da xac thuc hash'", await pv.evaluate(async () => { document.querySelector("#candGrid .ccard").click(); await new Promise((r) => setTimeout(r, 200)); return /Đã xác thực hash/.test(document.querySelector("#modalContent").textContent); }));
+  // ----- trang Bo phieu va Phe duyet cung hien anh/tieu su ung vien da xac thuc -----
+  await pv.evaluate(() => { document.querySelector("#modalContent") && document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" })); location.hash = "#/vote"; });
+  await pv.waitForFunction(() => /Tiểu sử cũ 0/.test(document.querySelector("#candList").textContent), null, { timeout: 15000 }).catch(() => {});
+  const vt = await pv.textContent("#candList");
+  check("trang Bo phieu: moi ung vien co anh/chu cai dau, tieu su rut gon va nhan xac thuc", (await pv.locator("#candList .cand .avatar").count()) === 2 && /Tiểu sử cũ 0/.test(vt) && /Tiểu sử cũ 1/.test(vt) && (vt.match(/Đã xác thực hash/g) || []).length === 2, vt.replace(/\s+/g, " ").slice(0, 200));
+  await pv.locator("#candList .cprof").nth(1).click();
+  check("trang Bo phieu: 'Xem ho so' mo ho so, khong tu chon ung vien", /Trần Thị B/.test(await pv.textContent("#modalContent")) && (await pv.evaluate(() => window.__votechain.S.pick)) === null);
+  await pv.keyboard.press("Escape");
+  await pv.evaluate(() => { location.hash = "#/approve"; });
+  await pv.waitForFunction(() => /Tiểu sử cũ 0/.test(document.querySelector("#approveCands").textContent), null, { timeout: 15000 }).catch(() => {});
+  const at = await pv.textContent("#approveCands");
+  check("trang Phe duyet: the Ung vien hien ten, tieu su, nhan xac thuc cho tung nguoi", (await pv.locator("#approveCands .ccard").count()) === 2 && /Nguyễn Văn A/.test(at) && /Trần Thị B/.test(at) && /Tiểu sử cũ 1/.test(at) && (at.match(/Đã xác thực hash/g) || []).length === 2, at.replace(/\s+/g, " ").slice(0, 200));
+  await pv.locator("#approveCands .ccard").first().click();
+  check("trang Phe duyet: bam vao ung vien mo ho so day du", /Tiểu sử cũ 0/.test(await pv.textContent("#modalContent")));
+  await pv.screenshot({ path: S + "/approve_cands.png" });
+  await pv.keyboard.press("Escape");
   const po = await open(0, { route: "election" });
   await po.waitForFunction(() => window.__votechain.S.election && document.querySelector("#elDescription").textContent.includes("Mô tả cũ"), null, { timeout: 20000 });
   await po.waitForFunction(() => !document.querySelector("#metaOrg").classList.contains("hidden"), null, { timeout: 8000 }).catch(() => {});
