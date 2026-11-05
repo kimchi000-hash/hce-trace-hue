@@ -10,7 +10,7 @@ const art = (n) => require(ROOT + "/artifacts/contracts/project/" + n + ".sol/" 
 const { buildTree } = require(ROOT + "/scripts/merkle");
 const RPC = "http://127.0.0.1:8545";
 const SB = "https://vfzuniykinaivchhuiul.supabase.co";
-const CID = "bafybeickdjosojmlagojcg7l4krhoffitywd74jn7rvzcqodzjti6qmony";
+const CID = "bafybeico4cogxnkerkmjkeisv4yjauxa35huufj5qv5y6drdlgtawjfrgq";
 const ETHERS_UMD = fs.readFileSync(ROOT + "/node_modules/ethers/dist/ethers.umd.min.js", "utf8");
 const log = [];
 const check = (n, ok, x) => log.push((ok ? "PASS " : "FAIL ") + n + (x ? " :: " + x : ""));
@@ -108,6 +108,26 @@ const check = (n, ok, x) => log.push((ok ? "PASS " : "FAIL ") + n + (x ? " :: " 
   await p3.waitForFunction(() => document.querySelectorAll("#cardCollection .vcard").length === 1, null, { timeout: 15000 });
   check("bo suu tap hien dung 1 the, dung ten cuoc bau (da thoat ky tu dac biet)", (await p3.textContent("#cardCollection")).includes('Bầu Chủ nhiệm "CLB" <K58>'));
   check("the hien so thu tu, ngay cap, NFT ID", /#0001/.test(await p3.textContent("#cardCollection")) && /NFT ID/.test(await p3.textContent("#cardCollection")));
+  // ----- tai / chia se anh the -----
+  const [dlEv] = await Promise.all([p3.waitForEvent("download", { timeout: 15000 }), p3.locator("#cardCollection .vcard").getByText("Tải ảnh thẻ").click()]);
+  const dlPath = SHOT + "/votechain_card_test.png"; await dlEv.saveAs(dlPath);
+  const png = fs.readFileSync(dlPath);
+  check("tai anh the: tep PNG hop le, 1080x1350, ten co so thu tu", png.slice(0, 8).toString("hex") === "89504e470d0a1a0a" && png.readUInt32BE(16) === 1080 && png.readUInt32BE(20) === 1350 && /the-cu-tri-0001-cuoc-0\.png$/.test(dlEv.suggestedFilename()), dlEv.suggestedFilename());
+  const ink = await p3.evaluate(async (b64) => {
+    const im = new Image(); im.src = "data:image/png;base64," + b64; await im.decode();
+    const c = document.createElement("canvas"); c.width = 1080; c.height = 1350; const g = c.getContext("2d"); g.drawImage(im, 0, 0);
+    const d = g.getImageData(390, 380, 300, 300).data; let n = 0;
+    for (let i = 0; i < d.length; i += 4) if (!(d[i] > 245 && d[i + 1] > 245 && d[i + 2] > 245)) n++;
+    return n / (d.length / 4);
+  }, png.toString("base64"));
+  check("anh the co ve mascot that (khong phai o trong)", ink > 0.25, String(ink));
+  await p3.evaluate(() => { navigator.canShare = () => true; navigator.share = async (o) => { window.__shared = o.files[0].name + "|" + o.files[0].type + "|" + o.text; }; });
+  await p3.locator("#cardCollection .vcard").getByText("Chia sẻ").click();
+  await p3.waitForFunction(() => window.__shared, null, { timeout: 15000 });
+  const shared = await p3.evaluate(() => window.__shared);
+  check("chia se: dung bang chia se he thong, kem anh PNG va noi dung; khong lo dia chi vi", /^votechain-the-cu-tri-0001-cuoc-0\.png\|image\/png\|Mình vừa nhận Thẻ cử tri VoteChain/.test(shared) && !shared.toLowerCase().includes(accts[3].toLowerCase()), shared);
+  check("localhost: khong hien nut chep lien ket (chi hien khi trang chay https cong khai)", (await p3.locator("#cardCollection .vcard").getByText("Chép liên kết").count()) === 0);
+  await shot(p3, "02b_actions");
   check("khong con khung nhan the (da co the)", await p3.locator("#cardMintBox").evaluate((n) => n.classList.contains("hidden")));
   const uri = await sbt.tokenURI(await sbt.tokenIdOf(0, accts[3]));
   const json = JSON.parse(Buffer.from(uri.split(",")[1], "base64").toString());

@@ -3301,6 +3301,8 @@ pre.code {
 .viz-note { flex-basis: 100%; text-align: center; font-size: 13px; color: var(--muted); }
 .viz-note.ok { color: var(--teal-600); font-weight: 600; }
 @media (prefers-reduced-motion: reduce) { .viz-fill, .viz-ring .c, .viz-ring .r { transition: none; } }
+
+.vc-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 14px; }
 </style>
 </head>
 
@@ -4007,27 +4009,27 @@ pre.code {
       <div id="eeMeta"><div class="small muted">Chưa tải.</div></div>
     </div>
 
-    <!-- hồ sơ giới thiệu (off-chain) -->
-    <div class="card" style="margin-top:16px" id="metaCard">
+    <!-- cập nhật hồ sơ (chỉ ban tổ chức, pha Đăng ký) -->
+    <div class="card hidden" style="margin-top:16px" id="metaOrg">
       <div class="card-head">
         <div>
-          <h3><svg class="ic"><use href="#i-file"/></svg>Hồ sơ giới thiệu <span class="src off" style="margin-left:6px">Off-chain</span></h3>
-          <div class="sub">Hợp đồng chỉ lưu tên ứng viên. Ảnh, tiểu sử và chương trình hành động được lưu ngoài chuỗi: trên trình duyệt này, hoặc trong file <code>meta.json</code> đặt cạnh trang. Không được blockchain xác minh.</div>
+          <h3><svg class="ic"><use href="#i-file"/></svg>Cập nhật hồ sơ giới thiệu <span class="src on" style="margin-left:6px">Ghi hash lên chuỗi</span></h3>
+          <div class="sub">Chỉ ví ban tổ chức của cuộc bầu cử này thấy mục này, và chỉ trong pha Đăng ký. Nội dung mới được lưu lên Supabase, hash mới ghi lên chuỗi; mọi chữ ký duyệt đã có sẽ bị xóa và nhóm duyệt phải ký lại.</div>
         </div>
       </div>
       <details class="fold">
-        <summary><svg class="ic sm"><use href="#i-file"/></svg>Soạn / chỉnh sửa hồ sơ giới thiệu cho cuộc bầu cử này</summary>
+        <summary><svg class="ic sm"><use href="#i-file"/></svg>Soạn hồ sơ mới</summary>
         <div class="fold-body">
-          <div class="alert warn flush" style="margin-bottom:14px"><svg class="ic sm"><use href="#i-alert"/></svg><span>Nội dung chỉ lưu trên trình duyệt này cho đến khi bạn xuất <code>meta.json</code> và công bố cạnh trang. Người khác chỉ thấy nội dung đã được công bố.</span></div>
-          <div class="field"><label class="f" for="mDesc">Mô tả ngắn</label><textarea id="mDesc" style="font-family:var(--sans);min-height:64px" maxlength="400" placeholder="Một hai câu giới thiệu cuộc bầu cử"></textarea></div>
-          <div class="field"><label class="f" for="mPurpose">Mục đích, nội dung</label><textarea id="mPurpose" style="font-family:var(--sans);min-height:92px" maxlength="1200" placeholder="Vì sao tổ chức, vị trí được bầu, quyền hạn, nhiệm kỳ…"></textarea></div>
-          <div id="metaCands"></div>
-          <div class="row" style="margin-top:16px">
-            <button id="btnMetaSave" class="btn primary sm"><svg class="ic sm"><use href="#i-check"/></svg>Lưu trên trình duyệt</button>
-            <button id="btnMetaExport" class="btn outline sm"><svg class="ic sm"><use href="#i-download"/></svg>Xuất meta.json</button>
-            <label class="btn outline sm" style="margin:0;cursor:pointer"><svg class="ic sm"><use href="#i-upload"/></svg>Nhập meta.json<input id="metaFile" type="file" accept="application/json,.json" class="hidden"></label>
-            <button id="btnMetaClear" class="btn ghost sm">Xóa hồ sơ cuộc này</button>
+          <div class="field"><label class="f" for="moDesc">Mô tả ngắn</label><textarea id="moDesc" style="font-family:var(--sans);min-height:64px" maxlength="400"></textarea></div>
+          <div class="field"><label class="f" for="moPurpose">Mục đích, nội dung</label><textarea id="moPurpose" style="font-family:var(--sans);min-height:92px" maxlength="1200"></textarea></div>
+          <div class="field"><label class="f" for="moElig">Điều kiện tham gia</label><textarea id="moElig" style="font-family:var(--sans);min-height:56px" maxlength="600"></textarea></div>
+          <div class="field"><label class="f" for="moCover">Ảnh bìa mới (tùy chọn, để trống giữ ảnh cũ)</label><input id="moCover" type="file" accept="image/png,image/jpeg,image/webp"></div>
+          <div id="moCands"></div>
+          <label class="small" style="display:flex;gap:8px;align-items:flex-start;margin-top:12px"><input id="moAck" type="checkbox" style="margin-top:3px"><span>Tôi hiểu: ghi hash mới lên chuỗi sẽ xóa các chữ ký duyệt đã có của cuộc này.</span></label>
+          <div class="row" style="margin-top:14px">
+            <button id="btnMoSave" class="btn primary sm"><svg class="ic sm"><use href="#i-check"/></svg>Lưu lên Supabase và ghi hash lên chuỗi</button>
           </div>
+          <div id="moStatus" class="small muted" style="margin-top:8px"></div>
         </div>
       </details>
     </div>
@@ -4650,9 +4652,9 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   const CONFIG = {
     CONTRACT_ADDRESS: "0x7f5ab140bf0118aA263A82de9e6eb02a56f474a5",
     // Hợp đồng thẻ cử tri (VoterCardSBT). Có thể dán ở màn hình "Thẻ cử tri" hoặc ghi đè bằng URL: ?sbt=0x…
-    SBT_ADDRESS: "0xc16d2F1f11D95164Ff0024D49Fb7Bd51F3b291c1",
+    SBT_ADDRESS: "0xa7071ABD96B1299330078099d30B061BC7A93DDa",
     // CID thư mục mascot trên IPFS. Khi khớp với avatarBaseURI của hợp đồng thẻ, trang thử ảnh trong web/mascots/ trước (nhanh hơn).
-    MASCOT_CID: "bafybeickdjosojmlagojcg7l4krhoffitywd74jn7rvzcqodzjti6qmony",
+    MASCOT_CID: "bafybeico4cogxnkerkmjkeisv4yjauxa35huufj5qv5y6drdlgtawjfrgq",
     ELECTION_ID: 0,
     CHAIN_ID: 11155111,
     RPC_URL: "https://ethereum-sepolia-rpc.publicnode.com",
@@ -5643,7 +5645,88 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       dl.appendChild(el("dt", "", "NFT ID")); dl.appendChild(dd);
     }
     c.appendChild(dl);
+    if (d.tokenId !== undefined) {
+      const act = el("div", "vc-actions");
+      const bDl = el("button", "btn outline sm", "Tải ảnh thẻ"); bDl.type = "button";
+      bDl.prepend(icon("download", "sm"));
+      bDl.onclick = async () => { try { const blob = await renderCardPng(d); downloadBlob(blob, cardFileName(d)); toast("ok", "Đã tải ảnh thẻ về máy."); } catch (e) { toast("err", explain(e)); } };
+      const bSh = el("button", "btn primary sm", "Chia sẻ"); bSh.type = "button";
+      bSh.onclick = () => shareCard(d);
+      act.appendChild(bDl); act.appendChild(bSh);
+      if (siteIsPublic()) {
+        const bCp = el("button", "btn ghost sm", "Chép liên kết"); bCp.type = "button";
+        bCp.onclick = async () => { try { await navigator.clipboard.writeText(cardShareLink(d)); toast("ok", "Đã chép liên kết cuộc bầu cử."); } catch (_) { toast("err", "Không chép được, hãy chép thủ công: " + cardShareLink(d)); } };
+        act.appendChild(bCp);
+      }
+      c.appendChild(act);
+    }
     return c;
+  }
+
+  /* ----- Tải / chia sẻ ảnh thẻ: vẽ thẻ ra PNG ngay trong trình duyệt (không có ví, lựa chọn phiếu hay salt) ----- */
+  const siteIsPublic = () => !/^(localhost|127\.|\[::1\]|0\.0\.0\.0)/.test(location.hostname) && /^https:$/.test(location.protocol);
+  const cardFileName = (d) => "votechain-the-cu-tri-" + padSerial(d.serial || 0) + "-cuoc-" + d.electionId + ".png";
+  function cardShareLink(d) {
+    const u = new URL(location.href); u.hash = "#/election";
+    u.search = "?contract=" + S.address + "&election=" + d.electionId;
+    return u.toString();
+  }
+  function downloadBlob(blob, name) {
+    const a = document.createElement("a"); const url = URL.createObjectURL(blob);
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+  function loadImg(src) {
+    return new Promise((res, rej) => { const i = new Image(); i.crossOrigin = "anonymous"; i.onload = () => res(i); i.onerror = () => rej(new Error("img")); i.src = src; });
+  }
+  async function renderCardPng(d) {
+    const W = 1080, H = 1350, cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+    const g = cv.getContext("2d");
+    const F = 'Inter, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+    const rr = (x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
+    const bg = g.createLinearGradient(0, 0, W, H); bg.addColorStop(0, "#dce8ff"); bg.addColorStop(1, "#c6ede6");
+    g.fillStyle = bg; g.fillRect(0, 0, W, H);
+    g.save(); g.shadowColor = "rgba(18,38,74,0.20)"; g.shadowBlur = 60; g.shadowOffsetY = 20; rr(90, 90, 900, 1170, 56); g.fillStyle = "#ffffff"; g.fill(); g.restore();
+    rr(90, 90, 900, 1170, 56); g.lineWidth = 3; g.strokeStyle = "#cdd9ea"; g.stroke();
+    g.textAlign = "center"; g.textBaseline = "alphabetic";
+    g.fillStyle = "#153fa0"; g.font = "700 34px " + F; g.fillText("VOTECHAIN · THẺ CỬ TRI", 540, 190);
+    // mascot
+    let drawn = false;
+    if (S.sbtInfo && S.sbtInfo.baseURI) {
+      for (const src of mascotSources(d.avatarId)) {
+        try { const im = await loadImg(src); const k = Math.min(560 / im.width, 560 / im.height); const w = im.width * k, h = im.height * k; g.drawImage(im, 540 - w / 2, 520 - h / 2, w, h); drawn = true; break; } catch (_) { /* thử nguồn kế tiếp */ }
+      }
+    }
+    if (!drawn) {
+      const f = EMOJI_FACE[d.avatarId] || EMOJI_FACE[0];
+      const rg = g.createRadialGradient(540, 500, 20, 540, 520, 280); rg.addColorStop(0, f[2]); rg.addColorStop(1, f[1]);
+      g.beginPath(); g.arc(540, 520, 270, 0, Math.PI * 2); g.fillStyle = rg; g.fill();
+      g.font = "230px " + F; g.fillStyle = "#12264a"; g.fillText(f[0], 540, 600);
+    }
+    // tiêu đề (tối đa 3 dòng)
+    g.fillStyle = "#12264a"; g.font = "700 48px " + F;
+    const words = String(d.title || "").split(/\s+/).filter(Boolean), lines = []; let cur = "";
+    for (const w of words) { const t = cur ? cur + " " + w : w; if (g.measureText(t).width > 780 && cur) { lines.push(cur); cur = w; } else cur = t; }
+    if (cur) lines.push(cur);
+    if (lines.length > 3) { lines.length = 3; lines[2] = lines[2].replace(/.{0,3}$/, "") + "…"; }
+    lines.forEach((l, k) => { let t = l; while (g.measureText(t).width > 800 && t.length > 4) t = t.slice(0, -2) + "…"; g.fillText(t, 540, 880 + k * 58); });
+    const sy = 880 + lines.length * 58 + 22;
+    g.fillStyle = "#1f5eea"; g.font = "800 58px " + F; g.fillText("Thẻ #" + padSerial(d.serial || 0), 540, sy);
+    g.fillStyle = "#5a6c8c"; g.font = "500 30px " + F;
+    g.fillText("Cuộc bầu cử #" + d.electionId + " · Ngày cấp " + (d.issuedAt ? fmtDate(Number(d.issuedAt)) : "—"), 540, sy + 56);
+    g.fillText("Mascot: " + (MASCOT_NAMES[d.avatarId] || ("#" + d.avatarId)), 540, sy + 98);
+    g.fillStyle = "#0b7f70"; g.font = "700 28px " + F; g.fillText("🔒 Soulbound · không thể chuyển nhượng", 540, 1222);
+    return new Promise((res, rej) => cv.toBlob((b) => (b ? res(b) : rej(new UserError("Không tạo được ảnh thẻ."))), "image/png"));
+  }
+  async function shareCard(d) {
+    try {
+      const blob = await renderCardPng(d), name = cardFileName(d);
+      const file = new File([blob], name, { type: "image/png" });
+      const text = "Mình vừa nhận Thẻ cử tri VoteChain: " + d.title + " (#" + padSerial(d.serial || 0) + ")" + (siteIsPublic() ? "\n" + cardShareLink(d) : "");
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: "Thẻ cử tri VoteChain", text }); return; }
+      downloadBlob(blob, name);
+      toast("ok", "Thiết bị này không mở được bảng chia sẻ, đã tải ảnh về để bạn tự đăng lên mạng xã hội.");
+    } catch (e) { if (e && e.name === "AbortError") return; toast("err", explain(e)); }
   }
 
   async function setSbtAddress(addr, persist) {
@@ -6606,14 +6689,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
 
   function wirePlatform() {
     $("btnFocusCfg").onclick = focusConfig;
-    $("btnMetaSave").onclick = () => { try { saveMetaForm(); } catch (e) { toast("err", explain(e)); } };
-    $("btnMetaExport").onclick = () => { try { exportMeta(); } catch (e) { toast("err", explain(e)); } };
-    $("btnMetaClear").onclick = clearMeta;
-    $("metaFile").onchange = async (ev) => {
-      const f = ev.target.files && ev.target.files[0];
-      if (f) { try { await importMeta(f); } catch (e) { toast("err", explain(e)); } }
-      ev.target.value = "";
-    };
+    $("btnMoSave").onclick = () => run("btnMoSave", "Đang cập nhật…", doUpdateMeta);
     $("modalClose").onclick = closeModal;
     $("modal").addEventListener("click", (ev) => { if (ev.target === $("modal")) closeModal(); });
     document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && !$("modal").classList.contains("hidden")) closeModal(); });
@@ -6798,8 +6874,8 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     loadMetaLocal();
     const k = String(id);
     const f = sanitizeMeta(S.metaFile && S.metaFile.elections && S.metaFile.elections[k]);
-    const hasLocal = !!(S.metaLocal.elections && S.metaLocal.elections[k]);
-    const l = sanitizeMeta(hasLocal ? S.metaLocal.elections[k] : null);
+    const hasLocal = false;   // không còn đọc bản soạn trong trình duyệt: chỉ tin file công bố và nội dung đã khớp hash
+    const l = sanitizeMeta(null);
     const out = { description: l.description || f.description, purpose: l.purpose || f.purpose, cover: l.cover || f.cover, candidates: [], fromLocal: hasLocal, fromFile: !!(S.metaFile && S.metaFile.elections && S.metaFile.elections[k]) };
     const n = Math.max(l.candidates.length, f.candidates.length);
     for (let i = 0; i < n; i++) {
@@ -6821,6 +6897,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
         if (x.state !== "ok" || !x.content) return;
         const c = x.content, cur = out.candidates[x.index] || { title: "", bio: "", history: "", program: "", photo: "" };
         out.candidates[x.index] = {
+          verified: true,
           title: cur.title,
           bio: cleanText(c.bio, META_LIMITS.bio) || cur.bio,
           history: cleanText([c.experience, c.achievements].filter(Boolean).join("\n\n"), META_LIMITS.history) || cur.history,
@@ -6873,126 +6950,96 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   }
 
   /* ----- trình soạn hồ sơ ----- */
-  function renderMetaEditor(force) {
-    const e = S.election;
-    if (!e) return;
-    if (!force && S.metaEditorFor === String(e.id)) return;
-    S.metaEditorFor = String(e.id);
-    S.metaPhotos = {};
-    const m = elMeta(e.id);
-    $("mDesc").value = m.description;
-    $("mPurpose").value = m.purpose;
-    const box = $("metaCands");
-    clear(box);
+  /* ------------------------------------------------------------------
+   * Cập nhật hồ sơ: CHỈ ví ban tổ chức (e.admin), CHỈ pha Đăng ký (khớp quy tắc của hợp đồng).
+   * Nội dung mới -> Supabase (bản nháp), hash mới -> updateElectionMetadata / updateCandidateMetadata.
+   * ------------------------------------------------------------------ */
+  const canEditMeta = (e) => !!(e && S.account && sameAddr(e.admin, S.account) && e.phase === 0 && !e.closed && sbConfigured());
+  function renderMetaOrg() {
+    const card = $("metaOrg"), e = S.election;
+    if (!card) return;
+    const show = canEditMeta(e);
+    card.classList.toggle("hidden", !show);
+    if (!show) { S.moKey = null; return; }
+    const mv = S.metaVerify && String(S.metaVerify.id) === String(e.id) ? S.metaVerify.res : null;
+    const key = e.id + ":" + (mv ? mv.election.chainHash + mv.candidates.map((x) => x.chainHash).join() : "-");
+    if (S.moKey === key) return;
+    S.moKey = key;
+    const ec = mv && mv.election.state === "ok" && mv.election.content ? mv.election.content : {};
+    $("moDesc").value = ec.description || ""; $("moPurpose").value = ec.purpose || ""; $("moElig").value = ec.eligibility || "";
+    $("moCover").value = ""; $("moAck").checked = false;
+    if (S.moId !== String(e.id)) { S.moId = String(e.id); $("moStatus").textContent = ""; }
+    const box = $("moCands"); clear(box);
     e.candidates.forEach((name, i) => {
-      const c = m.candidates[i] || {};
-      S.metaPhotos[i] = c.photo || "";
-      const wrap = el("div", "meta-cand");
-      wrap.dataset.i = String(i);
-      const head = el("div", "row between");
-      head.appendChild(el("b", "", "#" + i + " · " + name));
-      head.appendChild(srcTag("on", "Tên: On-chain"));
-      wrap.appendChild(head);
-
-      const pr = el("div", "photo-row"); pr.style.margin = "12px 0";
-      const av = el("span"); av.id = "mAv" + i; av.appendChild(avatarEl(name, i, S.metaPhotos[i]));
-      pr.appendChild(av);
-      const lab = el("label", "btn outline sm"); lab.style.margin = "0"; lab.style.cursor = "pointer";
-      lab.appendChild(icon("upload", "sm")); lab.appendChild(document.createTextNode("Tải ảnh"));
-      const fi = document.createElement("input"); fi.type = "file"; fi.accept = "image/png,image/jpeg,image/webp"; fi.className = "hidden"; fi.id = "mPhoto" + i;
-      fi.onchange = async () => {
-        const f = fi.files && fi.files[0]; if (!f) return;
-        try { S.metaPhotos[i] = await resizePhoto(f); refreshAv(i, name); toast("ok", "Đã thu nhỏ ảnh. Nhớ bấm “Lưu trên trình duyệt”.", 3500); }
-        catch (err) { toast("err", explain(err)); }
-        fi.value = "";
-      };
-      lab.appendChild(fi); pr.appendChild(lab);
-      const rm = el("button", "btn ghost sm", "Gỡ ảnh"); rm.type = "button"; rm.onclick = () => { S.metaPhotos[i] = ""; refreshAv(i, name); };
-      pr.appendChild(rm);
-      wrap.appendChild(pr);
-
+      const cc = mv && mv.candidates[i] && mv.candidates[i].state === "ok" && mv.candidates[i].content ? mv.candidates[i].content : {};
+      const wrap = el("div", "meta-cand"); wrap.dataset.i = String(i);
+      const head = el("div", "row between"); head.appendChild(el("b", "", "#" + i + " · " + name)); head.appendChild(srcTag("on", "Tên: On-chain")); wrap.appendChild(head);
       const mk = (cls, label, max, val, rows) => {
-        const f = el("div", "field"); f.style.marginBottom = "10px";
-        const l = el("label", "f", label); f.appendChild(l);
-        const t = rows ? document.createElement("textarea") : document.createElement("input");
-        if (!rows) t.type = "text"; else { t.style.fontFamily = "var(--sans)"; t.style.minHeight = (rows * 24 + 20) + "px"; }
-        t.maxLength = max; t.value = val || ""; t.className = cls; t.setAttribute("aria-label", label + " ứng viên " + name);
+        const f = el("div", "field"); f.appendChild(el("label", "f", label));
+        const t = document.createElement("textarea"); t.className = cls; t.maxLength = max; t.value = val || ""; t.style.fontFamily = "var(--sans)"; t.style.minHeight = (rows * 24 + 16) + "px";
         f.appendChild(t); wrap.appendChild(f);
       };
-      mk("m-title", "Chức danh / giới thiệu ngắn", META_LIMITS.title, c.title);
-      mk("m-bio", "Tiểu sử ngắn", META_LIMITS.bio, c.bio, 3);
-      mk("m-history", "Quá trình hoạt động", META_LIMITS.history, c.history, 3);
-      mk("m-program", "Chương trình hành động / cam kết", META_LIMITS.program, c.program, 3);
+      mk("mo-bio", "Tiểu sử ngắn", 600, cc.bio, 2);
+      mk("mo-exp", "Quá trình hoạt động", 800, cc.experience, 3);
+      mk("mo-ach", "Thành tích", 800, cc.achievements, 2);
+      mk("mo-man", "Chương trình hành động / cam kết", 800, cc.manifesto, 3);
+      const f = el("div", "field"); f.appendChild(el("label", "f", "Ảnh đại diện mới (tùy chọn, để trống giữ ảnh cũ)"));
+      const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/png,image/jpeg,image/webp"; inp.className = "mo-av"; f.appendChild(inp); wrap.appendChild(f);
       box.appendChild(wrap);
     });
   }
-  function refreshAv(i, name) {
-    const host = $("mAv" + i);
-    if (!host) return;
-    clear(host); host.appendChild(avatarEl(name, i, S.metaPhotos[i]));
-  }
-
-  function collectMetaForm() {
+  async function doUpdateMeta() {
     const e = S.election;
-    const cands = [];
-    document.querySelectorAll("#metaCands .meta-cand").forEach((w) => {
-      const i = Number(w.dataset.i);
-      cands[i] = {
-        title: w.querySelector(".m-title").value, bio: w.querySelector(".m-bio").value,
-        history: w.querySelector(".m-history").value, program: w.querySelector(".m-program").value, photo: S.metaPhotos[i] || "",
-      };
+    if (!S.contract) throw new UserError("Hãy kết nối ví MetaMask trước.");
+    if (!canEditMeta(e)) throw new UserError("Chỉ ví ban tổ chức được sửa hồ sơ, và chỉ trong pha Đăng ký.");
+    if (!$("moAck").checked) throw new UserError("Hãy tích ô xác nhận: chữ ký duyệt đã có sẽ bị xóa.");
+    if (!S.metaVerify || String(S.metaVerify.id) !== String(e.id) || !S.metaVerify.res) await refreshMetaVerify();
+    const mv = S.metaVerify.res;
+    await ensureLogin();
+    const org = await sbOrgUuid(e.orgId);
+    if (!org) throw new UserError("Tổ chức này chưa được đồng bộ sang Supabase (chain-sync chưa chạy). Hãy chờ đồng bộ rồi thử lại.");
+    const files = [];
+    const bEl = mv.election.state === "ok" && mv.election.content ? mv.election.content : null;
+    const coverFile = $("moCover").files && $("moCover").files[0];
+    const cover = await prepareImage(coverFile, "election-assets", e.orgId, "cover"); if (cover) files.push(cover);
+    const election = mkElectionMeta({
+      organizationId: bEl ? bEl.organizationId : e.orgId, title: bEl ? bEl.title : e.title,
+      description: $("moDesc").value.trim(), purpose: $("moPurpose").value.trim(), eligibility: $("moElig").value.trim(),
+      schedule: bEl ? bEl.schedule : null, extra: bEl ? bEl.extra : null, cover: cover ? fileEntry("cover", cover) : (bEl ? bEl.cover : null),
     });
-    return sanitizeMeta({ description: $("mDesc").value, purpose: $("mPurpose").value, cover: (elMeta(e.id).cover || ""), candidates: cands });
-  }
-
-  function saveMetaForm() {
-    const e = S.election;
-    if (!e) throw new UserError("Hãy tải một cuộc bầu cử trước.");
-    loadMetaLocal();
-    S.metaLocal.elections[String(e.id)] = collectMetaForm();
-    saveMetaLocal();
-    toast("ok", "Đã lưu hồ sơ trên trình duyệt này (off-chain, chưa được blockchain xác minh).");
-    S.metaEditorFor = null;
-    renderDetailPage(); renderElectionsList(); renderFeaturedGrid();
-  }
-
-  function exportMeta() {
-    loadMetaLocal();
-    const out = { version: 1, note: "Metadata off-chain của VoteChain: không được blockchain xác minh.", chainId: CHAIN_ID, contract: S.address || null, elections: {} };
-    const ids = new Set([...Object.keys((S.metaFile && S.metaFile.elections) || {}), ...Object.keys(S.metaLocal.elections)]);
-    ids.forEach((k) => { if (/^\d+$/.test(k)) { const m = elMeta(k); out.elections[k] = { description: m.description, purpose: m.purpose, cover: m.cover, candidates: m.candidates }; } });
-    if (!Object.keys(out.elections).length) throw new UserError("Chưa có hồ sơ nào để xuất. Hãy soạn và lưu trước.");
-    downloadJson("meta.json", out);
-    toast("ok", "Đã tải meta.json. Đặt file này cạnh index.html để mọi người cùng thấy (vẫn là thông tin off-chain).");
-  }
-
-  async function importMeta(file) {
-    let obj;
-    try { obj = JSON.parse(await file.text()); } catch (_) { throw new UserError("File không phải JSON hợp lệ."); }
-    if (!obj || typeof obj !== "object" || !obj.elections || typeof obj.elections !== "object") throw new UserError("File không đúng định dạng meta.json (thiếu khóa “elections”).");
-    if (obj.contract && ethers.isAddress(obj.contract) && S.address && ethers.getAddress(obj.contract) !== S.address) {
-      toast("warn", "File này khai báo hợp đồng khác với hợp đồng đang dùng. Vẫn nhập, hãy kiểm tra lại nội dung.");
+    const wraps = [...document.querySelectorAll("#moCands .meta-cand")];
+    const cands = [];
+    for (let i = 0; i < e.candidates.length; i++) {
+      const w = wraps[i], bc = mv.candidates[i] && mv.candidates[i].state === "ok" && mv.candidates[i].content ? mv.candidates[i].content : null;
+      const af = w.querySelector(".mo-av").files && w.querySelector(".mo-av").files[0];
+      const av = await prepareImage(af, "candidate-assets", e.orgId, "avatar"); if (av) files.push(av);
+      cands.push(mkCandidateMeta({
+        index: i, fullName: e.candidates[i], bio: w.querySelector(".mo-bio").value.trim(), experience: w.querySelector(".mo-exp").value.trim(),
+        achievements: w.querySelector(".mo-ach").value.trim(), manifesto: w.querySelector(".mo-man").value.trim(),
+        avatar: av ? fileEntry("avatar", av) : (bc ? bc.avatar : null), documents: bc && bc.documents ? bc.documents : [],
+      }));
     }
-    loadMetaLocal();
-    let n = 0;
-    for (const k of Object.keys(obj.elections)) { if (/^\d+$/.test(k)) { S.metaLocal.elections[k] = sanitizeMeta(obj.elections[k]); n++; } }
-    if (!n) throw new UserError("Không có cuộc bầu cử hợp lệ nào trong file.");
-    saveMetaLocal();
-    S.metaEditorFor = null;
-    toast("ok", "Đã nhập hồ sơ cho " + n + " cuộc bầu cử (off-chain).");
-    if (S.election) renderDetailPage();
-    renderElectionsList(); renderFeaturedGrid();
-  }
-
-  function clearMeta() {
-    const e = S.election;
-    if (!e) return;
-    loadMetaLocal();
-    delete S.metaLocal.elections[String(e.id)];
-    saveMetaLocal();
-    S.metaEditorFor = null;
-    toast("ok", "Đã xóa hồ sơ soạn trên trình duyệt cho cuộc #" + e.id + ".");
-    renderDetailPage(); renderElectionsList(); renderFeaturedGrid();
+    const eh = metadataHash(election), ch = cands.map(metadataHash);
+    const changed = [];
+    if (eh !== lc(mv.election.chainHash)) changed.push({ type: "election", hash: eh, content: election });
+    ch.forEach((h, i) => { if (h !== lc(mv.candidates[i].chainHash)) changed.push({ type: "candidate", idx: i, hash: h, content: cands[i] }); });
+    if (!changed.length) throw new UserError("Không có thay đổi nào so với hồ sơ đang ghi trên chuỗi.");
+    $("moStatus").textContent = "Đang lưu nội dung lên Supabase…";
+    for (const f of files) await sbUpload(f);
+    for (const c of changed) await sbSaveDraft(org.id, c.type, c.type === "candidate" ? c.idx : null, c.hash, c.content);
+    for (const c of changed) {
+      if (c.type === "election") {
+        await S.contract.updateElectionMetadata.estimateGas(e.id, c.hash);
+        await sendTx("Cập nhật hồ sơ cuộc bầu cử", () => S.contract.updateElectionMetadata(e.id, c.hash));
+      } else {
+        await S.contract.updateCandidateMetadata.estimateGas(e.id, c.idx, c.hash);
+        await sendTx("Cập nhật hồ sơ ứng viên #" + c.idx, () => S.contract.updateCandidateMetadata(e.id, c.idx, c.hash));
+      }
+    }
+    $("moStatus").textContent = "Đã ghi " + changed.length + " hash mới lên chuỗi. Nội dung sẽ hiện sau khi chain-sync đồng bộ (tối đa vài phút).";
+    toast("ok", "Đã cập nhật hồ sơ. Chữ ký duyệt cũ đã bị xóa, nhóm duyệt cần ký lại.");
+    S.metaVerify = null; S.moKey = null;
+    await loadElection(true);
   }
 
   /* ------------------------------------------------------------------
@@ -7126,7 +7173,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
 
     const d = $("elDescription");
     d.className = "desc" + (m.description ? "" : " none");
-    d.textContent = m.description || "Chưa có mô tả giới thiệu. Ban tổ chức có thể soạn ở mục “Hồ sơ giới thiệu” bên dưới (thông tin off-chain).";
+    d.textContent = m.description || "Chưa có mô tả giới thiệu đã xác thực. Ban tổ chức cập nhật được trong pha Đăng ký.";
     const p = $("elPurpose");
     p.className = "v prose" + (m.purpose ? "" : " none");
     p.textContent = m.purpose || "Chưa có thông tin mục đích và nội dung.";
@@ -7142,7 +7189,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     renderViz();
     renderTimeline();
     renderAgg();
-    renderMetaEditor(false);
+    renderMetaOrg();
   }
 
 
@@ -7261,7 +7308,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     const body = el("div", "modal-body");
     const sec = (title, text) => {
       const s = el("section");
-      const h4 = el("h4"); h4.appendChild(document.createTextNode(title)); h4.appendChild(srcTag("off"));
+      const h4 = el("h4"); h4.appendChild(document.createTextNode(title)); h4.appendChild(c.verified ? srcTag("on", "Đã xác thực hash") : srcTag("off"));
       s.appendChild(h4);
       s.appendChild(el("div", "prose" + (text ? "" : " none"), text || "Ban tổ chức chưa cung cấp thông tin này."));
       body.appendChild(s);
@@ -8240,7 +8287,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       banner("info", "Nhập địa chỉ hợp đồng ProjectCore (đã triển khai trên " + chainName(CHAIN_ID) + ") ở mục Kết nối hợp đồng để bắt đầu.");
       ["kpiTotal", "kpiActive", "kpiVoters", "kpiVotes"].forEach((id) => { $(id).textContent = "—"; });
     }
-    loadMetaFile().then(() => { if (S.all) { renderFeaturedGrid(); renderElectionsList(); } if (S.election) { S.metaEditorFor = null; renderDetailPage(); } });
+    loadMetaFile().then(() => { if (S.all) { renderFeaturedGrid(); renderElectionsList(); } if (S.election) { renderDetailPage(); } });
     if (fromUrl && ethers.isAddress(fromUrl)) banner("warn", "Địa chỉ hợp đồng đang lấy từ đường dẫn. Chỉ tiếp tục nếu bạn tin cậy người gửi liên kết.");
     updateButtons();
     renderVoteFlow();

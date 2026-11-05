@@ -8,7 +8,7 @@ const art = (n) => require(ROOT + "/artifacts/contracts/project/" + n + ".sol/" 
 const { buildTree } = require(ROOT + "/scripts/merkle");
 const RPC = "http://127.0.0.1:8545";
 const SB = "https://vfzuniykinaivchhuiul.supabase.co";
-const CID = "bafybeickdjosojmlagojcg7l4krhoffitywd74jn7rvzcqodzjti6qmony";
+const CID = "bafybeico4cogxnkerkmjkeisv4yjauxa35huufj5qv5y6drdlgtawjfrgq";
 const ETHERS_UMD = fs.readFileSync(ROOT + "/node_modules/ethers/dist/ethers.umd.min.js", "utf8");
 const log = [];
 const check = (n, ok, x) => log.push((ok ? "PASS " : "FAIL ") + n + (x ? " :: " + x : ""));
