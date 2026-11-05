@@ -1,6 +1,6 @@
 # VoteChain v2: kiến trúc tổ chức, chống spam và metadata hash
 
-Tài liệu thiết kế cho nâng cấp "nền tảng bầu cử nội bộ nhiều tổ chức". Trạng thái: **Giai đoạn 3 (hợp đồng) và 4 (Supabase: migration, RLS, Storage, Edge Function) đã viết và kiểm thử cục bộ**; Giai đoạn 5 (giao diện `web/index.html`: tổ chức, tạo/duyệt cuộc bầu cử theo ABI mới, đăng nhập ví, xác thực hash) đã làm và kiểm thử với Hardhat cục bộ; script triển khai Sepolia và hướng dẫn (Giai đoạn 6) đã viết và tập luyện trên mạng cục bộ; chưa deploy Sepolia thật (cần ví và RPC của nhóm). Xem `docs/SEPOLIA_DEPLOY_V2.md`. Hướng dẫn Supabase: `docs/SUPABASE_SETUP.md`.
+Tài liệu thiết kế cho nâng cấp "nền tảng bầu cử nội bộ nhiều tổ chức". **Trạng thái hiện tại:** ba hợp đồng (`OrganizationRegistry`, `ProjectCore`, `VoterCardSBT`) đã **triển khai trên Sepolia** (địa chỉ ở `deployments/sepolia.json` và README); Supabase (migration, RLS, Storage, hàm SQL, Edge Function `wallet-auth` và `chain-sync`) đã viết và kiểm thử cục bộ (80 ca); giao diện `web/index.html` đã có tổ chức, tạo/duyệt cuộc bầu cử, đăng nhập ví, xác thực hash, biểu đồ, thẻ cử tri; bộ test hợp đồng hiện 194 ca. **Chưa làm:** kiểm thử với Supabase thật và MetaMask thật trong một lượt đầy đủ, và đưa trang lên địa chỉ web công khai. Hướng dẫn: `docs/SEPOLIA_DEPLOY_V2.md`, `docs/SUPABASE_SETUP.md`.
 
 ## 1. Hai hợp đồng, một ranh giới rõ
 
@@ -72,7 +72,7 @@ Lịch sử hash cũ không bị xóa vì nằm trong log sự kiện.
 
 **Lưu ý thời gian:** duyệt lại vẫn phải xong trước `regEnd`; nếu không kịp, cuộc bầu cử không kích hoạt (như quy tắc cũ). Người tạo nên chốt metadata sớm.
 
-Frontend (Giai đoạn 5) sẽ tải metadata từ Supabase, tính lại hash theo đúng quy tắc trên rồi so với hash trên chuỗi; lệch thì hiện cảnh báo, không âm thầm hiển thị.
+Giao diện tải metadata từ Supabase, tính lại hash theo đúng quy tắc trên rồi so với hash trên chuỗi; khớp thì hiện nhãn "Đã xác thực hash" và nội dung (ảnh, tiểu sử, mô tả); lệch thì hiện cảnh báo "KHÔNG khớp hash", không âm thầm hiển thị. Ví cử tri không có chỗ sửa hồ sơ: chỉ người tạo cuộc bầu cử mới cập nhật được, và chỉ trong pha Đăng ký (hợp đồng chặn sau đó bằng `MetadataLocked`).
 
 ## 6. On-chain và off-chain
 
@@ -81,7 +81,7 @@ Frontend (Giai đoạn 5) sẽ tải metadata từ Supabase, tính lại hash th
 | Tổ chức, vai trò, đại diện, trạng thái xác minh | Registry | Hợp đồng |
 | Cuộc bầu cử, snapshot duyệt, Merkle root, phiếu, kết quả | ProjectCore | Hợp đồng |
 | Hash metadata + phiên bản | ProjectCore | Hợp đồng |
-| Mô tả, ảnh, tiểu sử, tài liệu | Supabase (Giai đoạn 4) | Chỉ tin khi hash khớp chuỗi |
+| Mô tả, ảnh, tiểu sử, tài liệu; hồ sơ tổ chức (mô tả, đơn vị chủ quản, năm thành lập, liên hệ) | Supabase | Chỉ tin khi hash khớp chuỗi (`infoHash` của tổ chức, hash hồ sơ của cuộc và ứng viên) |
 | Chỉ mục truy vấn, lịch sử hiển thị | Supabase | Không dùng làm nguồn kết quả |
 
 Kết quả bầu cử, phê duyệt và quyền hạn luôn đọc từ hợp đồng. RLS của Supabase không thay thế quyền trên hợp đồng.
@@ -128,3 +128,12 @@ Kiểm thử thêm: kiểm soát quyền (platformAdmin không can thiệp đư�
 ## 9. Thẻ cử tri (Soulbound NFT)
 
 `VoterCardSBT` tách khỏi `ProjectCore` (không sửa lõi bỏ phiếu). Điều kiện nhận thẻ do hợp đồng kiểm tra qua `ProjectCore.hasRevealed(id, voter)`; `tokenId = (electionId << 160) | voter` nên mỗi ví chỉ một thẻ cho mỗi cuộc bầu cử; mọi thao tác chuyển nhượng/ủy quyền đều revert (ERC-5192). Thẻ chỉ lưu `electionId`, serial, ngày cấp, mascot; **không lưu lựa chọn hay salt**. Ảnh mascot lấy từ thư mục IPFS bất biến (cấu hình lúc deploy), hoặc emoji dựng trên chuỗi nếu không cấu hình. Nhận thẻ là tùy chọn, không ảnh hưởng tính hợp lệ của phiếu. Supabase không cần thay đổi. Xem `docs/SEPOLIA_DEPLOY_V2.md` mục 9.
+
+## 10. Hồ sơ tổ chức
+
+- **Đăng ký:** `registerOrganization(name, infoHash)`, trong đó `infoHash = keccak256` của hồ sơ chuẩn hóa (`votechain.organization.v1`: tên, loại, mô tả, đơn vị chủ quản, email, website, năm thành lập). Một số loại tổ chức (ví dụ Lớp) không có đơn vị chủ quản hay website; trường bỏ trống luôn rỗng trong hồ sơ.
+- **Lưu nội dung:** gọi hàm SQL `save_organization_profile(p_org, p_profile)` (`SECURITY DEFINER`, `search_path` rỗng, chỉ người đã đăng nhập bằng ví). Người gọi phải là Manager; tổ chức đang chờ xác minh chỉ lưu được một lần, tổ chức đã xác minh được ghi đè. Cột `profile` không nằm trong quyền `UPDATE` trực tiếp.
+- **Chờ đồng bộ:** tổ chức mới chỉ có trong Supabase sau khi `chain-sync` đọc chuỗi; trong lúc chờ, bản nháp nằm trong `localStorage` của trình duyệt người đăng ký và tự lưu khi tổ chức đã đồng bộ.
+- **Chỉnh sửa:** Manager của tổ chức đã xác minh gọi `updateOrganization(id, name, infoHash mới)` rồi lưu nội dung mới lên Supabase. Nếu bước Supabase lỗi, bản nháp được giữ và tự thử lại; bản nháp lệch hash trên chuỗi bị bỏ.
+- **Đối chiếu:** thẻ "Hồ sơ tổ chức" băm lại nội dung và so với `infoHash`: "Khớp hash" hoặc "KHÔNG khớp".
+- **Giới hạn:** logo không nằm trong hồ sơ băm vì Storage chỉ cho Manager của tổ chức đã xác minh tải lên; Manager có thể đổi tên tổ chức sau khi được xác minh (xem `SELF_AUDIT.md` TB6).

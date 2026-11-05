@@ -93,15 +93,17 @@ gantt
 
 | Mục Gate Review 1 | Lúc nộp | Hiện tại | Lý do |
 | :--- | :--- | :--- | :--- |
-| Hợp đồng | 125 dòng, một cuộc bầu cử | 313 dòng, nhiều cuộc bầu cử | Đã phát triển thêm sau Gate Review |
+| Hợp đồng | 125 dòng, một cuộc bầu cử | Ba hợp đồng: `ProjectCore` 585 dòng, `OrganizationRegistry` 278 dòng, `VoterCardSBT` 314 dòng | Mở rộng thành nền tảng nhiều tổ chức sau Gate Review |
 | Danh sách cử tri | `registerVoters`, mapping `isVoter`, tối đa 200 ví/lô | Merkle root + bằng chứng khi nộp phiếu | Danh sách không phải trả gas theo số cử tri; không còn trần 200 |
-| Quản trị | `admin` đăng ký cử tri | Người tạo + 1–10 người duyệt độc lập, cần đủ chữ ký | Tách quyền lập danh sách và quyền xác nhận |
+| Quản trị | `admin` đăng ký cử tri | Tổ chức được quản trị nền tảng xác minh; nhóm 2–10 đại diện duyệt do tổ chức quản lý, chụp lại khi tạo cuộc, loại người tạo và ví ứng viên khai báo; ngưỡng `⌈2n/3⌉` | Tách quyền lập danh sách, quyền xác nhận và quyền quản trị nền tảng |
 | Băm cam kết | `keccak256(candidateId, salt, msg.sender)`, `salt` là `bytes32` | `keccak256(id, candidateId, salt, msg.sender)`, `salt` là `string` | Chống phát lại giữa các cuộc bầu cử |
-| Cắt phạm vi: "dưới 150 dòng" | 125 dòng | **313 dòng — vượt** | Xem bên dưới |
+| Cắt phạm vi: "dưới 150 dòng" | 125 dòng | **`ProjectCore` 585 dòng — vượt** (ba hợp đồng 1 177 dòng) | Xem bên dưới |
 | Cắt phạm vi: "một vòng, không đa cuộc" | Một cuộc bầu cử | Nhiều cuộc **độc lập** (không phải đa vòng) | `electionCount` + dữ liệu riêng mỗi `id`; vẫn không có vòng bầu lại |
-| Địa chỉ Sepolia | `0x7D3bC21A8532d2011cF970C0701413C236C53Ddd` | _chưa triển khai bản mới_ | ABI đã đổi nên phải triển khai lại |
+| Địa chỉ Sepolia | `0x7D3bC21A8532d2011cF970C0701413C236C53Ddd` | Đã triển khai bản mới: Registry `0x1790…De811`, Core `0x7f5a…a4a5`, thẻ cử tri `0xa707…3DDa` (đầy đủ ở `deployments/sepolia.json`) | ABI đã đổi nên phải triển khai lại |
+| Hồ sơ ứng viên và tổ chức | Không có | Hash trên chuỗi; nội dung ở Supabase, trình duyệt băm lại và đối chiếu | Cần ảnh và tiểu sử mà không tốn gas lưu nội dung |
+| Thẻ cử tri | Không có | `VoterCardSBT` soulbound, 12 linh vật, chỉ cấp cho ví đã mở phiếu | Ghi nhận tham gia, không chuyển nhượng được |
 
-**Về mốc 150 dòng:** bộ lọc phạm vi của sổ tay yêu cầu `ProjectCore.sol` dưới 150 dòng. Mã hiện tại vượt (313 dòng, gồm 16 dòng thư viện Merkle và các hàm đọc). Nhóm cân nhắc hai hướng: (A) quay về bản ~125 dòng khớp hồ sơ gốc; (B) giữ bản đầy đủ, đồng bộ toàn bộ tài liệu/test/giao diện, và **nêu rõ việc vượt mốc**. Nhóm chọn B vì có thêm lớp kiểm soát (người duyệt, Merkle, nhiều cuộc) đã được test; bản đầy đủ có 77 ca test xanh. **Cần giảng viên xác nhận chấp nhận điều chỉnh này** — chưa được xác nhận tính đến thời điểm viết phụ lục.
+**Về mốc 150 dòng:** bộ lọc phạm vi của sổ tay yêu cầu `ProjectCore.sol` dưới 150 dòng. Mã hiện tại vượt (`ProjectCore` 585 dòng, gồm thư viện Merkle, hàng chờ duyệt chống spam, hash hồ sơ và các hàm đọc; thêm hai hợp đồng riêng cho tổ chức và thẻ cử tri). Nhóm cân nhắc hai hướng: (A) quay về bản ~125 dòng khớp hồ sơ gốc; (B) giữ bản đầy đủ, đồng bộ toàn bộ tài liệu/test/giao diện, và **nêu rõ việc vượt mốc**. Nhóm chọn B vì có thêm lớp kiểm soát (người duyệt, Merkle, nhiều cuộc) đã được test; bản đầy đủ có 194 ca test hợp đồng xanh và 80 ca test Supabase xanh. **Cần giảng viên xác nhận chấp nhận điều chỉnh này** — chưa được xác nhận tính đến thời điểm viết phụ lục.
 
-**Nhiệm vụ Lab 13–15 so với kế hoạch:** Lab 13 (test) và Lab 17 (≥ 3 ca gồm gian lận) hoàn thành bằng `test/ProjectCore.test.js` (72 ca) và `test/web_abi.test.js` (5 ca). Lab 14: `docs/SELF_AUDIT.md` và `docs/AUDIT_REPORT.md`; báo cáo nhận từ nhóm bạn đang chờ. Lab 15: `web/` đã viết lại, chờ triển khai Sepolia (`docs/SEPOLIA_RUNBOOK.md`).
+**Nhiệm vụ Lab 13–15 so với kế hoạch:** Lab 13 (test) và Lab 17 (≥ 3 ca gồm gian lận) hoàn thành bằng bộ test trong `test/` (hiện 194 ca, gồm `ProjectCore.test.js` 48 ca nhóm A–H, `Organization.test.js` 32 ca, `Metadata.test.js` 16 ca, `AntiSpam.test.js` 13 ca, `VoterCardSBT.test.js` 14 ca, cùng các test khớp ABI và Edge Function). Lab 14: `docs/SELF_AUDIT.md` và `docs/AUDIT_REPORT.md`; báo cáo nhận từ nhóm bạn đang chờ. Lab 15: `web/` đã viết lại và hợp đồng đã triển khai lên Sepolia (`docs/SEPOLIA_DEPLOY_V2.md`); còn chờ đưa trang lên địa chỉ web công khai.
 

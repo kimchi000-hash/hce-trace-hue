@@ -67,6 +67,16 @@ async function main() {
   const approve1Gas = await gas(core.connect(ap1).approveElection(0)); // chua du nguong
   const approve2Gas = await gas(core.connect(ap2).approveElection(0)); // du nguong -> kich hoat
 
+  // Cuoc thu hai (con o pha Registration) de do cap nhat ho so va tu choi
+  const p2 = { ...p, title: "Bau lop truong K58", merkleRoot: ethers.id("root-2") };
+  await (await core.connect(creator).createElection(p2)).wait();
+  await (await core.connect(ap1).approveElection(1)).wait();
+  const newHash = metadataHash(electionMetadata({ organizationId: 1, title: p2.title, description: "Mo ta moi", purpose: "Muc dich moi" }));
+  const updateElectionMetaGas = await gas(core.connect(creator).updateElectionMetadata(1, newHash)); // co dat lai 1 chu ky
+  const newCandHash = metadataHash(candidateMetadata({ index: 0, fullName: names[0], bio: "Tieu su moi" }));
+  const updateCandMetaGas = await gas(core.connect(creator).updateCandidateMetadata(1, 0, newCandHash));
+  const rejectGas = await gas(core.connect(ap2).rejectElection(1));
+
   const st = await core.getElectionStats(0);
   await time.increaseTo(Number(st.regEnd) + 1);
 
@@ -78,6 +88,12 @@ async function main() {
   await time.increaseTo(Number(st.commitEnd) + 1);
   const reveal1Gas = await gas(core.connect(v1).reveal(0, 0, salt1)); // la dau tien cua ung vien 0
   const reveal2Gas = await gas(core.connect(v2).reveal(0, 0, salt2)); // la sau cua cung ung vien
+
+  // The cu tri soulbound (khong anh ngoai: dung SVG du phong tren chuoi)
+  const Sbt = await ethers.getContractFactory("VoterCardSBT");
+  const sbt = await Sbt.deploy(await core.getAddress(), "", 0, "");
+  const deploySbtGas = Number((await sbt.deploymentTransaction().wait()).gasUsed);
+  const mintGas = await gas(sbt.connect(v1).mint(0, 0));
 
   await time.increaseTo(Number(st.revealEnd) + 1);
   const resultGas = Number(await core.result.estimateGas(0));
@@ -93,10 +109,15 @@ async function main() {
     createElection: createGas,
     approveElection_chua_du: approve1Gas,
     approveElection_kich_hoat: approve2Gas,
+    updateElectionMetadata_dat_lai_chu_ky: updateElectionMetaGas,
+    updateCandidateMetadata: updateCandMetaGas,
+    rejectElection: rejectGas,
     commit_cu_tri_1: commit1Gas,
     commit_cu_tri_2: commit2Gas,
     reveal_la_dau_cua_ung_vien: reveal1Gas,
     reveal_la_sau_cung_ung_vien: reveal2Gas,
+    deploy_VoterCardSBT: deploySbtGas,
+    mint_the_cu_tri: mintGas,
     result_view_estimate: resultGas,
   };
 

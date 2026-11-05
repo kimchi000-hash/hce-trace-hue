@@ -82,3 +82,32 @@ Mỗi mục ghi: công cụ, prompt, AI trả về, đánh giá, chỗ sai, các
 - Chạy lại `npm install && npx hardhat test` trên máy mình và đọc kết quả.
 - Mở từng hàm trong `ProjectCore.sol` và giải thích bằng lời của mình (đặc biệt `REVEALED`, Merkle, `phase()`).
 - Đối chiếu lại các mã giao dịch Lab 11 trên Etherscan.
+
+---
+
+## Giai đoạn nâng cấp V2 (nhiều tổ chức, hồ sơ có hash, thẻ cử tri) và đồng bộ tài liệu
+
+- **Công cụ:** Claude (Claude Code, mô hình Sonnet 5.5) làm việc trên bản sao repo nhóm, nhánh `phase4-supabase`. Mọi lần commit/đẩy lên GitHub chỉ thực hiện sau khi sinh viên nhắn đồng ý rõ ràng.
+- **Việc AI làm:** viết giao diện chỉnh hồ sơ tổ chức, hiển thị ảnh và giới thiệu ứng viên ở trang bỏ phiếu và trang phê duyệt, cơ chế đối chiếu hash nội dung Supabase với hash trên chuỗi, viết test giao diện, cập nhật SPEC v4.0, ECONOMIC_RULES v4.0, GAS_REPORT, SELF_AUDIT, ARCHITECTURE_V2, FUNCTION_MAP, PRESENTATION_PLAN.
+- **Việc sinh viên quyết định:** không sửa hợp đồng để thêm "ví ứng viên ký xác nhận" (sinh viên lập luận: ứng viên đã ứng cử nghĩa là đã đồng ý, nên bước ký chỉ là thủ tục; ghi là hướng phát triển); chưa làm ứng dụng cửa hàng ứng dụng; tự triển khai Vercel; tự chạy SQL trên Supabase; tự triển khai hợp đồng qua Remix.
+
+### Bảng phát hiện của giai đoạn này
+
+| # | Phát hiện | Bằng chứng | Ai phát hiện | Xử lý |
+| :-: | :--- | :--- | :---: | :--- |
+| 1 | Tài liệu (SPEC, ECONOMIC_RULES, README, SELF_AUDIT, GATE_REVIEW, PROJECT_PLAN, PRESENTATION_PLAN) vẫn mô tả bản đầu (313 dòng, 72–77 test, một tổ chức) trong khi mã đã là V2 (ba hợp đồng, 194 test Hardhat) | So số dòng, số test, tên hàm trong tài liệu với mã | **AI phát hiện** khi sinh viên yêu cầu cập nhật | Viết lại các tài liệu; số liệu lấy lại bằng lệnh chạy thật |
+| 2 | Hồ sơ nội dung ở Supabase có thể bị sửa trộm mà giao diện vẫn hiển thị | Đọc luồng dữ liệu | **AI đề xuất** | Băm lại nội dung trong trình duyệt, chỉ hiện khi bằng hash trên chuỗi ("Đã xác thực hash"), ngược lại báo "KHÔNG khớp hash" |
+| 3 | Phép thử giao diện lần đầu báo 1 lỗi sau khi sửa phần chọn loại lớp | Chạy lại riêng lẻ: 51/51 đạt | AI | Nguyên nhân là chạy song song nhiều bài test dùng chung một nút Hardhat; từ đó chạy tuần tự |
+
+### Chỗ AI làm sai hoặc phải chỉnh
+
+- **AI nói sai về hợp đồng:** AI từng khẳng định hợp đồng "không có ví ứng viên". Thực tế `createElection` có tham số tùy chọn `candidateWallets` (không lưu), chỉ dùng để **loại** ví đó khỏi nhóm duyệt khi chụp (`_snapshotApprovers`, xem `FUNCTION_MAP.md`). Đã sửa lại trong tài liệu sau khi đọc lại mã.
+- **Số dòng viện dẫn sai:** bản nháp `SELF_AUDIT.md` ghi số dòng sai (ví dụ chỗ chặn commit trùng, chỗ loại đại diện). AI đã đối chiếu từng dòng bằng `sed -n` với mã và sửa lại.
+- **Giới hạn của bằng chứng kiểm thử:** các test giao diện (phase5_ui, card_ui, viz_ui, meta_update_ui, org_profile_ui) dùng Supabase **giả lập**, chưa phải Supabase thật hay MetaMask thật. Tài liệu ghi rõ điều này.
+- AI không thể làm thay: triển khai bằng ví thật, ghi mã giao dịch Etherscan, URL công khai, poster, video, báo cáo rà soát chéo từ nhóm bạn. Các mục này để trống, **không điền số liệu giả**.
+
+### Việc sinh viên cần tự kiểm chứng
+
+- Chạy lại `npx hardhat test` và `npm run test:supabase`, đối chiếu số lượng test.
+- Đọc `docs/FUNCTION_MAP.md` kèm mã, tự giải thích từng hàm; số dòng cần kiểm lại nếu có sửa hợp đồng.
+- Chạy một cuộc bầu đầy đủ bằng V2 trên Sepolia và điền `evidence/v2/README.md`.
