@@ -1,5 +1,7 @@
 # SEPOLIA RUNBOOK — triển khai và thu bằng chứng
 
+> **Đây là runbook của bản v1 (một hợp đồng `ProjectCore` cũ).** Bản nền tảng nhiều tổ chức (v2: `OrganizationRegistry` + `ProjectCore`) dùng `docs/SEPOLIA_DEPLOY_V2.md`.
+
 Việc này **phải do nhóm làm bằng ví của mình** (cần Sepolia ETH và ký giao dịch). Mọi ô "☐" bên dưới đều để trống cho đến khi có kết quả thật. **Không điền địa chỉ, mã giao dịch hay ảnh chụp nào chưa từng xảy ra.**
 
 Cần: 3 ví MetaMask trên Sepolia, mỗi ví có ETH thử nghiệm (faucet). Gợi ý: ví A = ban tổ chức, ví B = người duyệt, ví C và D = cử tri (A cũng có thể là cử tri). Ví người duyệt **không được trùng ví ban tổ chức**.

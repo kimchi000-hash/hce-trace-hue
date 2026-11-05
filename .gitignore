@@ -12,3 +12,5 @@ supabase/.temp/
 supabase/.env.functions
 supabase/.branches/
 .env.local
+deployments/hardhat.json
+deployments/localhost.json
