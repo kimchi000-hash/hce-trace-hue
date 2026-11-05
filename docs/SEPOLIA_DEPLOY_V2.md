@@ -119,3 +119,26 @@ npx.cmd hardhat verify --network sepolia <CORE_ADDRESS> <REGISTRY_ADDRESS>
 - Commit `deployments/sepolia.json`, `web/index.html` (đã có địa chỉ) và `.env.example` nếu bạn điền `REGISTRY_ADDRESS`/`CORE_ADDRESS` (đều là thông tin công khai). **Không** commit `.env` hay `supabase/.env.functions`.
 - Điền địa chỉ hợp đồng và mã giao dịch thật vào README và hồ sơ nộp. **Không điền địa chỉ hay mã giao dịch chưa từng xảy ra.**
 - Nếu ví deploy từng bị lộ hoặc nghi ngờ: tạo ví mới, deploy lại bằng `FORCE_REDEPLOY=1`, rồi cập nhật bước 5.
+
+## 9. Thẻ cử tri (VoterCardSBT) — tùy chọn, làm sau khi đã deploy ProjectCore
+
+`VoterCardSBT` là hợp đồng riêng; **không sửa `ProjectCore`**. Hợp đồng kiểm tra điều kiện bằng `ProjectCore.hasRevealed`, mỗi ví một thẻ cho mỗi cuộc bầu cử, thẻ không chuyển nhượng và không ghi lựa chọn.
+
+**Chuẩn bị ảnh mascot (một lần):** đưa thư mục chỉ chứa `0.png` … `7.png` lên IPFS (Pinata, chọn *Folder*, mạng *Public*), lấy CID của thư mục và mở thử `https://ipfs.io/ipfs/<CID>/0.png`. Không upload lại thư mục (CID sẽ đổi). Có sẵn bản dự phòng ở `web/mascots/`.
+
+**Triển khai trên Remix** (compiler 0.8.20, không import, cùng cách với hai hợp đồng kia):
+
+| Tham số | Giá trị |
+| :-- | :-- |
+| `projectCore_` | địa chỉ ProjectCore đã deploy |
+| `avatarBaseURI_` | `ipfs://<CID>/` (có dấu `/` cuối). Để trống `""` nếu muốn dùng emoji dự phòng |
+| `avatarCount_` | `8` (bị bỏ qua khi để trống baseURI) |
+| `avatarExt_` | `png` |
+
+Ba giá trị mascot **không đổi được sau khi deploy**; muốn đổi phải deploy lại, và các thẻ đã cấp ở bản cũ không chuyển sang bản mới.
+
+**Nối vào giao diện:** mở trang, vào mục *Thẻ cử tri*, dán địa chỉ VoterCardSBT, bấm *Lưu địa chỉ*. Giao diện chỉ chấp nhận hợp đồng thẻ trỏ đúng tới ProjectCore đang dùng. Muốn điền sẵn cho mọi người: sửa `CONFIG.SBT_ADDRESS` trong `web/index.html` (địa chỉ công khai).
+
+**Quyền riêng tư:** thẻ gắn công khai địa chỉ ví với cuộc bầu cử và không thể xóa. Giao diện bắt người dùng tích đồng ý trước khi nhận. Lưu ý sự kiện `Revealed` của ProjectCore vốn đã công khai lựa chọn của từng ví sau khi mở phiếu; thẻ không thêm thông tin đó nhưng làm việc tham gia dễ thấy hơn.
+
+**Kiểm thử:** `npx.cmd hardhat test test/VoterCardSBT.test.js`. Kiểm thử giao diện thẻ: `node scripts/e2e/card_ui.js` (cần Hardhat node và máy chủ tĩnh, xem đầu file). Chưa thử trên Sepolia/MetaMask thật.

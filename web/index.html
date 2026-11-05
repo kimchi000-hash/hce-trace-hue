@@ -3243,6 +3243,33 @@ pre.code {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* ---------------------------------------------------------------------
+   THẺ CỬ TRI (Soulbound NFT)
+   --------------------------------------------------------------------- */
+.vc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 10px; }
+.vc-pick { border: 2px solid var(--line); background: var(--surface); border-radius: var(--radius); padding: 8px 6px 6px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; font: inherit; color: var(--ink-2); font-size: 0.72rem; line-height: 1.25; text-align: center; }
+.vc-pick:hover { border-color: var(--brand-200); background: var(--brand-50); }
+.vc-pick[aria-checked="true"] { border-color: var(--brand); background: var(--brand-50); box-shadow: 0 0 0 3px var(--brand-100); }
+.vc-pick .vc-img, .vc-pick .vc-emoji { width: 64px; height: 64px; }
+.vc-img { display: block; object-fit: contain; background: transparent; }
+.vc-emoji { display: grid; place-items: center; border-radius: 50%; font-size: 2.2rem; line-height: 1; }
+.vcard { width: 100%; max-width: 280px; margin: 0 auto; border: 1px solid var(--line-strong); border-radius: 22px; background: linear-gradient(160deg, var(--brand-50), var(--surface) 55%, var(--teal-50)); box-shadow: var(--shadow); padding: 16px 16px 14px; text-align: center; position: relative; }
+.vcard .vc-tag { font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brand-700); font-weight: 700; }
+.vcard .vc-art { margin: 10px auto 8px; width: 190px; height: 190px; display: grid; place-items: center; }
+.vcard .vc-art .vc-img, .vcard .vc-art .vc-emoji { width: 190px; height: 190px; font-size: 6rem; }
+.vcard .vc-title { font-weight: 700; color: var(--ink); font-size: 0.98rem; line-height: 1.3; word-break: break-word; }
+.vcard .vc-serial { color: var(--brand-700); font-weight: 700; margin-top: 2px; }
+.vcard dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 10px 0 0; text-align: left; font-size: 0.76rem; }
+.vcard dt { color: var(--muted); }
+.vcard dd { margin: 0; color: var(--ink-2); text-align: right; word-break: break-all; }
+.vcard .vc-lock { color: var(--teal-600); display: flex; justify-content: center; gap: 4px; align-items: center; font-size: 0.68rem; font-weight: 700; margin-top: 3px; }
+.vc-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+.vc-consent { border: 1px solid var(--amber-100); background: var(--amber-50); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 0.84rem; line-height: 1.5; color: var(--ink-2); }
+.vc-consent ul { margin: 6px 0 10px; padding-left: 18px; }
+.vc-consent li { margin: 3px 0; }
+.vc-consent label { display: flex; gap: 8px; align-items: flex-start; font-weight: 600; cursor: pointer; }
+.vc-consent input[type="checkbox"] { margin-top: 3px; width: auto; }
 </style>
 </head>
 
@@ -3472,6 +3499,7 @@ pre.code {
     <button class="nav-item" data-route="elections"><svg class="ic"><use href="#i-list"/></svg>Bầu cử</button>
     <button class="nav-item" data-route="org"><svg class="ic"><use href="#i-users"/></svg>Tổ chức</button>
     <button class="nav-item" data-route="vote"><svg class="ic"><use href="#i-vote"/></svg>Bỏ phiếu</button>
+    <button class="nav-item" data-route="card"><svg class="ic"><use href="#i-shield"/></svg>Thẻ cử tri</button>
     <button class="nav-item" data-route="create"><svg class="ic"><use href="#i-plus-circle"/></svg>Tạo cuộc bầu cử</button>
     <button class="nav-item" data-route="approve"><svg class="ic"><use href="#i-badge-check"/></svg>Phê duyệt<span id="navBadgeApprove" class="count hidden">0</span></button>
     <button class="nav-item" data-route="result"><svg class="ic"><use href="#i-trophy"/></svg>Kết quả</button>
@@ -3996,6 +4024,11 @@ pre.code {
         <span class="ic-box"><svg class="ic"><use href="#i-info"/></svg></span>
         <div><h4 id="nextTitle">—</h4><p id="nextDesc"></p></div>
       </div>
+      <div id="cardInvite" class="alert ok hidden" style="margin-top:12px">
+        <svg class="ic sm"><use href="#i-shield"/></svg>
+        <span style="flex:1">Phiếu của bạn đã được tính. Bạn có thể <b>nhận Thẻ cử tri</b> (NFT không chuyển nhượng) làm kỷ niệm đã tham gia cuộc bầu cử này. Việc này hoàn toàn tùy chọn và không ảnh hưởng đến phiếu.</span>
+        <button class="btn primary sm" data-route="card" type="button">Nhận thẻ</button>
+      </div>
     </div>
 
     <div class="grid g-main" style="margin-top:16px">
@@ -4085,6 +4118,79 @@ pre.code {
         </div>
       </div>
     </div>
+  </div>
+</section>
+
+
+<!-- =====================================================================
+     VIEW: THẺ CỬ TRI (Soulbound NFT)
+     ===================================================================== -->
+<section class="view" id="view-card" data-title="Thẻ cử tri" hidden>
+  <div class="page-head">
+    <div>
+      <h1>Thẻ cử tri</h1>
+      <p>NFT không chuyển nhượng (soulbound) ghi nhận bạn đã tham gia một cuộc bầu cử. Thẻ không chứa lựa chọn của bạn.</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-head">
+      <div>
+        <h3><svg class="ic"><use href="#i-link"/></svg>Hợp đồng thẻ (VoterCardSBT)</h3>
+        <div class="sub">Dán địa chỉ hợp đồng VoterCardSBT đã triển khai. Giao diện chỉ nhận hợp đồng thẻ trỏ đúng tới hợp đồng ProjectCore đang dùng.</div>
+      </div>
+    </div>
+    <div class="row">
+      <input id="sbtAddr" type="text" spellcheck="false" placeholder="0x… (VoterCardSBT)" style="flex:1;min-width:240px">
+      <button id="btnSbtSave" class="btn outline sm" type="button">Lưu địa chỉ</button>
+      <a id="sbtLink" class="btn ghost sm hidden" target="_blank" rel="noopener noreferrer"><svg class="ic sm"><use href="#i-external"/></svg>Explorer</a>
+    </div>
+    <div id="sbtStatus" class="help"></div>
+  </div>
+
+  <div class="grid g-main">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <h3><svg class="ic"><use href="#i-badge-check"/></svg>Nhận thẻ cho cuộc bầu cử đang chọn</h3>
+          <div class="sub" id="cardElecLabel">Chưa chọn cuộc bầu cử.</div>
+        </div>
+      </div>
+      <div id="cardStatus" class="alert info hidden"></div>
+      <div id="cardMintBox" class="hidden">
+        <label class="f">Chọn mascot</label>
+        <div id="cardAvatars" class="vc-grid" role="radiogroup" aria-label="Chọn mascot"></div>
+        <div class="vc-consent" style="margin-top:14px">
+          <b>Trước khi nhận thẻ, hãy đọc kỹ:</b>
+          <ul>
+            <li>Thẻ nằm trên blockchain công khai và gắn <b>địa chỉ ví của bạn</b> với cuộc bầu cử này. Ai cũng xem được.</li>
+            <li>Thẻ <b>không ghi lựa chọn</b> của bạn. Tuy nhiên, khi mở phiếu, hợp đồng bầu cử đã phát công khai sự kiện Reveal (ví nào chọn ứng viên nào). Đó là cách hợp đồng hiện tại hoạt động, không do thẻ gây ra.</li>
+            <li>Thẻ <b>không thể chuyển nhượng, không thể xóa hay hủy</b>.</li>
+            <li>Nhận thẻ là tùy chọn, tốn một ít phí gas, và không ảnh hưởng đến phiếu đã tính.</li>
+          </ul>
+          <label><input id="cardConsent" type="checkbox"> Tôi hiểu và đồng ý công khai việc ví này đã tham gia cuộc bầu cử.</label>
+        </div>
+        <button id="btnMintCard" class="btn primary lg block" style="margin-top:14px" type="button" disabled><svg class="ic"><use href="#i-badge-check"/></svg>Nhận Thẻ cử tri</button>
+        <div id="cardMintHint" class="help"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div><h3><svg class="ic"><use href="#i-eye"/></svg>Xem trước thẻ</h3><div class="sub">Thẻ thật có thể hiển thị khác đôi chút trên sàn NFT.</div></div></div>
+      <div id="cardPreview"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="card-head">
+      <div>
+        <h3><svg class="ic"><use href="#i-box"/></svg>Bộ sưu tập của tôi</h3>
+        <div class="sub">Các thẻ cử tri của ví đang kết nối, ở mọi cuộc bầu cử.</div>
+      </div>
+      <button id="btnCardRefresh" class="btn outline sm" type="button"><svg class="ic sm"><use href="#i-refresh"/></svg>Làm mới</button>
+    </div>
+    <div id="cardCollection" class="vc-list"></div>
+    <div id="cardCollectionEmpty" class="help"></div>
   </div>
 </section>
 
@@ -4494,6 +4600,10 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
    * ------------------------------------------------------------------ */
   const CONFIG = {
     CONTRACT_ADDRESS: "",
+    // Hợp đồng thẻ cử tri (VoterCardSBT). Có thể dán ở màn hình "Thẻ cử tri" hoặc ghi đè bằng URL: ?sbt=0x…
+    SBT_ADDRESS: "",
+    // CID thư mục mascot trên IPFS. Khi khớp với avatarBaseURI của hợp đồng thẻ, trang thử ảnh trong web/mascots/ trước (nhanh hơn).
+    MASCOT_CID: "bafybeickdjosojmlagojcg7l4krhoffitywd74jn7rvzcqodzjti6qmony",
     ELECTION_ID: 0,
     CHAIN_ID: 11155111,
     RPC_URL: "https://ethereum-sepolia-rpc.publicnode.com",
@@ -4619,6 +4729,32 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   /*REG-ABI-END*/
   const REG_IFACE = new ethers.Interface(REG_ABI);
   const IFACE = new ethers.Interface(APP_ABI);
+
+  /*SBT-ABI-START*/
+  const SBT_ABI = [
+    "function projectCore() view returns (address)",
+    "function avatarCount() view returns (uint8)",
+    "function avatarBaseURI() view returns (string)",
+    "function avatarExt() view returns (string)",
+    "function nextSerial(uint256 electionId) view returns (uint256)",
+    "function tokenIdOf(uint256 electionId, address voter) pure returns (uint256)",
+    "function hasCard(uint256 electionId, address voter) view returns (bool)",
+    "function mint(uint256 electionId, uint8 avatarId) returns (uint256 tokenId)",
+    "function cardOf(uint256 tokenId) view returns (uint256 electionId, address owner, uint256 serial, uint256 issuedAt, uint8 avatarId)",
+    "function balanceOf(address owner) view returns (uint256)",
+    "function locked(uint256 tokenId) view returns (bool)",
+    "event CardMinted(uint256 indexed electionId, address indexed voter, uint256 indexed tokenId, uint256 serial, uint8 avatarId)",
+    "error NotRevealed()",
+    "error ElectionNotFound()",
+    "error InvalidAvatar()",
+    "error AlreadyMinted()",
+    "error Soulbound()",
+    "error NonexistentToken()",
+    "error ZeroAddress()",
+    "error BadAvatarConfig()"
+  ];
+  /*SBT-ABI-END*/
+  const SBT_IFACE = new ethers.Interface(SBT_ABI);
 
   /* ------------------------------------------------------------------
    * 3. TIỆN ÍCH CHUNG
@@ -4784,13 +4920,20 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     MemberLimit: "Tổ chức đã đạt số thành viên tối đa.",
     IsApprover: "Ví này đang là người duyệt; hãy gỡ quyền duyệt trước.",
     InvalidStatus: "Trạng thái tổ chức hiện tại không cho phép thao tác này.",
+    NotRevealed: "Ví của bạn chưa mở phiếu thành công ở cuộc bầu cử này nên chưa nhận được thẻ.",
+    AlreadyMinted: "Ví của bạn đã nhận thẻ cho cuộc bầu cử này rồi (mỗi ví một thẻ cho mỗi cuộc bầu cử).",
+    InvalidAvatar: "Mascot đã chọn không hợp lệ.",
+    Soulbound: "Thẻ cử tri không thể chuyển nhượng.",
+    NonexistentToken: "Thẻ này không tồn tại.",
+    BadAvatarConfig: "Cấu hình mascot của hợp đồng thẻ không hợp lệ.",
+    ZeroAddress: "Địa chỉ không hợp lệ (địa chỉ 0x0).",
   };
 
   function revertInfo(e) {
     if (e && e.revert && e.revert.name) return { name: e.revert.name, args: Array.from(e.revert.args || []) };
     const data = e && (e.data || (e.error && e.error.data) || (e.info && e.info.error && e.info.error.data));
     if (typeof data === "string" && /^0x[0-9a-fA-F]{8,}/.test(data)) {
-      for (const I of [IFACE, REG_IFACE]) { try { const p = I.parseError(data); if (p) return { name: p.name, args: Array.from(p.args) }; } catch (_) { /* thử giao diện kế tiếp */ } }
+      for (const I of [IFACE, REG_IFACE, SBT_IFACE]) { try { const p = I.parseError(data); if (p) return { name: p.name, args: Array.from(p.args) }; } catch (_) { /* thử giao diện kế tiếp */ } }
     }
     return null;
   }
@@ -4996,6 +5139,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     S.provider = provider;
     S.signer = await provider.getSigner();
     S.account = ethers.getAddress(await S.signer.getAddress());
+    if (S.sbtAddr) S.sbt = new ethers.Contract(S.sbtAddr, SBT_ABI, S.signer);
     S.chainId = CHAIN_ID;
 
     if (window.ethereum.on && !S._listening) {
@@ -5019,6 +5163,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     }
     updateButtons();
     scanAll(true);
+    queueCardRefresh();
   }
 
   /* ------------------------------------------------------------------
@@ -5076,6 +5221,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     S.election = e;
     if (!S.proofsFile) await loadProofsFile();
     render();
+    queueCardRefresh();
     if (!quiet) toast("ok", "Đã tải cuộc bầu cử #" + raw + ": " + e.title);
   }
 
@@ -5373,6 +5519,269 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   }
 
   /* ------------------------------------------------------------------
+   * 14. THẺ CỬ TRI (Soulbound NFT, hợp đồng VoterCardSBT riêng)
+   *   - Điều kiện nhận thẻ do HỢP ĐỒNG kiểm tra (ProjectCore.hasRevealed), giao diện chỉ hiển thị.
+   *   - Thẻ không chứa lựa chọn / salt. Nhận thẻ là tùy chọn, không ảnh hưởng phiếu.
+   * ------------------------------------------------------------------ */
+  const MASCOT_NAMES = ["Mèo phi hành gia", "Gấu tốt nghiệp", "Thỏ hoa tím", "Rùa mũ VoteChain", "Chim cánh cụt loa", "Corgi hoodie", "Rồng khiên", "Cừu khăn quàng"];
+  // Dự phòng của hợp đồng khi KHÔNG cấu hình ảnh ngoài (khớp _face/_bg/_fg trong VoterCardSBT.sol): emoji, màu nền, màu vòng
+  const EMOJI_FACE = [["🐱", "#e0f2fe", "#7dd3fc"], ["🐼", "#dcfce7", "#86efac"], ["🦊", "#fef3c7", "#fcd34d"], ["🐰", "#fce7f3", "#f9a8d4"], ["🦉", "#ede9fe", "#c4b5fd"], ["🐸", "#ffedd5", "#fdba74"]];
+  const IPFS_GATEWAYS = ["https://ipfs.io/ipfs/", "https://dweb.link/ipfs/", "https://w3s.link/ipfs/"];
+  S.sbtAddr = ""; S.sbt = null; S.sbtRead = null; S.sbtInfo = null;
+  S.cardPick = null; S.cardHas = null; S.cardHasKey = ""; S.cards = null;
+  const sbtReader = () => S.sbt || S.sbtRead;
+  const padSerial = (n) => String(n).padStart(4, "0");
+
+  /** Danh sách nguồn ảnh thử lần lượt cho mascot i (rỗng nếu hợp đồng dùng emoji dự phòng). */
+  function mascotSources(i) {
+    const inf = S.sbtInfo;
+    if (!inf || !inf.baseURI) return [];
+    const path = inf.baseURI + i + "." + inf.ext;
+    const m = /^ipfs:\/\/([^/]+)\/(.+)$/.exec(path);
+    const out = [];
+    if (m) {
+      if (CONFIG.MASCOT_CID && m[1] === CONFIG.MASCOT_CID && inf.ext === "png") out.push("mascots/" + i + ".png");
+      for (const g of IPFS_GATEWAYS) out.push(g + m[1] + "/" + m[2]);
+    } else if (/^https:\/\//.test(path)) out.push(path);
+    return out;
+  }
+  function mascotNode(i) {
+    const inf = S.sbtInfo;
+    if (!inf || !inf.baseURI) {
+      const f = EMOJI_FACE[i] || EMOJI_FACE[0];
+      const d = el("div", "vc-emoji", f[0]);
+      d.style.background = "radial-gradient(circle at 50% 40%, " + f[2] + ", " + f[1] + ")";
+      d.setAttribute("role", "img"); d.setAttribute("aria-label", "Mascot " + (i + 1));
+      return d;
+    }
+    const srcs = mascotSources(i);
+    const img = el("img", "vc-img");
+    img.alt = MASCOT_NAMES[i] || ("Mascot " + (i + 1));
+    img.decoding = "async";
+    let k = 0;
+    const next = () => {
+      if (k < srcs.length) { img.src = srcs[k++]; return; }
+      img.onerror = null;
+      const ph = el("div", "vc-emoji", "🗳️");
+      ph.style.background = "var(--gray-50)";
+      ph.setAttribute("role", "img"); ph.setAttribute("aria-label", img.alt + " (chưa tải được ảnh)");
+      img.replaceWith(ph);
+    };
+    img.onerror = next;
+    next();
+    return img;
+  }
+
+  /** Dựng thẻ (HTML) từ dữ liệu; mọi chuỗi đưa vào bằng textContent. */
+  function cardNode(d) {
+    const c = el("div", "vcard");
+    const lock = el("span", "vc-lock"); lock.appendChild(icon("lock", "sm")); lock.appendChild(document.createTextNode("Soulbound"));
+    c.appendChild(el("div", "vc-tag", "VoteChain · Thẻ cử tri"));
+    c.appendChild(lock);
+    const art = el("div", "vc-art"); art.appendChild(mascotNode(d.avatarId)); c.appendChild(art);
+    c.appendChild(el("div", "vc-title", d.title));
+    c.appendChild(el("div", "vc-serial", d.serial ? "Thẻ #" + padSerial(d.serial) : "Thẻ #— (cấp khi nhận)"));
+    const dl = el("dl");
+    const row = (k, v) => { dl.appendChild(el("dt", "", k)); dl.appendChild(el("dd", "", v)); };
+    row("Cuộc bầu cử", "#" + d.electionId);
+    row("Ngày cấp", d.issuedAt ? fmtDate(Number(d.issuedAt)) : "khi nhận thẻ");
+    row("Mascot", MASCOT_NAMES[d.avatarId] || ("#" + d.avatarId));
+    if (d.tokenId !== undefined) {
+      const dd = el("dd"); dd.textContent = "";
+      const t = d.tokenId.toString();
+      if (explorer() && S.sbtAddr) { const a = el("a", "", t.slice(0, 8) + "…" + t.slice(-6)); a.href = explorer() + "/nft/" + S.sbtAddr + "/" + t; a.target = "_blank"; a.rel = "noopener noreferrer"; dd.appendChild(a); }
+      else dd.textContent = t.slice(0, 8) + "…" + t.slice(-6);
+      dl.appendChild(el("dt", "", "NFT ID")); dl.appendChild(dd);
+    }
+    c.appendChild(dl);
+    return c;
+  }
+
+  async function setSbtAddress(addr, persist) {
+    S.sbtAddr = ""; S.sbt = null; S.sbtRead = null; S.sbtInfo = null; S.cards = null; S.cardHas = null; S.cardHasKey = "";
+    const status = $("sbtStatus"), link = $("sbtLink");
+    link.classList.add("hidden");
+    if (!addr) { status.textContent = "Chưa cấu hình hợp đồng thẻ. Sau khi triển khai VoterCardSBT, hãy dán địa chỉ vào đây."; return; }
+    if (!ethers.isAddress(addr)) { status.textContent = "⛔ Địa chỉ không hợp lệ."; return; }
+    addr = ethers.getAddress(addr);
+    if (!ethers.isAddress(S.address)) { status.textContent = "Hãy nhập địa chỉ hợp đồng ProjectCore trước."; return; }
+    const prov = S.readProvider || (CONFIG.RPC_URL ? new ethers.JsonRpcProvider(CONFIG.RPC_URL, CHAIN_ID, { staticNetwork: true }) : null);
+    if (!prov) { status.textContent = "⛔ Chưa có kết nối đọc chuỗi."; return; }
+    try {
+      const rd = new ethers.Contract(addr, SBT_ABI, prov);
+      const [core, count, base, ext] = await Promise.all([rd.projectCore(), rd.avatarCount(), rd.avatarBaseURI(), rd.avatarExt()]);
+      if (ethers.getAddress(core) !== ethers.getAddress(S.address)) {
+        status.textContent = "⛔ Hợp đồng thẻ này trỏ tới ProjectCore khác (" + shortAddr(core) + "), không phải hợp đồng đang dùng. Đã từ chối để tránh nhận nhầm thẻ.";
+        return;
+      }
+      S.sbtAddr = addr; S.sbtRead = rd;
+      S.sbtInfo = { count: Number(count), baseURI: base, ext };
+      if (S.signer) S.sbt = new ethers.Contract(addr, SBT_ABI, S.signer);
+      if (persist) LS.set("votechain:sbt", addr);
+      $("sbtAddr").value = addr;
+      status.textContent = "✅ Hợp đồng thẻ hợp lệ · " + S.sbtInfo.count + " mascot · " + (base ? "ảnh trên IPFS/URL cố định" : "emoji dự phòng trên chuỗi");
+      if (explorer()) { link.href = explorer() + "/address/" + addr; link.classList.remove("hidden"); }
+    } catch (e) {
+      console.warn("sbt", e);
+      status.textContent = "⛔ Không đọc được hợp đồng thẻ (sai địa chỉ, sai mạng hoặc không phải VoterCardSBT).";
+    }
+  }
+
+  /** Trạng thái "đã có thẻ" cho cuộc bầu cử đang chọn + ví đang kết nối. */
+  async function refreshCardState() {
+    const e = S.election, rd = sbtReader();
+    if (!e || !rd || !S.account) { S.cardHas = null; S.cardHasKey = ""; return null; }
+    const key = S.sbtAddr + ":" + e.id + ":" + S.account;
+    if (S.cardHasKey === key && S.cardHas !== null) return S.cardHas;
+    S.cardHas = await rd.hasCard(e.id, S.account);
+    S.cardHasKey = key;
+    return S.cardHas;
+  }
+
+  /** Lời mời ở màn hình Bỏ phiếu: chỉ hiện khi đã mở phiếu, đã cấu hình thẻ và chưa nhận. */
+  function refreshCardInvite() {
+    const box = $("cardInvite");
+    const e = S.election;
+    if (!box) return;
+    if (!e || !e.revealed || !S.sbtAddr || !S.account) { box.classList.add("hidden"); return; }
+    refreshCardState().then((has) => {
+      box.classList.toggle("hidden", has !== false);
+    }).catch(() => box.classList.add("hidden"));
+  }
+
+  function setCardStatus(kind, msg) {
+    const b = $("cardStatus");
+    if (!msg) { b.classList.add("hidden"); return; }
+    b.className = "alert " + kind; b.textContent = msg;
+  }
+
+  async function refreshCardView() {
+    const e = S.election;
+    $("cardElecLabel").textContent = e ? "Cuộc bầu cử #" + e.id + " · " + e.title : "Chưa chọn cuộc bầu cử. Hãy chọn một cuộc bầu cử ở mục Bầu cử.";
+    const mint = $("cardMintBox"), prev = $("cardPreview");
+    mint.classList.add("hidden"); clear(prev);
+    $("btnMintCard").disabled = true;
+
+    if (!S.sbtAddr) {
+      setCardStatus("info", "Chưa có hợp đồng thẻ. Hãy dán địa chỉ VoterCardSBT ở ô phía trên.");
+      prev.appendChild(el("div", "help", "Chưa có thẻ để xem trước."));
+      renderCollection(); return;
+    }
+    if (!e) { setCardStatus("info", "Hãy chọn một cuộc bầu cử trước."); renderCollection(); return; }
+    if (!S.account) { setCardStatus("info", "Hãy kết nối ví MetaMask để nhận hoặc xem thẻ."); renderCollection(); return; }
+    if (!e.revealed) {
+      setCardStatus("warn", "Bạn cần bỏ phiếu và mở phiếu thành công ở cuộc bầu cử này trước khi nhận thẻ.");
+      prev.appendChild(cardNode({ electionId: e.id, title: e.title, avatarId: 0 }));
+      renderCollection(); return;
+    }
+    const has = await refreshCardState();
+    if (has) {
+      setCardStatus("ok", "Bạn đã nhận thẻ cho cuộc bầu cử này. Thẻ nằm trong bộ sưu tập bên dưới.");
+      const tid = await sbtReader().tokenIdOf(e.id, S.account);
+      const c = await sbtReader().cardOf(tid);
+      prev.appendChild(cardNode({ electionId: e.id, title: e.title, avatarId: Number(c.avatarId), serial: c.serial, issuedAt: c.issuedAt, tokenId: tid }));
+      renderCollection(); return;
+    }
+    setCardStatus("", "");
+    mint.classList.remove("hidden");
+    const count = S.sbtInfo.count;
+    if (S.cardPick === null || S.cardPick >= count) S.cardPick = 0;
+    const grid = $("cardAvatars"); clear(grid);
+    for (let i = 0; i < count; i++) {
+      const b = el("button", "vc-pick"); b.type = "button"; b.setAttribute("role", "radio");
+      b.setAttribute("aria-checked", String(i === S.cardPick));
+      b.appendChild(mascotNode(i)); b.appendChild(el("span", "", MASCOT_NAMES[i] || ("Mascot " + (i + 1))));
+      b.onclick = () => { S.cardPick = i; renderCardPreviewOnly(); grid.querySelectorAll(".vc-pick").forEach((x, j) => x.setAttribute("aria-checked", String(j === i))); };
+      grid.appendChild(b);
+    }
+    renderCardPreviewOnly();
+    syncMintButton();
+    renderCollection();
+  }
+
+  async function renderCardPreviewOnly() {
+    const e = S.election; if (!e) return;
+    const prev = $("cardPreview"); clear(prev);
+    let serial = null;
+    try { serial = (await sbtReader().nextSerial(e.id)) + 1n; } catch (_) { /* hiển thị không số thứ tự */ }
+    clear(prev);
+    prev.appendChild(cardNode({ electionId: e.id, title: e.title, avatarId: S.cardPick || 0, serial }));
+  }
+
+  function syncMintButton() {
+    const ok = $("cardConsent").checked && S.cardPick !== null && !!S.sbt && !!S.election && S.election.revealed;
+    $("btnMintCard").disabled = !ok;
+    $("cardMintHint").textContent = ok ? "" : (!S.sbt ? "Hãy kết nối ví để nhận thẻ." : "Hãy chọn mascot và tích đồng ý để nhận thẻ.");
+  }
+
+  async function doMintCard() {
+    const e = S.election;
+    if (!S.sbt) throw new UserError("Hãy kết nối ví MetaMask và cấu hình hợp đồng thẻ trước.");
+    if (!e) throw new UserError("Hãy chọn cuộc bầu cử trước.");
+    if (!$("cardConsent").checked) throw new UserError("Hãy đọc và tích đồng ý về việc công khai trước khi nhận thẻ.");
+    if (S.cardPick === null) throw new UserError("Hãy chọn một mascot.");
+    await S.sbt.mint.estimateGas(e.id, S.cardPick);
+    toast("info", "Hãy ký giao dịch nhận thẻ trong MetaMask…");
+    await sendTx("Nhận Thẻ cử tri (cuộc #" + e.id + ")", () => S.sbt.mint(e.id, S.cardPick));
+    S.cardHas = null; S.cardHasKey = ""; S.cards = null;
+    $("cardConsent").checked = false;
+    await refreshCardView();
+    refreshCardInvite();
+    toast("ok", "Đã nhận Thẻ cử tri! Thẻ nằm trong bộ sưu tập của bạn.");
+  }
+
+  async function loadCollection() {
+    const rd = sbtReader(), core = reader();
+    if (!rd || !core || !S.account) { S.cards = []; return; }
+    const n = Number(await core.electionCount());
+    const ids = Array.from({ length: Math.min(n, 200) }, (_, i) => i);
+    const flags = await Promise.all(ids.map((i) => rd.hasCard(i, S.account).catch(() => false)));
+    const mine = ids.filter((_, k) => flags[k]);
+    S.cards = await Promise.all(mine.map(async (id) => {
+      const tid = await rd.tokenIdOf(id, S.account);
+      const [c, info] = await Promise.all([rd.cardOf(tid), core.getElectionBasicInfo(id)]);
+      return { electionId: id, title: info.title, avatarId: Number(c.avatarId), serial: c.serial, issuedAt: c.issuedAt, tokenId: tid };
+    }));
+  }
+  async function renderCollection() {
+    const box = $("cardCollection"), empty = $("cardCollectionEmpty");
+    clear(box); empty.textContent = "";
+    if (!S.sbtAddr) { empty.textContent = "Chưa cấu hình hợp đồng thẻ."; return; }
+    if (!S.account) { empty.textContent = "Kết nối ví để xem bộ sưu tập."; return; }
+    try {
+      if (!S.cards) { empty.textContent = "Đang tải…"; await loadCollection(); empty.textContent = ""; }
+    } catch (e) { empty.textContent = "Không tải được bộ sưu tập: " + explain(e); return; }
+    if (!S.cards.length) { empty.textContent = "Bạn chưa có thẻ nào. Thẻ sẽ xuất hiện ở đây sau khi bạn mở phiếu và nhận thẻ."; return; }
+    for (const d of S.cards) box.appendChild(cardNode(d));
+  }
+
+  /** Vẽ lại màn hình Thẻ cử tri khi trạng thái đổi (ví, cuộc bầu cử, hợp đồng thẻ); không chạy chồng nhau. */
+  function queueCardRefresh() {
+    if (S.route !== "card") return;
+    if (S.cardRefreshing) { S.cardAgain = true; return; }
+    S.cardRefreshing = true;
+    refreshCardView().catch((e) => console.warn("card", e)).finally(() => {
+      S.cardRefreshing = false;
+      if (S.cardAgain) { S.cardAgain = false; queueCardRefresh(); }
+    });
+  }
+
+  function wireCard() {
+    $("btnSbtSave").onclick = async () => { await setSbtAddress($("sbtAddr").value.trim(), true); await refreshCardView(); refreshCardInvite(); };
+    $("cardConsent").onchange = syncMintButton;
+    $("btnMintCard").onclick = () => run("btnMintCard", "Đang xử lý…", doMintCard);
+    $("btnCardRefresh").onclick = async () => { S.cards = null; S.cardHas = null; S.cardHasKey = ""; await refreshCardView(); };
+  }
+  async function initCard() {
+    const qs = new URLSearchParams(location.search);
+    const a = (qs.get("sbt") || LS.get("votechain:sbt") || CONFIG.SBT_ADDRESS || "").trim();
+    $("sbtAddr").value = a;
+    await setSbtAddress(a, false);
+    refreshCardInvite();
+    queueCardRefresh();
+  }
+
+  /* ------------------------------------------------------------------
    * 10. DUYỆT VÀ TẠO CUỘC BẦU CỬ
    * ------------------------------------------------------------------ */
   async function doApprove() {
@@ -5507,10 +5916,10 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   const SVGNS = "http://www.w3.org/2000/svg";
   const MAX_SCAN = 60;          // số cuộc bầu cử mới nhất được quét cho dashboard
   const MAX_FEED = 8;           // số dòng hiển thị ở "Hoạt động gần đây"
-  const ROUTES = ["dashboard", "elections", "org", "election", "vote", "create", "approve", "result", "log", "tools", "about"];
-  const CTX_ROUTES = ["election", "vote", "approve", "result", "log"];   // màn hình hiện chip "đang chọn"
+  const ROUTES = ["dashboard", "elections", "org", "election", "vote", "card", "create", "approve", "result", "log", "tools", "about"];
+  const CTX_ROUTES = ["election", "vote", "card", "approve", "result", "log"];   // màn hình hiện chip "đang chọn"
   const ROUTE_TITLE = {
-    dashboard: "Dashboard", elections: "Bầu cử", org: "Tổ chức", election: "Chi tiết cuộc bầu cử", vote: "Bỏ phiếu", create: "Tạo cuộc bầu cử",
+    dashboard: "Dashboard", elections: "Bầu cử", org: "Tổ chức", election: "Chi tiết cuộc bầu cử", vote: "Bỏ phiếu", card: "Thẻ cử tri", create: "Tạo cuộc bầu cử",
     approve: "Phê duyệt", result: "Kết quả", log: "Nhật ký hoạt động", tools: "Công cụ kiểm tra", about: "Giới thiệu",
   };
   const PALETTE = ["#1f5eea", "#0f9d8a", "#b86e00", "#6d5bd0", "#c93752", "#5a6c8c"];
@@ -5643,6 +6052,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     if (route === "approve") { renderPending(); if (S.election && readReady()) refreshMetaVerify().catch(() => {}); }
     if (route === "election") { ensureEE(); if (S.election && readReady()) refreshMetaVerify().catch(() => {}); }
     if (route === "org" && !S.orgs && readReady()) loadOrgs().catch(() => {});
+    if (route === "card") queueCardRefresh();
     if (route === "create" && S.account && !S.orgs && readReady()) loadOrgs().catch(() => {});
   }
 
@@ -6037,6 +6447,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     const ib = box.querySelector(".ic-box");
     clear(ib); ib.appendChild(icon(ic));
     $("nextTitle").textContent = title; $("nextDesc").textContent = desc;
+    refreshCardInvite();
   }
 
   /* ----- ứng viên ở màn hình chi tiết ----- */
@@ -7597,6 +8008,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     $("btnScan").onclick = () => run("btnScan", "Đang quét…", async () => { await scanAll(false); });
     $("btnScan2").onclick = () => run("btnScan2", "Đang quét…", async () => { await scanAll(false); });
     $("btnCommit").onclick = () => run("btnCommit", "Đang xử lý…", doCommit);
+    wireCard();
     $("btnReveal").onclick = () => run("btnReveal", "Đang xử lý…", () => doReveal(false));
     $("btnManualReveal").onclick = () => run("btnManualReveal", "Đang xử lý…", () => doReveal(true));
     $("btnApprove").onclick = () => run("btnApprove", "Đang xử lý…", doApprove);
@@ -7673,6 +8085,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     updateButtons();
     renderVoteFlow();
     initPlatform().catch((e) => console.warn("initPlatform", e));
+    initCard().catch((e) => console.warn("initCard", e));
 
     // tự kết nối lại nếu ví đã cấp quyền trước đó và đúng mạng
     try {
@@ -7689,7 +8102,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   }
 
   window.addEventListener("DOMContentLoaded", init);
-  window.__votechain = { S, explain, commitmentOf, buildTree, verifyProof, parseAddresses, APP_ABI, sbWallet, sbGet, metadataHash, REG_ABI, loadOrgs }; // phục vụ kiểm thử
+  window.__votechain = { S, explain, commitmentOf, buildTree, verifyProof, parseAddresses, APP_ABI, sbWallet, sbGet, metadataHash, REG_ABI, loadOrgs, SBT_ABI, mascotSources, setSbtAddress, refreshCardView }; // phục vụ kiểm thử
 })();
 </script>
 </body>

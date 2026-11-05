@@ -103,3 +103,45 @@ describe("web/index.html khop voi ProjectCore (giao dien <-> hop dong)", functio
     });
   });
 });
+
+describe("web/index.html khop voi VoterCardSBT (the cu tri)", function () {
+  const ms = html.match(/\/\*SBT-ABI-START\*\/\s*const SBT_ABI = (\[[\s\S]*?\]);\s*\/\*SBT-ABI-END\*\//);
+  it("co khoi SBT_ABI", function () { expect(ms, "Khong tim thay khoi SBT_ABI").to.not.equal(null); });
+
+  it("moi ham/su kien/loi giao dien dung deu ton tai that, dung chu ky, kieu tra ve va mutability", async function () {
+    const real = new ethers.Interface((await artifacts.readArtifact("VoterCardSBT")).abi);
+    const app = new ethers.Interface(JSON.parse(ms[1]));
+    app.forEachFunction((f) => {
+      const r = real.getFunction(f.name);
+      expect(r, "thieu ham " + f.name).to.not.equal(null);
+      expect(r.format("sighash"), f.name).to.equal(f.format("sighash"));
+      expect(r.outputs.map((o) => o.type).join(","), "kieu tra ve " + f.name).to.equal(f.outputs.map((o) => o.type).join(","));
+      expect(r.stateMutability, "mutability " + f.name).to.equal(f.stateMutability);
+    });
+    app.forEachError((e) => expect(real.getError(e.name), "thieu loi " + e.name).to.not.equal(null));
+    app.forEachEvent((e) => {
+      const r = real.getEvent(e.name);
+      expect(r, "thieu su kien " + e.name).to.not.equal(null);
+      expect(r.format("sighash")).to.equal(e.format("sighash"));
+    });
+    // ten tra ve cua cardOf: giao dien doc theo ten
+    expect(app.getFunction("cardOf").outputs.map((o) => o.name)).to.deep.equal(real.getFunction("cardOf").outputs.map((o) => o.name));
+  });
+
+  it("moi loi cua VoterCardSBT deu duoc giao dien biet va co cau dich tieng Viet", async function () {
+    const real = new ethers.Interface((await artifacts.readArtifact("VoterCardSBT")).abi);
+    const app = new ethers.Interface(JSON.parse(ms[1]));
+    real.forEachError((e) => {
+      expect(app.getError(e.name), "SBT_ABI thieu loi " + e.name).to.not.equal(null);
+      expect(html, "ERR_VI thieu cau dich cho " + e.name).to.match(new RegExp("\\b" + e.name + ":\\s*[\"(]"));
+    });
+  });
+
+  it("8 anh mascot du phong ton tai va la PNG hop le", function () {
+    for (let i = 0; i < 8; i++) {
+      const f = path.join(__dirname, "..", "web", "mascots", i + ".png");
+      const b = fs.readFileSync(f);
+      expect(b.slice(0, 8).toString("hex"), f).to.equal("89504e470d0a1a0a");
+    }
+  });
+});

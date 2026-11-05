@@ -124,3 +124,7 @@ Kết quả bầu cử, phê duyệt và quyền hạn luôn đọc từ hợp �
 | 15–20 | Merkle, Commit–Reveal, salt, quorum, kết quả | `ProjectCore.test.js` C–H, Metadata D [15-20] |
 
 Kiểm thử thêm: kiểm soát quyền (platformAdmin không can thiệp được nội bộ), biên tham số, sai pha, reentrancy (không có chuyển ETH hay lời gọi ghi ra ngoài).
+
+## 9. Thẻ cử tri (Soulbound NFT)
+
+`VoterCardSBT` tách khỏi `ProjectCore` (không sửa lõi bỏ phiếu). Điều kiện nhận thẻ do hợp đồng kiểm tra qua `ProjectCore.hasRevealed(id, voter)`; `tokenId = (electionId << 160) | voter` nên mỗi ví chỉ một thẻ cho mỗi cuộc bầu cử; mọi thao tác chuyển nhượng/ủy quyền đều revert (ERC-5192). Thẻ chỉ lưu `electionId`, serial, ngày cấp, mascot; **không lưu lựa chọn hay salt**. Ảnh mascot lấy từ thư mục IPFS bất biến (cấu hình lúc deploy), hoặc emoji dựng trên chuỗi nếu không cấu hình. Nhận thẻ là tùy chọn, không ảnh hưởng tính hợp lệ của phiếu. Supabase không cần thay đổi. Xem `docs/SEPOLIA_DEPLOY_V2.md` mục 9.
