@@ -4295,6 +4295,23 @@ pre.code {
       <div class="card-head"><div><h3 id="omTitle">—</h3><div class="sub" id="omSub">—</div></div><div class="row tight" id="omAdmin"></div></div>
       <div id="omAlert"></div>
       <div id="omProfile" style="margin-top:12px"></div>
+      <div id="omEdit" class="card" style="margin-top:12px" hidden>
+        <div class="card-head"><div><h4>Chỉnh sửa hồ sơ tổ chức</h4></div></div>
+        <div class="grid g2">
+          <div class="field"><label class="f" for="eName">Tên tổ chức</label><input id="eName" type="text" maxlength="64"></div>
+          <div class="field"><label class="f" for="eType">Loại</label><select id="eType"><option value="class">Lớp</option><option value="club">Câu lạc bộ</option><option value="faculty">Khoa</option><option value="university">Trường</option><option value="student_union">Đoàn/Hội</option><option value="community">Cộng đồng</option><option value="other">Khác</option></select></div>
+        </div>
+        <div class="field"><label class="f" for="eDesc">Giới thiệu, mục đích hoạt động</label><textarea id="eDesc" style="font-family:var(--sans);min-height:84px" maxlength="1000"></textarea></div>
+        <div class="grid g2">
+          <div class="field" id="eAffilF"><label class="f" for="eAffil">Đơn vị chủ quản / trực thuộc</label><input id="eAffil" type="text" maxlength="120"></div>
+          <div class="field"><label class="f" for="eYear">Năm thành lập</label><input id="eYear" type="number" min="1900" max="2100" step="1"></div>
+          <div class="field"><label class="f" for="eEmail">Email liên hệ</label><input id="eEmail" type="email" maxlength="120"></div>
+          <div class="field" id="eWebF"><label class="f" for="eWeb">Website / Facebook</label><input id="eWeb" type="text" maxlength="200" placeholder="https://…"></div>
+        </div>
+        <div class="help" style="margin:-4px 0 12px">Lưu sẽ gửi một giao dịch ghi tên và hash hồ sơ mới lên chuỗi, rồi lưu nội dung lên Supabase. Email và website là <b>công khai</b>.</div>
+        <div id="eStatus" class="small muted" style="margin-bottom:8px"></div>
+        <div class="row"><button id="btnOrgEditSave" class="btn primary sm">Lưu lên chuỗi</button><button id="btnOrgEditCancel" class="btn soft sm">Hủy</button></div>
+      </div>
       <div class="grid g2" style="align-items:start;margin-top:12px">
         <div>
           <h4 style="margin:0 0 8px">Thành viên</h4>
@@ -7798,6 +7815,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       id, owner: ethers.getAddress(v.owner), status: Number(v.status), name: v.name, infoHash: v.infoHash, members: Number(v.memberCount), approvers: Number(v.approverCount),
       memberList: Array.from(m.addrs).map((a, i) => ({ addr: ethers.getAddress(a), role: Number(m.roles[i]) })), approverList: Array.from(ap).map(ethers.getAddress), role,
     };
+    if (S.orgPick && S.orgPick.id !== id && $("omEdit")) $("omEdit").hidden = true;
     S.orgPick = o;
     $("orgManage").classList.remove("hidden");
     renderOrgManage();
@@ -7872,22 +7890,23 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   const orgDraftKey = (id) => "votechain:orgprofile:" + id + ":" + lc(S.account || "");
   /** Một số loại tổ chức không cần mọi trường (VD: lớp học không có đơn vị chủ quản, website). Trường bị ẩn luôn rỗng trong hồ sơ. */
   const ORG_HIDE = { class: ["oAffil", "oWeb"] };
-  function syncOrgFormFields() {
-    const hide = ORG_HIDE[$("oType").value] || [];
-    ["oAffil", "oWeb"].forEach((id) => { const off = hide.includes(id); $(id + "F").hidden = off; if (off) $(id).value = ""; });
+  function syncOrgFormFields(p = "o") {
+    const hide = ORG_HIDE[$(p + "Type").value] || [];
+    ["Affil", "Web"].forEach((k) => { const off = hide.includes("o" + k); $(p + k + "F").hidden = off; if (off) $(p + k).value = ""; });
   }
-  function readOrgForm() {
-    syncOrgFormFields();
-    const name = $("oName").value.trim();
+  function readOrgForm(p = "o") {
+    syncOrgFormFields(p);
+    const $o = (k) => $(p + k);
+    const name = $o("Name").value.trim();
     if (!name || utf8Len(name) > 64) throw new UserError("Tên tổ chức phải dài 1–64 byte.");
-    const email = $("oEmail").value.trim(), web = $("oWeb").value.trim(), yr = $("oYear").value.trim();
+    const email = $o("Email").value.trim(), web = $o("Web").value.trim(), yr = $o("Year").value.trim();
     if (email && !/^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(email)) throw new UserError("Email liên hệ không hợp lệ.");
     if (web && !/^https:\/\/[^\s"'<>]{3,190}$/.test(web)) throw new UserError("Website / Facebook phải bắt đầu bằng https://");
     let year = null;
     if (yr) { year = Number(yr); if (!Number.isInteger(year) || year < 1900 || year > 2100) throw new UserError("Năm thành lập không hợp lệ (1900–2100)."); }
-    const desc = $("oDesc").value.trim();
+    const desc = $o("Desc").value.trim();
     if (desc.length > 1000) throw new UserError("Giới thiệu tối đa 1000 ký tự.");
-    return mkOrgProfile({ name, organizationType: $("oType").value, description: desc, affiliation: $("oAffil").value.trim().slice(0, 120), contactEmail: email, website: web, foundedYear: year });
+    return mkOrgProfile({ name, organizationType: $o("Type").value, description: desc, affiliation: $o("Affil").value.trim().slice(0, 120), contactEmail: email, website: web, foundedYear: year });
   }
   async function doOrgRegister() {
     const profile = readOrgForm();
@@ -7906,18 +7925,24 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   }
 
   /** Lưu hồ sơ đã băm lúc đăng ký lên Supabase (qua hàm save_organization_profile) khi tổ chức đã được chain-sync đồng bộ. */
-  async function applyOrgProfile(id) {
+  async function applyOrgProfile(id, onchainHash) {
     const raw = LS.get(orgDraftKey(id));
     if (!raw || !sbConfigured()) return "none";
     let profile; try { profile = JSON.parse(raw); } catch (_) { LS.del(orgDraftKey(id)); return "none"; }
+    // onchainHash (khi đã biết): chỉ ghi bản nháp đúng hash đang có trên chuỗi; bản nháp lệch hash bị bỏ
+    if (onchainHash && lc(metadataHash(profile)) !== lc(onchainHash)) { LS.del(orgDraftKey(id)); return "none"; }
     const row = await sbOrgUuid(id);
     if (!row) return "wait";
-    if (row.profile) { LS.del(orgDraftKey(id)); return "done"; }
+    const stored = row.profile && typeof row.profile === "object" ? row.profile : null;
+    if (stored && (!onchainHash || lc(metadataHash(stored)) === lc(onchainHash))) { LS.del(orgDraftKey(id)); return "done"; }
     if (!sbActive()) return "login";
-    const r = await sbRaw(CONFIG.SUPABASE_URL + "/rest/v1/rpc/save_organization_profile", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ p_org: row.id, p_profile: profile }) });
-    if (!r.ok) throw new UserError("Lưu hồ sơ tổ chức thất bại (" + r.status + ")" + (sbMsg(r) ? ": " + sbMsg(r) : "."));
+    await postOrgProfile(row, profile);
     LS.del(orgDraftKey(id));
     return "saved";
+  }
+  async function postOrgProfile(row, profile) {
+    const r = await sbRaw(CONFIG.SUPABASE_URL + "/rest/v1/rpc/save_organization_profile", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ p_org: row.id, p_profile: profile }) });
+    if (!r.ok) throw new UserError("Lưu hồ sơ tổ chức thất bại (" + r.status + ")" + (sbMsg(r) ? ": " + sbMsg(r) : "."));
   }
   async function pollOrgProfile(id) {
     const st = $("oRegStatus");
@@ -7933,6 +7958,29 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     st.textContent = "Hồ sơ tổ chức #" + id + " sẽ tự lưu khi bạn mở lại trang Tổ chức sau khi chain-sync đồng bộ.";
   }
 
+  /** Manager của tổ chức đã xác minh sửa hồ sơ: ghi tên + hash mới lên chuỗi (updateOrganization), rồi lưu nội dung lên Supabase. */
+  function openOrgEdit(o, p) {
+    const q = p || {};
+    $("eName").value = o.name; $("eType").value = q.organizationType || "other"; $("eDesc").value = q.description || "";
+    $("eAffil").value = q.affiliation || ""; $("eYear").value = Number.isInteger(q.foundedYear) ? q.foundedYear : ""; $("eEmail").value = q.contactEmail || ""; $("eWeb").value = q.website || "";
+    syncOrgFormFields("e"); $("eStatus").textContent = ""; $("omEdit").hidden = false;
+    $("omEdit").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+  async function doOrgEdit() {
+    const o = S.orgPick;
+    if (!o || o.role !== 3 || o.status !== 2) throw new UserError("Chỉ Manager của tổ chức đã xác minh mới sửa được hồ sơ.");
+    const profile = readOrgForm("e");
+    const infoHash = metadataHash(profile);
+    if (lc(infoHash) === lc(o.infoHash) && profile.name === o.name) throw new UserError("Chưa có thay đổi nào so với hồ sơ trên chuỗi.");
+    await ensureLogin();   // đăng nhập dữ liệu trước để cửa sổ ký của ví hiện đúng lúc
+    await regTx("Cập nhật hồ sơ tổ chức #" + o.id, "updateOrganization", [o.id, profile.name, infoHash]);
+    LS.set(orgDraftKey(o.id), JSON.stringify(profile));   // giữ bản chờ lưu nếu bước Supabase lỗi; lần mở trang sau tự thử lại
+    $("omEdit").hidden = true;
+    toast("ok", "Đã ghi hash hồ sơ mới lên chuỗi.");
+    await pickOrg(o.id);
+    await loadOrgs();
+  }
+
   /** Thẻ "Hồ sơ tổ chức": nội dung từ Supabase, băm lại trong trình duyệt và so với infoHash trên chuỗi. */
   function renderOrgProfile(o, row) {
     const box = $("omProfile"); if (!box) return;
@@ -7941,6 +7989,9 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     const head = el("div", "card-head"); const hd = el("div"); hd.appendChild(el("h4", "", "Hồ sơ tổ chức")); head.appendChild(hd);
     card.appendChild(head);
     const p = row && row.profile && typeof row.profile === "object" ? row.profile : null;
+    if (o.role === 3 && o.status === 2 && sbConfigured()) {
+      const eb = el("button", "btn soft sm", "Chỉnh sửa hồ sơ"); eb.id = "btnOrgEdit"; eb.onclick = () => openOrgEdit(o, p); head.appendChild(eb);
+    }
     if (!p) {
       const pend = LS.get(orgDraftKey(o.id));
       card.appendChild(el("div", "small muted", pend ? "Hồ sơ đã băm lên chuỗi, đang chờ lưu lên Supabase (chain-sync đồng bộ xong sẽ tự lưu)." : "Tổ chức này chưa có hồ sơ chi tiết (đăng ký chỉ gồm tên và loại)."));
@@ -7990,7 +8041,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     try { row = sbConfigured() ? await sbOrgUuid(o.id) : null; } catch (e) { box.textContent = "Không đọc được Supabase: " + explain(e); return; }
     S.orgMirror = row;
     renderOrgProfile(o, row);
-    if (row && !row.profile && LS.get(orgDraftKey(o.id)) && sbActive()) { applyOrgProfile(o.id).then((r) => { if (r === "saved") { toast("ok", "Đã lưu hồ sơ tổ chức lên Supabase."); loadOrgMirror(o).catch(() => {}); } }).catch((e) => toast("err", explain(e))); }
+    if (row && LS.get(orgDraftKey(o.id)) && sbActive()) { applyOrgProfile(o.id, o.infoHash).then((r) => { if (r === "saved") { toast("ok", "Đã lưu hồ sơ tổ chức lên Supabase."); loadOrgMirror(o).catch(() => {}); } }).catch((e) => toast("err", explain(e))); }
     if (!row) { box.textContent = "Tổ chức chưa được đồng bộ sang Supabase (chain-sync chưa chạy hoặc chưa tới lượt). Chưa lưu được mô tả và logo."; return; }
     box.textContent = "Đã đồng bộ" + (row.synced_at ? " lúc " + new Date(row.synced_at).toLocaleString("vi-VN") : "") + ".";
     $("oiType").value = row.organization_type || "other";
@@ -8327,7 +8378,10 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   function wirePlatform2() {
     $("btnSbLogin").onclick = async () => { await run("btnSbLogin", "Đang đăng nhập…", async () => { if (sbActive()) sbLogout(); else await sbLogin(); }); renderLoginState(); };
     $("btnOrgReload").onclick = () => run("btnOrgReload", "Đang tải…", async () => { await loadOrgs(); if (S.orgPick) await pickOrg(S.orgPick.id); });
-    $("oType").onchange = syncOrgFormFields; syncOrgFormFields();
+    $("oType").onchange = () => syncOrgFormFields("o"); syncOrgFormFields("o");
+    $("eType").onchange = () => syncOrgFormFields("e");
+    $("btnOrgEditSave").onclick = () => run("btnOrgEditSave", "Đang lưu…", doOrgEdit);
+    $("btnOrgEditCancel").onclick = () => { $("omEdit").hidden = true; };
     $("btnOrgRegister").onclick = () => run("btnOrgRegister", "Đang gửi…", doOrgRegister);
     $("btnAddMember").onclick = () => run("btnAddMember", "Đang gửi…", doAddMember);
     $("btnAddApprover").onclick = () => run("btnAddApprover", "Đang gửi…", doAddApprover);
@@ -8471,7 +8525,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   }
 
   window.addEventListener("DOMContentLoaded", init);
-  window.__votechain = { S, explain, commitmentOf, buildTree, verifyProof, parseAddresses, APP_ABI, sbWallet, sbGet, metadataHash, REG_ABI, loadOrgs, SBT_ABI, mascotSources, setSbtAddress, refreshCardView, SB, readOrgForm }; // phục vụ kiểm thử
+  window.__votechain = { S, explain, commitmentOf, buildTree, verifyProof, parseAddresses, APP_ABI, sbWallet, sbGet, metadataHash, REG_ABI, loadOrgs, SBT_ABI, mascotSources, setSbtAddress, refreshCardView, SB, readOrgForm, pickOrg }; // phục vụ kiểm thử
 })();
 </script>
 </body>

@@ -196,6 +196,35 @@ async function sbHandler(route) {
   // ----- 5. luu lan hai khi Pending bi tu choi o phia may chu (mock theo dung luat cua ham SQL) -----
   const r2 = await po.evaluate(async (pid) => { const r = await fetch("https://vfzuniykinaivchhuiul.supabase.co/rest/v1/rpc/save_organization_profile", { method: "POST", headers: { apikey: "sb_publishable_EDmldUtxLGO4J5EvAE0DHQ__RVMvuYu", "content-type": "application/json", authorization: "Bearer " + window.__votechain.SB.session.access_token }, body: JSON.stringify({ p_org: pid, p_profile: { schema: "votechain.organization.v1" } }) }); return r.status; }, "11111111-1111-1111-1111-111111111111").catch(() => 0);
   check("luu lan hai khi Pending bi tu choi (400)", r2 === 400 || r2 === 0, String(r2));
+  // ----- 6. to chuc da xac minh: Manager sua ho so (updateOrganization + RPC); vi khong phai Manager khong thay nut -----
+  mock.orgRows["1"].profile = mock.rpc[0].profile;   // khoi phuc noi dung that sau buoc 4
+  await registry.connect(admin).verifyOrganization(1); mock.orgRows["1"].verification_status = "Verified";
+  await po.click("#btnOrgReload"); await po.waitForTimeout(300); await idle(po);
+  await po.waitForSelector("#btnOrgEdit", { timeout: 15000 });
+  check("Manager cua to chuc da xac minh thay nut Chinh sua ho so", (await po.locator("#btnOrgEdit").count()) === 1);
+  await po.click("#btnOrgEdit");
+  check("form sua duoc dien san tu ho so hien tai", (await po.inputValue("#eName")) === form.name && (await po.inputValue("#eDesc")) === form.desc && (await po.inputValue("#eEmail")) === form.email && (await po.inputValue("#eYear")) === "2019");
+  await po.click("#btnOrgEditSave"); await po.waitForTimeout(400); await idle(po);
+  check("khong thay doi gi: bi chan, khong gui giao dich", /Chưa có thay đổi/.test(await toasts(po)));
+  await po.fill("#eEmail", "sai-email"); await po.click("#btnOrgEditSave"); await po.waitForTimeout(400); await idle(po);
+  check("email sai o form sua: bi chan", /Email liên hệ không hợp lệ/.test(await toasts(po)));
+  const rpcBefore = mock.rpc.length;
+  await po.fill("#eEmail", "moi@example.vn"); await po.fill("#eDesc", "Mo ta da cap nhat."); await po.fill("#eName", "CLB Blockchain Hue");
+  await po.click("#btnOrgEditSave");
+  await po.waitForFunction(() => window.__votechain.S.orgPick && window.__votechain.S.orgPick.name === "CLB Blockchain Hue", null, { timeout: 30000 });
+  const newProf = meta.organizationMetadata({ name: "CLB Blockchain Hue", organizationType: "club", description: "Mo ta da cap nhat.", affiliation: form.affil, contactEmail: "moi@example.vn", website: form.web, foundedYear: 2019 });
+  const o1b = await registry.getOrganization(1);
+  check("tren chuoi: ten va infoHash moi = hash cua ho so moi", o1b.name === "CLB Blockchain Hue" && o1b.infoHash === meta.metadataHash(newProf));
+  await po.waitForFunction((n) => window.__votechain.S.orgMirror && window.__votechain.S.orgMirror.profile && window.__votechain.S.orgMirror.profile.description === "Mo ta da cap nhat." && /Khớp hash trên chuỗi/.test(document.querySelector("#omProfile").textContent), null, { timeout: 30000 }).catch(() => {});
+  check("RPC duoc goi them dung 1 lan voi ho so moi", mock.rpc.length === rpcBefore + 1 && meta.metadataHash(mock.rpc[mock.rpc.length - 1].profile) === o1b.infoHash);
+  check("sau khi sua: the ho so hien noi dung moi va 'Khop hash'", /Mo ta da cap nhat\./.test(await po.textContent("#omProfile")) && /Khớp hash trên chuỗi/.test(await po.textContent("#omProfile")) && (await po.evaluate(() => document.getElementById("omEdit").hidden)));
+  check("ban cho luu da duoc xoa", (await po.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("votechain:orgprofile:")).length)) === 0);
+  await shot(po, "org_edit");
+  const pv = await open(5, { route: "org" });
+  await pv.waitForFunction(() => window.__votechain.S.orgs !== null && window.__votechain.S.orgs !== undefined, null, { timeout: 15000 });
+  await pv.evaluate(() => window.__votechain.pickOrg && window.__votechain.pickOrg(1)).catch(() => {});
+  await pv.waitForTimeout(1500);
+  check("vi khong phai Manager khong co nut Chinh sua", (await pv.locator("#btnOrgEdit").count()) === 0);
   await browser.close();
   for (let i = log.length - 1; i >= 0; i--) if (/^CONSOLE\.ERR UserError/.test(log[i])) log.splice(i, 1);   // loi du kien (kiem tra chan du lieu sai)
   console.log(log.join("\n"));
