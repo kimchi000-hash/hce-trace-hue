@@ -6322,7 +6322,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     $("ctxBar").classList.toggle("hidden", !(CTX_ROUTES.includes(route) && S.election));
     window.scrollTo(0, 0);
     if (route === "log" && !S.events && readReady() && S.election) loadLogs().catch(() => {});
-    if (route === "approve") { renderPending(); if (S.election && readReady()) refreshMetaVerify().catch(() => {}); }
+    if (route === "approve") { renderPending(); autoFocusPending(); }
     if (route === "election") { ensureEE(); if (S.election && readReady()) refreshMetaVerify().catch(() => {}); }
     if (route === "org" && !S.orgs && readReady()) loadOrgs().catch(() => {});
     if (route === "vote" && S.election && readReady() && !(S.metaVerify && String(S.metaVerify.id) === String(S.election.id))) refreshMetaVerify().catch(() => {});
@@ -6385,6 +6385,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       renderDashboard();
       renderElectionsList();
       renderPending();
+      if (S.route === "approve") autoFocusPending();
       loadFeed().catch(() => {});
     } catch (e) {
       if (!quiet) toast("err", "Không quét được dữ liệu hợp đồng: " + explain(e));
@@ -6477,6 +6478,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     }
     for (const s of pend) {
       const tr = el("tr");
+      if (S.election && String(S.election.id) === String(s.id)) tr.style.background = "var(--teal-50, rgba(13,148,136,.08))";
       const c1 = el("td"); c1.appendChild(el("div", "", s.title)); c1.firstChild.style.fontWeight = "650"; c1.appendChild(el("div", "tiny faint", "#" + s.id)); tr.appendChild(c1);
       const c2 = el("td"); c2.appendChild(addrEl(s.admin)); tr.appendChild(c2);
       const c3 = el("td"); c3.appendChild(el("b", "", s.approvalCount + "/" + s.requiredApprovals + (s.rejectCount ? " · " + s.rejectCount + " từ chối" : "")));
@@ -6510,10 +6512,39 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
         w.onclick = () => run(w.id, "Đang gửi…", () => doWithdraw(s.id));
         row.appendChild(w);
       }
+      const v = el("button", "btn soft sm", "Xem hồ sơ"); v.id = "view-" + s.id;
+      v.onclick = () => run(v.id, "Đang tải…", () => focusPending(s.id));
+      row.appendChild(v);
       const d = el("button", "btn ghost sm", "Chi tiết"); d.onclick = () => openElection(s.id, "election");
       row.appendChild(d); c6.appendChild(row); tr.appendChild(c6);
       body.appendChild(tr);
     }
+  }
+
+  /** Trang Phê duyệt: tải cuộc được chọn (không chuyển trang) để khối xác thực và ứng viên hiển thị đúng cuộc đó. */
+  async function focusPending(id) {
+    if (S.election && String(S.election.id) === String(id)) {
+      if (!(S.metaVerify && String(S.metaVerify.id) === String(id)) && readReady()) await refreshMetaVerify();
+      renderPending();
+      return;
+    }
+    $("electionId").value = String(id);
+    try { await loadElection(true); renderPending(); if (readReady()) await refreshMetaVerify(); }
+    catch (e) { toast("err", explain(e)); }
+  }
+  /** Vào trang Phê duyệt mà cuộc đang chọn không nằm trong danh sách chờ duyệt thì tự chọn cuộc đáng chú ý nhất. */
+  function autoFocusPending() {
+    if (!S.all || !readReady() || S.focusBusy) return;
+    const pend = S.all.filter((x) => x.reqStatus === 0 || x.reqStatus === 4);
+    if (!pend.length) { if (S.election) refreshMetaVerify().catch(() => {}); return; }
+    if (S.election && pend.some((x) => String(x.id) === String(S.election.id))) {
+      if (!(S.metaVerify && String(S.metaVerify.id) === String(S.election.id))) refreshMetaVerify().catch(() => {});
+      return;
+    }
+    const mine = pend.find((x) => x.reqStatus === 0 && x.isApprover && !x.hasApproved && !x.hasRejected);
+    const pick = mine || pend[0];
+    S.focusBusy = true;
+    focusPending(pick.id).finally(() => { S.focusBusy = false; });
   }
 
   async function approveById(id) {
@@ -7411,6 +7442,9 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     if (!box) return;
     clear(box);
     if (!e) { box.appendChild(el("div", "small muted", "Chọn một cuộc bầu cử để xem ứng viên.")); return; }
+    const lead = el("div", "small"); lead.style.marginBottom = "10px";
+    lead.appendChild(el("b", "", "Cuộc #" + e.id + " · " + e.title));
+    box.appendChild(lead);
     const grid = el("div", "cgrid");
     e.candidates.forEach((name, i) => {
       const c = candMeta(e.id, i);
