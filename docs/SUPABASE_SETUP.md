@@ -119,7 +119,7 @@ Mỗi 1 phút `POST https://vfzuniykinaivchhuiul.supabase.co/functions/v1/chain-
 
 Tài liệu Supabase xác nhận: tải lên chỉ cần quyền `INSERT`; ghi đè (`upsert`) cần thêm `SELECT` và `UPDATE`; ví dụ chính thức so `owner_id` với `auth.jwt()->>'sub'` (policy xóa của ta dùng đúng biểu thức này). **Không** tìm thấy tài liệu nào mô tả chính xác cách Storage API điền `owner_id`, hay câu SQL mà `move`/`copy`/`remove` thực thi. Vì vậy phần này đã được thử bằng PostgreSQL với bảng `storage.objects` giả lập, và **phải thử lại bằng thao tác thật** (Phần G).
 
-## Phần G. Thử Storage thật (sau khi có đăng nhập ở Giai đoạn 5, hoặc bằng supabase-js trong console)
+## Phần G. Thử Storage thật (giao diện Giai đoạn 5 đã có đăng nhập: dùng mục Tổ chức → Logo, hoặc Tạo cuộc bầu cử → Ảnh bìa)
 
 Với phiên đăng nhập của một Manager đã `Verified`:
 1. Tải `1/logo/0x<64 hex>.png` (đúng tổ chức) → thành công. Thử `2/logo/…` (tổ chức khác), `1/logo/abc.png`, `1/logo/0x….svg` → đều bị từ chối.
@@ -138,4 +138,20 @@ npm run test:supabase:pg               # 7 test truy cập ĐỒNG THỜI trên 
 ```
 Test đồng thời chạy mỗi tình huống 3 bản (hàm thật; hàm thật + `pg_sleep` kéo dài khe race; hàm bỏ khóa + `pg_sleep`) và đòi bản cuối **phải vượt** giới hạn, để chứng minh test đủ nhạy bắt lỗi.
 
-**Chưa kiểm thử được ở môi trường này** (phải tự kiểm trên Supabase thật, theo Phần A.5, D, G): `Deno.serve` và API `auth.admin.createUser/generateLink`, `verifyOtp`, PostgREST thật, RPC Sepolia thật, giới hạn dung lượng/MIME và hành vi `owner_id` của Storage API thật. PostgreSQL trong test là bản thật (14+), nhưng schema `auth` và `storage` được giả lập tối thiểu. Máy chủ này không truy cập được `supabase.co` nên chưa xác nhận được dự án đang hoạt động.
+**Chưa kiểm thử được ở môi trường này** (phải tự kiểm trên Supabase thật, theo Phần A.5, D, G): `Deno.serve` và API `auth.admin.createUser/generateLink`, `verifyOtp`, PostgREST thật, RPC Sepolia thật, giới hạn dung lượng/MIME và hành vi `owner_id` của Storage API thật. PostgreSQL trong test là bản thật (14+), nhưng schema `auth` và `storage` được giả lập tối thiểu. Máy chủ kiểm thử không truy cập được `supabase.co`; việc hai hàm đã chạy trên dự án thật được xác nhận bằng lệnh bạn chạy ở Phần D.
+
+## Phần H. Chạy giao diện `web/index.html` với Supabase
+
+1. **Phải mở trang bằng máy chủ, không mở file trực tiếp** (file:// không có origin nên bị chặn). Trong thư mục dự án:
+   ```powershell
+   python -m http.server 8080 --directory web
+   ```
+   rồi mở `http://localhost:8080`. Địa chỉ này phải **trùng** `SITE_DOMAIN` (`localhost:8080`) và nằm trong `ALLOWED_ORIGINS` ở bước secrets (Phần C). Khi đưa lên tên miền thật, đổi cả hai secret rồi deploy lại `wallet-auth`.
+2. Mở `web/index.html?contract=<địa chỉ ProjectCore>&chain=11155111` (hoặc dán địa chỉ vào ô trên trang). Giao diện tự đọc địa chỉ `OrganizationRegistry` từ `ProjectCore.registry()`, **chỉ cần một địa chỉ**.
+3. Trong `index.html` chỉ có URL dự án và khóa **publishable** (công khai). Không bao giờ dán `service_role` hay secret key vào file này.
+4. Nút **Đăng nhập dữ liệu** (trên cùng) yêu cầu ký một thông điệp, không tốn gas. Giao diện kiểm tra thông điệp đúng ví, nonce và chainId rồi mới cho ký. Phiên đăng nhập chỉ lưu trong tab (sessionStorage) và gắn với đúng ví đang kết nối.
+5. Tệp tải lên (logo, ảnh bìa, ảnh ứng viên) nằm ở kho **công khai** và không thu hồi được. Giao diện có cảnh báo ngay cạnh nút gửi.
+6. Nội dung chỉ được **xác thực** khi `chain-sync` đã đồng bộ (cần Giai đoạn 6: địa chỉ hợp đồng, `RPC_URL`, cron). Trước đó, tổ chức chưa có trong Supabase nên chưa lưu được bản nháp; hãy bỏ chọn “Lưu nội dung” và giữ file metadata (JSON) tải về.
+
+**Kiểm thử giao diện:** `scripts/e2e/phase5_ui.js` (Hardhat cục bộ + Playwright, 51 kiểm tra) chạy toàn bộ luồng tổ chức, tạo cuộc bầu cử, duyệt/từ chối/rút/hết hạn, xác thực hash và bỏ phiếu. **Supabase trong script này là giả lập**, nên nó chỉ chứng minh giao diện nói đúng giao thức, không chứng minh Supabase thật chấp nhận (CORS, `verifyOtp`, Storage, PostgREST).
+

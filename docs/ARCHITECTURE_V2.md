@@ -1,6 +1,6 @@
 # VoteChain v2: kiến trúc tổ chức, chống spam và metadata hash
 
-Tài liệu thiết kế cho nâng cấp "nền tảng bầu cử nội bộ nhiều tổ chức". Trạng thái: **Giai đoạn 3 (hợp đồng) và 4 (Supabase: migration, RLS, Storage, Edge Function) đã viết và kiểm thử cục bộ**; Giai đoạn 5 (giao diện) chưa làm; chưa deploy Sepolia. Hướng dẫn Supabase: `docs/SUPABASE_SETUP.md`.
+Tài liệu thiết kế cho nâng cấp "nền tảng bầu cử nội bộ nhiều tổ chức". Trạng thái: **Giai đoạn 3 (hợp đồng) và 4 (Supabase: migration, RLS, Storage, Edge Function) đã viết và kiểm thử cục bộ**; Giai đoạn 5 (giao diện `web/index.html`: tổ chức, tạo/duyệt cuộc bầu cử theo ABI mới, đăng nhập ví, xác thực hash) đã làm và kiểm thử với Hardhat cục bộ; chưa deploy Sepolia. Hướng dẫn Supabase: `docs/SUPABASE_SETUP.md`.
 
 ## 1. Hai hợp đồng, một ranh giới rõ
 

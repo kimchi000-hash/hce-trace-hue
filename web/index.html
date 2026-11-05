@@ -3470,6 +3470,7 @@ pre.code {
   <nav class="nav" aria-label="Chức năng">
     <button class="nav-item" data-route="dashboard"><svg class="ic"><use href="#i-dashboard"/></svg>Dashboard</button>
     <button class="nav-item" data-route="elections"><svg class="ic"><use href="#i-list"/></svg>Bầu cử</button>
+    <button class="nav-item" data-route="org"><svg class="ic"><use href="#i-users"/></svg>Tổ chức</button>
     <button class="nav-item" data-route="vote"><svg class="ic"><use href="#i-vote"/></svg>Bỏ phiếu</button>
     <button class="nav-item" data-route="create"><svg class="ic"><use href="#i-plus-circle"/></svg>Tạo cuộc bầu cử</button>
     <button class="nav-item" data-route="approve"><svg class="ic"><use href="#i-badge-check"/></svg>Phê duyệt<span id="navBadgeApprove" class="count hidden">0</span></button>
@@ -3512,6 +3513,7 @@ pre.code {
   <span class="grow"></span>
   <span id="netPill" class="chip hide-sm" title="Mạng blockchain"><span class="dot"></span><span id="netText">Chưa kết nối</span></span>
   <span id="accountChip" class="chip ok mono hidden" title=""><svg class="ic sm"><use href="#i-wallet"/></svg><span id="accountText"></span></span>
+  <button id="btnSbLogin" class="btn outline sm hidden">Đăng nhập dữ liệu</button>
   <button id="btnConnect" class="btn primary sm"><svg class="ic sm"><use href="#i-wallet"/></svg>Kết nối MetaMask</button>
 </header>
 
@@ -3923,6 +3925,11 @@ pre.code {
       </div>
     </div>
 
+    <div class="card" style="margin-top:16px">
+      <div class="card-head"><div><h3><svg class="ic"><use href="#i-hash"/></svg>Nội dung đã xác thực với chuỗi</h3><div class="sub">Mô tả và hồ sơ ứng viên lấy từ Supabase, được băm lại trong trình duyệt và so với hash trên chuỗi.</div></div></div>
+      <div id="eeMeta"><div class="small muted">Chưa tải.</div></div>
+    </div>
+
     <!-- hồ sơ giới thiệu (off-chain) -->
     <div class="card" style="margin-top:16px" id="metaCard">
       <div class="card-head">
@@ -4082,45 +4089,127 @@ pre.code {
 </section>
 
 <!-- =====================================================================
+     VIEW: TỔ CHỨC
+     ===================================================================== -->
+<section class="view" id="view-org" data-title="Tổ chức" hidden>
+  <div class="page-head">
+    <div>
+      <h1>Tổ chức</h1>
+      <p>Mỗi cuộc bầu cử thuộc một tổ chức. Tổ chức mới ở trạng thái <b>Chờ xác minh</b> cho đến khi quản trị nền tảng xác minh. Vai trò: Member (thành viên), Proposer (được đề xuất cuộc bầu cử), Manager (quản lý thành viên và người duyệt).</p>
+    </div>
+    <div class="row"><button id="btnOrgReload" class="btn outline sm"><svg class="ic sm"><use href="#i-refresh"/></svg>Tải lại</button></div>
+  </div>
+
+  <div class="grid g2" style="align-items:start">
+    <div class="card">
+      <div class="card-head"><div><h3><svg class="ic"><use href="#i-list"/></svg>Danh sách tổ chức</h3><div class="sub" id="orgInfo">—</div></div></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Tổ chức</th><th>Trạng thái</th><th>Vai trò của bạn</th><th></th></tr></thead>
+        <tbody id="orgRows"><tr class="empty"><td colspan="4">Chưa tải dữ liệu.</td></tr></tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div><h3><svg class="ic"><use href="#i-plus-circle"/></svg>Đăng ký tổ chức mới</h3><div class="sub">Ví đăng ký trở thành chủ sở hữu và Manager.</div></div></div>
+      <div class="field"><label class="f" for="oName">Tên tổ chức</label><input id="oName" type="text" maxlength="64"><div class="help">1–64 byte, công khai trên chuỗi.</div></div>
+      <div class="field"><label class="f" for="oType">Loại</label><select id="oType">
+        <option value="class">Lớp</option><option value="club">Câu lạc bộ</option><option value="faculty">Khoa</option><option value="university">Trường</option><option value="student_union">Đoàn/Hội</option><option value="community">Cộng đồng</option><option value="other">Khác</option></select></div>
+      <button id="btnOrgRegister" class="btn primary"><svg class="ic sm"><use href="#i-send"/></svg>Đăng ký tổ chức</button>
+    </div>
+  </div>
+
+  <div id="orgManage" class="hidden" style="margin-top:16px">
+    <div class="card">
+      <div class="card-head"><div><h3 id="omTitle">—</h3><div class="sub" id="omSub">—</div></div><div class="row tight" id="omAdmin"></div></div>
+      <div id="omAlert"></div>
+      <div class="grid g2" style="align-items:start;margin-top:12px">
+        <div>
+          <h4 style="margin:0 0 8px">Thành viên</h4>
+          <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Ví</th><th>Vai trò</th><th></th></tr></thead><tbody id="omMembers"></tbody></table></div>
+          <div id="omMemberForm" style="margin-top:12px">
+            <div class="field"><label class="f" for="mAddr">Ví thành viên</label><input id="mAddr" type="text" placeholder="0x…" spellcheck="false"></div>
+            <div class="row"><select id="mRole"><option value="1">Member</option><option value="2" selected>Proposer</option><option value="3">Manager</option></select>
+              <button id="btnAddMember" class="btn soft sm">Thêm / đổi vai trò</button></div>
+          </div>
+        </div>
+        <div>
+          <h4 style="margin:0 0 8px">Người duyệt <span class="small muted" id="omThreshold"></span></h4>
+          <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Ví</th><th></th></tr></thead><tbody id="omApprovers"></tbody></table></div>
+          <div id="omApproverForm" style="margin-top:12px">
+            <div class="field"><label class="f" for="apAddr">Ví người duyệt</label><input id="apAddr" type="text" placeholder="0x…" spellcheck="false"><div class="help">Phải là thành viên. Cần 2–10 người duyệt; ngưỡng ký = 2/3 làm tròn lên.</div></div>
+            <div class="row"><button id="btnAddApprover" class="btn soft sm">Thêm người duyệt</button></div>
+          </div>
+        </div>
+      </div>
+      <div id="omInfoBox" style="margin-top:18px">
+        <h4 style="margin:0 0 8px">Thông tin hiển thị (Supabase)</h4>
+        <div class="small muted" id="omSync" style="margin-bottom:8px">—</div>
+        <div class="grid g2">
+          <div class="field" style="margin:0"><label class="f" for="oiType">Loại</label><select id="oiType"><option value="class">Lớp</option><option value="club">Câu lạc bộ</option><option value="faculty">Khoa</option><option value="university">Trường</option><option value="student_union">Đoàn/Hội</option><option value="community">Cộng đồng</option><option value="other">Khác</option></select></div>
+          <div class="field" style="margin:0"><label class="f" for="oiLogo">Logo (tùy chọn)</label><input id="oiLogo" type="file" accept="image/png,image/jpeg,image/webp"><div class="help">Tối đa 2 MB. Logo là công khai.</div></div>
+        </div>
+        <div class="field" style="margin-top:12px"><label class="f" for="oiDesc">Mô tả</label><textarea id="oiDesc" style="font-family:var(--sans);min-height:70px" maxlength="2000"></textarea><div class="help">Mô tả và logo nằm ngoài chuỗi và <b>không</b> được bảo vệ bằng hash; chỉ Manager của tổ chức đã xác minh sửa được.</div></div>
+        <button id="btnOrgInfoSave" class="btn soft sm">Lưu thông tin</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =====================================================================
      VIEW: TẠO CUỘC BẦU CỬ
      ===================================================================== -->
 <section class="view" id="view-create" data-title="Tạo cuộc bầu cử" hidden>
   <div class="page-head">
     <div>
       <h1>Tạo cuộc bầu cử</h1>
-      <p>Dành cho ban tổ chức. Danh sách cử tri không đưa lên chuỗi, chỉ có Merkle root; hãy công bố danh sách để mọi người tự kiểm tra.</p>
+      <p>Mỗi cuộc bầu cử thuộc một tổ chức đã được xác minh. Nhóm người duyệt lấy từ tổ chức, không do người tạo tự chọn. Danh sách cử tri không đưa lên chuỗi, chỉ có Merkle root.</p>
     </div>
   </div>
 
   <div class="grid g-main">
     <div class="stack lg">
       <div class="card">
-        <div class="card-head"><div><h3><svg class="ic"><use href="#i-file"/></svg>1 · Thông tin chung</h3><div class="sub">Tên và danh sách ứng viên.</div></div></div>
-        <div class="field"><label class="f" for="cTitle">Tên cuộc bầu cử</label><input id="cTitle" type="text" maxlength="120" value="Bầu Ban cán sự lớp"><div class="help">1–120 byte.</div></div>
-        <div class="field" style="margin-bottom:0"><label class="f" for="cNames">Ứng viên (mỗi dòng một tên)</label><textarea id="cNames" style="font-family:var(--sans);min-height:96px" spellcheck="false">Nguyễn Văn A
-Trần Thị B</textarea><div class="help">2–20 ứng viên, mỗi tên 1–64 byte.</div></div>
+        <div class="card-head"><div><h3><svg class="ic"><use href="#i-users"/></svg>1 · Tổ chức</h3><div class="sub">Chỉ hiện tổ chức đã xác minh mà ví của bạn có vai trò Proposer hoặc Manager.</div></div></div>
+        <div class="field"><label class="f" for="cOrg">Tổ chức tổ chức cuộc bầu cử</label><select id="cOrg"><option value="">Kết nối ví để tải danh sách…</option></select><div class="help" id="cOrgHelp">—</div></div>
+        <div id="cOrgInfo" class="small muted"></div>
       </div>
 
       <div class="card">
-        <div class="card-head"><div><h3><svg class="ic"><use href="#i-clock"/></svg>2 · Thời gian các giai đoạn</h3><div class="sub">Hợp đồng tự chuyển pha theo thời gian khối, không ai bấm công tắc.</div></div></div>
+        <div class="card-head"><div><h3><svg class="ic"><use href="#i-file"/></svg>2 · Thông tin cuộc bầu cử</h3><div class="sub">Tên và ứng viên nằm trên chuỗi. Phần mô tả được băm (keccak256) và chỉ hash lên chuỗi.</div></div></div>
+        <div class="field"><label class="f" for="cTitle">Tên cuộc bầu cử</label><input id="cTitle" type="text" maxlength="120" value="Bầu Ban cán sự lớp"><div class="help">1–120 byte, ghi công khai trên chuỗi.</div></div>
+        <div class="field"><label class="f" for="cDesc">Mô tả</label><textarea id="cDesc" style="font-family:var(--sans);min-height:70px" spellcheck="false"></textarea></div>
+        <div class="grid g2">
+          <div class="field" style="margin:0"><label class="f" for="cPurpose">Mục đích</label><input id="cPurpose" type="text" maxlength="300"></div>
+          <div class="field" style="margin:0"><label class="f" for="cEligibility">Điều kiện cử tri</label><input id="cEligibility" type="text" maxlength="300"></div>
+        </div>
+        <div class="field" style="margin:14px 0 0"><label class="f" for="cCover">Ảnh bìa (tùy chọn)</label><input id="cCover" type="file" accept="image/png,image/jpeg,image/webp"><div class="help">PNG/JPEG/WebP, tối đa 10 MB.</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div><h3><svg class="ic"><use href="#i-user-check"/></svg>3 · Ứng viên</h3><div class="sub">Mỗi dòng một tên. Hồ sơ từng ứng viên được băm riêng.</div></div></div>
+        <div class="field"><label class="f" for="cNames">Ứng viên (mỗi dòng một tên)</label><textarea id="cNames" style="font-family:var(--sans);min-height:96px" spellcheck="false">Nguyễn Văn A
+Trần Thị B</textarea><div class="help">2–20 ứng viên, mỗi tên 1–64 byte.</div></div>
+        <div id="cCandBox" class="stack" style="gap:10px"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div><h3><svg class="ic"><use href="#i-clock"/></svg>4 · Thời gian các giai đoạn</h3><div class="sub">Hợp đồng tự chuyển pha theo thời gian khối, không ai bấm công tắc.</div></div></div>
         <div class="grid g3">
-          <div class="field" style="margin:0"><label class="f" for="cReg">Duyệt (phút)</label><input id="cReg" type="number" min="1" max="43200" value="5"></div>
+          <div class="field" style="margin:0"><label class="f" for="cReg">Duyệt (phút)</label><input id="cReg" type="number" min="1" max="10080" value="5"></div>
           <div class="field" style="margin:0"><label class="f" for="cCommit">Nộp phiếu (phút)</label><input id="cCommit" type="number" min="1" max="43200" value="10"></div>
           <div class="field" style="margin:0"><label class="f" for="cReveal">Mở phiếu (phút)</label><input id="cReveal" type="number" min="1" max="43200" value="10"></div>
         </div>
-        <div class="help" id="cTimeHelp">Tổng: 25 phút.</div>
+        <div class="help" id="cTimeHelp">Tổng: 25 phút. Thời gian duyệt tối đa 7 ngày (10.080 phút).</div>
       </div>
 
       <div class="card">
-        <div class="card-head"><div><h3><svg class="ic"><use href="#i-users"/></svg>3 · Cử tri và Merkle root</h3><div class="sub">Dán danh sách ví; trình duyệt dựng cây Merkle và số lượng cử tri.</div></div></div>
+        <div class="card-head"><div><h3><svg class="ic"><use href="#i-users"/></svg>5 · Cử tri và Merkle root</h3><div class="sub">Dán danh sách ví; trình duyệt dựng cây Merkle và số lượng cử tri.</div></div></div>
         <div class="field"><label class="f" for="cVoters">Danh sách cử tri (mỗi dòng một địa chỉ)</label><textarea id="cVoters" spellcheck="false" placeholder="0x…&#10;0x…"></textarea><div class="help" id="cVotersHelp">Tối đa 1.000.000 ví.</div></div>
         <div class="field" style="margin-bottom:0"><label class="f" for="cQuorum">Quorum (basis points)</label><input id="cQuorum" type="number" min="0" max="10000" value="5000"><div class="help" id="cQuorumHelp">= 50,00% (100 bps = 1%)</div></div>
       </div>
 
       <div class="card">
-        <div class="card-head"><div><h3><svg class="ic"><use href="#i-badge-check"/></svg>4 · Tham số phê duyệt</h3><div class="sub">Người duyệt độc lập với ban tổ chức.</div></div></div>
-        <div class="field"><label class="f" for="cApprovers">Người duyệt (mỗi dòng một địa chỉ)</label><textarea id="cApprovers" spellcheck="false" placeholder="0x…"></textarea><div class="help">1–10 ví, không được là ví của bạn.</div></div>
-        <div class="field" style="margin-bottom:0;max-width:260px"><label class="f" for="cRequired">Số chữ ký duyệt cần có</label><input id="cRequired" type="number" min="1" value="1"></div>
+        <div class="card-head"><div><h3><svg class="ic"><use href="#i-badge-check"/></svg>6 · Người duyệt (lấy từ tổ chức)</h3><div class="sub">Chụp lại lúc tạo. Ví của bạn và ví ứng viên bị loại để tránh xung đột lợi ích.</div></div></div>
+        <div id="cApprovers" class="small muted">Chọn tổ chức để xem.</div>
       </div>
     </div>
 
@@ -4129,10 +4218,13 @@ Trần Thị B</textarea><div class="help">2–20 ứng viên, mỗi tên 1–64
         <div class="card-head"><div><h3><svg class="ic"><use href="#i-shield"/></svg>Kiểm tra &amp; xem trước</h3><div class="sub">Mỗi mục tương ứng một giới hạn của hợp đồng.</div></div></div>
         <ul id="cChecks" class="checklist"></ul>
         <div id="cPreview" class="hidden" style="margin-top:14px"></div>
+        <div class="alert warn" style="margin-top:14px"><span>⚠️</span><span><b>Tệp tải lên là công khai.</b> Ảnh bìa, ảnh đại diện lưu ở kho công khai: ai có đường dẫn đều xem được, và không thể thu hồi. Chỉ tải nội dung bạn sẵn sàng công bố.</span></div>
+        <label class="small" style="display:flex;gap:8px;align-items:flex-start;margin-top:12px"><input id="cSave" type="checkbox" checked style="margin-top:3px"><span>Lưu nội dung (bản nháp, ảnh) lên Supabase để mọi người xem và xác thực với hash trên chuỗi. Cần đăng nhập bằng ví.</span></label>
         <div class="stack" style="margin-top:16px;gap:8px">
           <button id="btnBuild" class="btn soft block">Xem trước &amp; kiểm tra</button>
-          <button id="btnCreate" class="btn primary block"><svg class="ic sm"><use href="#i-send"/></svg>Tạo cuộc bầu cử</button>
+          <button id="btnCreate" class="btn primary block"><svg class="ic sm"><use href="#i-send"/></svg>Gửi yêu cầu tạo cuộc bầu cử</button>
           <button id="btnDownloadProofs" class="btn outline block" disabled><svg class="ic sm"><use href="#i-download"/></svg>Tải proofs.json</button>
+          <button id="btnDownloadMeta" class="btn outline block" disabled><svg class="ic sm"><use href="#i-download"/></svg>Tải metadata (JSON)</button>
         </div>
         <div id="cResult" class="hidden" style="margin-top:14px"></div>
       </div>
@@ -4163,6 +4255,11 @@ Trần Thị B</textarea><div class="help">2–20 ứng viên, mỗi tên 1–64
     </div>
   </div>
 
+  <div class="card" style="margin-top:16px">
+    <div class="card-head"><div><h3><svg class="ic"><use href="#i-hash"/></svg>Xác thực nội dung với hash trên chuỗi</h3><div class="sub">Trình duyệt tự băm lại nội dung từ Supabase và so với hash đã ghi trên chuỗi. Không dựa vào kết luận của máy chủ.</div></div><button id="btnVerifyMeta" class="btn outline sm">Đối chiếu</button></div>
+    <div id="approveMeta"><div class="small muted">Chọn một cuộc bầu cử rồi bấm Đối chiếu.</div></div>
+  </div>
+
   <div class="grid g2" style="margin-top:16px;align-items:start">
     <div class="card">
       <div class="card-head"><div><h3><svg class="ic"><use href="#i-shield"/></svg>Ký duyệt cuộc đang chọn</h3><div class="sub" id="approveTarget">—</div></div></div>
@@ -4173,8 +4270,14 @@ Trần Thị B</textarea><div class="help">2–20 ứng viên, mỗi tên 1–64
         <li>Tên ứng viên, mốc thời gian và quorum đúng như thỏa thuận.</li>
         <li>Các người duyệt khác là những người độc lập với ban tổ chức.</li>
       </ul>
-      <button id="btnApprove" class="btn primary" style="margin-top:16px"><svg class="ic sm"><use href="#i-badge-check"/></svg>Ký duyệt cuộc bầu cử này</button>
+      <div class="row" style="margin-top:16px">
+        <button id="btnApprove" class="btn primary"><svg class="ic sm"><use href="#i-badge-check"/></svg>Ký duyệt cuộc bầu cử này</button>
+        <button id="btnReject" class="btn outline"><svg class="ic sm"><use href="#i-x"/></svg>Từ chối</button>
+        <button id="btnWithdraw" class="btn ghost">Rút yêu cầu (người tạo)</button>
+        <button id="btnRelease" class="btn ghost">Ghi nhận hết hạn</button>
+      </div>
       <div id="approveHint" class="help"></div>
+      <div id="approveState" class="small muted" style="margin-top:6px"></div>
     </div>
     <div class="card">
       <div class="card-head"><div><h3><svg class="ic"><use href="#i-users"/></svg>Danh sách người duyệt</h3><div class="sub">Của cuộc bầu cử đang chọn.</div></div></div>
@@ -4394,6 +4497,9 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     ELECTION_ID: 0,
     CHAIN_ID: 11155111,
     RPC_URL: "https://ethereum-sepolia-rpc.publicnode.com",
+    // Supabase: chỉ URL và khóa CÔNG KHAI (publishable). Tuyệt đối không dán service_role/secret key vào đây.
+    SUPABASE_URL: "https://vfzuniykinaivchhuiul.supabase.co",
+    SUPABASE_KEY: "sb_publishable_EDmldUtxLGO4J5EvAE0DHQ__RVMvuYu",
     LOG_BLOCKS: 20000,
   };
   const LIMITS = { MAX_CANDIDATES: 20, MAX_APPROVERS: 10, MAX_TITLE_BYTES: 120, MAX_NAME_BYTES: 64, MAX_PHASE_MINUTES: 43200, MAX_VOTERS: 1000000, BPS: 10000 };
@@ -4404,24 +4510,45 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   /*ABI-START*/
   const APP_ABI = [
     "function electionCount() view returns (uint256)",
+    "function registry() view returns (address)",
     "function phase(uint256 id) view returns (uint8)",
+    "function requestStatus(uint256 id) view returns (uint8)",
     "function getElectionBasicInfo(uint256 id) view returns (address admin, string title, bool isActivated, bytes32 merkleRoot)",
     "function getElectionStats(uint256 id) view returns (uint256 regEnd, uint256 commitEnd, uint256 revealEnd, uint256 quorumBps, uint256 voterCount, uint256 revealedCount, uint256 requiredApprovals, uint256 approvalCount)",
+    "function getElectionOrg(uint256 id) view returns (uint256 organizationId, uint256 createdAt, uint8 status, uint256 rejectCount, bytes32 metadataHash, uint256 metadataVersion)",
+    "function getCandidateMetadata(uint256 id, uint256 candidateId) view returns (bytes32 metadataHash, uint256 version)",
     "function getCandidates(uint256 id) view returns (string[])",
     "function getVotes(uint256 id) view returns (uint256[])",
     "function getApprovers(uint256 id) view returns (address[])",
     "function isApprover(uint256 id, address who) view returns (bool)",
     "function hasApproved(uint256 id, address who) view returns (bool)",
+    "function hasRejected(uint256 id, address who) view returns (bool)",
     "function getVoterStatus(uint256 id, address voter) view returns (bool committed, bool revealed)",
     "function commitments(uint256 id, address voter) view returns (bytes32)",
     "function result(uint256 id) view returns (bool valid, uint256 winnerId, uint256 topVotes)",
-    "function createElection((string title, string[] names, uint256 regMinutes, uint256 commitMinutes, uint256 revealMinutes, uint256 quorumBps, uint256 voterCount, bytes32 merkleRoot, address[] approvers, uint256 requiredApprovals) p) returns (uint256 id)",
+    "function pendingCountOfWallet(address who) view returns (uint256)",
+    "function pendingCountOfOrg(uint256 organizationId) view returns (uint256)",
+    "function maxPendingPerWallet() view returns (uint256)",
+    "function maxPendingPerOrg() view returns (uint256)",
+    "function createElection((uint256 organizationId, string title, string[] names, address[] candidateWallets, uint256 regMinutes, uint256 commitMinutes, uint256 revealMinutes, uint256 quorumBps, uint256 voterCount, bytes32 merkleRoot, bytes32 metadataHash, bytes32[] candidateMetadataHashes) p) returns (uint256 id)",
     "function approveElection(uint256 id)",
+    "function rejectElection(uint256 id)",
+    "function withdrawElection(uint256 id)",
+    "function releaseExpired(uint256 id)",
+    "function updateElectionMetadata(uint256 id, bytes32 newHash)",
+    "function updateCandidateMetadata(uint256 id, uint256 candidateId, bytes32 newHash)",
     "function commit(uint256 id, bytes32 commitment, bytes32[] merkleProof)",
     "function reveal(uint256 id, uint256 candidateId, string salt)",
     "event ElectionCreated(uint256 indexed id, address indexed admin, string title)",
+    "event ElectionProposed(uint256 indexed id, uint256 indexed organizationId, address indexed proposer, uint256 createdAt)",
     "event ElectionApproved(uint256 indexed id, address indexed approver)",
     "event ElectionActivated(uint256 indexed id)",
+    "event ElectionRejectionVote(uint256 indexed id, address indexed approver)",
+    "event ElectionRejected(uint256 indexed id)",
+    "event ElectionWithdrawn(uint256 indexed id)",
+    "event RequestExpired(uint256 indexed id)",
+    "event ElectionMetadataSet(uint256 indexed id, uint256 version, bytes32 metadataHash)",
+    "event CandidateMetadataSet(uint256 indexed id, uint256 indexed candidateId, uint256 version, bytes32 metadataHash)",
     "event Committed(uint256 indexed id, address indexed voter)",
     "event Revealed(uint256 indexed id, address indexed voter, uint256 indexed candidateId)",
     "error ElectionNotFound()",
@@ -4435,9 +4562,62 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     "error NoCommitment()",
     "error AlreadyRevealed()",
     "error InvalidCandidate()",
-    "error BadReveal()"
+    "error BadReveal()",
+    "error OrganizationNotVerified()",
+    "error NotAuthorized()",
+    "error NotEnoughApprovers()",
+    "error PendingLimit()",
+    "error RequestClosed()",
+    "error RequestLocked()",
+    "error AlreadyRejected()",
+    "error MetadataLocked()",
+    "error NotExpired()",
+    "error NotPlatformAdmin()"
   ];
   /*ABI-END*/
+  /*REG-ABI-START*/
+  const REG_ABI = [
+    "function organizationCount() view returns (uint256)",
+    "function platformAdmin() view returns (address)",
+    "function getOrganization(uint256 id) view returns ((address owner, uint8 status, string name, bytes32 infoHash, uint256 createdAt, uint256 memberCount, uint256 approverCount) v)",
+    "function getMembers(uint256 id) view returns (address[] addrs, uint8[] roles)",
+    "function getApprovers(uint256 id) view returns (address[])",
+    "function roleOf(uint256 id, address who) view returns (uint8)",
+    "function canPropose(uint256 id, address who) view returns (bool)",
+    "function isVerified(uint256 id) view returns (bool)",
+    "function approvalThreshold(uint256 approverCount) pure returns (uint256)",
+    "function registerOrganization(string name, bytes32 infoHash) returns (uint256 id)",
+    "function updateOrganization(uint256 id, string name, bytes32 infoHash)",
+    "function verifyOrganization(uint256 id)",
+    "function suspendOrganization(uint256 id)",
+    "function addMember(uint256 id, address who, uint8 role)",
+    "function removeMember(uint256 id, address who)",
+    "function updateMemberRole(uint256 id, address who, uint8 role)",
+    "function addApprover(uint256 id, address who)",
+    "function removeApprover(uint256 id, address who)",
+    "function replaceApprover(uint256 id, address oldApprover, address newApprover)",
+    "event OrganizationRegistered(uint256 indexed id, address indexed owner, string name)",
+    "event OrganizationVerified(uint256 indexed id, address indexed by)",
+    "event OrganizationSuspended(uint256 indexed id, address indexed by)",
+    "event MemberAdded(uint256 indexed id, address indexed member, uint8 role)",
+    "event MemberRemoved(uint256 indexed id, address indexed member)",
+    "error OrganizationNotFound()",
+    "error NotPlatformAdmin()",
+    "error NotManager()",
+    "error OrganizationNotVerified()",
+    "error InvalidParams()",
+    "error AlreadyMember()",
+    "error NotMember()",
+    "error CannotChangeOwner()",
+    "error AlreadyApprover()",
+    "error NotAnApprover()",
+    "error ApproverLimit()",
+    "error MemberLimit()",
+    "error IsApprover()",
+    "error InvalidStatus()"
+  ];
+  /*REG-ABI-END*/
+  const REG_IFACE = new ethers.Interface(REG_ABI);
   const IFACE = new ethers.Interface(APP_ABI);
 
   /* ------------------------------------------------------------------
@@ -4583,13 +4763,34 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     AlreadyRevealed: "Bạn đã mở phiếu rồi, mỗi cử tri chỉ được tính một phiếu.",
     InvalidCandidate: "Ứng viên đã chọn không tồn tại.",
     BadReveal: "Lựa chọn hoặc mã bí mật (salt) không khớp với phiếu đã nộp.",
+    OrganizationNotVerified: "Tổ chức chưa được xác minh (hoặc đang bị tạm ngưng) nên chưa thực hiện được thao tác này.",
+    NotAuthorized: "Ví của bạn không có quyền thực hiện thao tác này (cần vai trò Proposer/Manager của tổ chức, hoặc là người tạo cuộc bầu cử).",
+    NotEnoughApprovers: "Tổ chức chưa đủ người duyệt hợp lệ (cần ít nhất 2 người, không tính ví của bạn và ví ứng viên).",
+    PendingLimit: "Đã đạt hạn mức yêu cầu đang chờ duyệt (theo ví hoặc theo tổ chức). Hãy rút, chờ duyệt xong hoặc chờ hết hạn.",
+    RequestClosed: "Yêu cầu này đã đóng (được duyệt, bị từ chối, đã rút hoặc hết hạn).",
+    RequestLocked: "Đã có người duyệt hoặc từ chối nên không thể rút yêu cầu.",
+    AlreadyRejected: "Bạn đã biểu quyết cho cuộc bầu cử này rồi.",
+    MetadataLocked: "Metadata đã bị khóa vì cuộc bầu cử đã sang pha nộp phiếu.",
+    NotExpired: "Yêu cầu chưa hết hạn hoặc không còn ở trạng thái chờ duyệt.",
+    NotPlatformAdmin: "Chỉ quản trị nền tảng mới làm được thao tác này.",
+    NotManager: "Chỉ Manager của tổ chức mới làm được thao tác này.",
+    OrganizationNotFound: "Không tìm thấy tổ chức với ID này.",
+    AlreadyMember: "Ví này đã là thành viên của tổ chức.",
+    NotMember: "Ví này không phải thành viên của tổ chức.",
+    CannotChangeOwner: "Không thể đổi vai trò hoặc xóa chủ sở hữu tổ chức.",
+    AlreadyApprover: "Ví này đã là người duyệt của tổ chức.",
+    NotAnApprover: "Ví này không phải người duyệt của tổ chức.",
+    ApproverLimit: "Số người duyệt vượt giới hạn (2–10).",
+    MemberLimit: "Tổ chức đã đạt số thành viên tối đa.",
+    IsApprover: "Ví này đang là người duyệt; hãy gỡ quyền duyệt trước.",
+    InvalidStatus: "Trạng thái tổ chức hiện tại không cho phép thao tác này.",
   };
 
   function revertInfo(e) {
     if (e && e.revert && e.revert.name) return { name: e.revert.name, args: Array.from(e.revert.args || []) };
     const data = e && (e.data || (e.error && e.error.data) || (e.info && e.info.error && e.info.error.data));
     if (typeof data === "string" && /^0x[0-9a-fA-F]{8,}/.test(data)) {
-      try { const p = IFACE.parseError(data); if (p) return { name: p.name, args: Array.from(p.args) }; } catch (_) { /* bỏ qua */ }
+      for (const I of [IFACE, REG_IFACE]) { try { const p = I.parseError(data); if (p) return { name: p.name, args: Array.from(p.args) }; } catch (_) { /* thử giao diện kế tiếp */ } }
     }
     return null;
   }
@@ -4744,6 +4945,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
 
   function setAddress(addr, persist) {
     S.address = addr;
+    S.regAddr = null; S.orgs = null; S.orgPick = null;
     if (persist) LS.set("votechain:addr", addr);
     $("cfgAddress").value = addr;
     $("footerContract").textContent = addr ? "Hợp đồng: " + addr : "";
@@ -4809,7 +5011,12 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       if (await checkContractCode(provider)) S.contract = new ethers.Contract(S.address, APP_ABI, S.signer);
     }
     renderSaved();
-    if (S.contract) await loadElection(true);
+    renderLoginState();
+    loadOrgs().catch((e) => console.warn("loadOrgs", e));
+    if (S.contract) {
+      // Hợp đồng mới triển khai chưa có cuộc bầu cử nào: không được chặn phần còn lại của việc kết nối.
+      try { await loadElection(true); } catch (e) { if (e instanceof UserError) toast("warn", explain(e)); else throw e; }
+    }
     updateButtons();
     scanAll(true);
   }
@@ -4838,8 +5045,8 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     const count = await c.electionCount();
     if (id >= count) throw new UserError("Chưa có cuộc bầu cử #" + raw + " (hiện có " + count + " cuộc).");
 
-    const [info, st, names, ph, approvers] = await Promise.all([
-      c.getElectionBasicInfo(id), c.getElectionStats(id), c.getCandidates(id), c.phase(id), c.getApprovers(id),
+    const [info, st, names, ph, approvers, org] = await Promise.all([
+      c.getElectionBasicInfo(id), c.getElectionStats(id), c.getCandidates(id), c.phase(id), c.getApprovers(id), c.getElectionOrg(id),
     ]);
     const e = {
       id, title: info.title, admin: ethers.getAddress(info.admin), isActivated: info.isActivated, merkleRoot: info.merkleRoot,
@@ -4847,6 +5054,8 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       quorumBps: BigInt(st.quorumBps), voterCount: BigInt(st.voterCount), revealedCount: BigInt(st.revealedCount),
       requiredApprovals: Number(st.requiredApprovals), approvalCount: Number(st.approvalCount),
       candidates: Array.from(names), phase: Number(ph), approvers: Array.from(approvers).map(ethers.getAddress),
+      orgId: Number(org.organizationId), createdAt: Number(org.createdAt), reqStatus: Number(org.status), rejectCount: Number(org.rejectCount),
+      metaHash: org.metadataHash, metaVersion: Number(org.metadataVersion), hasRejected: false,
       approvedBy: {}, committed: false, revealed: false, votes: null, isApprover: false, hasApproved: false,
     };
     // trạng thái từng người duyệt
@@ -4856,7 +5065,9 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       e.committed = v.committed; e.revealed = v.revealed;
       e.isApprover = e.approvers.includes(S.account);
       e.hasApproved = !!e.approvedBy[S.account];
+      e.hasRejected = !!(await c.hasRejected(id, S.account));
     }
+    e.closed = e.reqStatus === 2 || e.reqStatus === 3;
     if (e.phase === 3 || e.revealedCount > 0n) e.votes = Array.from(await c.getVotes(id)).map(Number);
 
     const blk = await chainProvider().getBlock("latest");
@@ -5076,8 +5287,10 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       return "";
     }
     if (which === "approve") {
+      if (e.closed) return "Yêu cầu đã " + (e.reqStatus === 2 ? "bị từ chối" : "được rút") + ".";
       if (!e.isApprover) return "Ví của bạn không phải người duyệt của cuộc bầu cử này.";
       if (e.hasApproved) return "Bạn đã ký duyệt rồi.";
+      if (e.hasRejected) return "Bạn đã biểu quyết từ chối cuộc bầu cử này.";
       if (e.phase !== 0) return "Đã hết pha Đăng ký & duyệt nên không ký được nữa.";
       return "";
     }
@@ -5095,6 +5308,15 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     }
     $("btnManualReveal").disabled = whyBlocked("reveal") !== "";
     $("btnCreate").disabled = !S.account;
+    const ee = S.election;
+    const open = !!ee && !ee.closed && !ee.isActivated && ee.phase === 0;
+    const vote = open && ee.isApprover && !ee.hasApproved && !ee.hasRejected;
+    if (!S.busy) {
+      $("btnReject").disabled = !vote;
+      $("btnWithdraw").disabled = !(open && S.account && sameAddr(ee.admin, S.account) && ee.approvalCount === 0 && ee.rejectCount === 0);
+      $("btnRelease").disabled = !(ee && !ee.isActivated && !ee.closed && ee.phase > 0 || (ee && ee.reqStatus === 4));
+    }
+    $("approveState").textContent = ee ? "Trạng thái yêu cầu: " + REQ_VI[ee.reqStatus] + " · đã ký " + ee.approvalCount + "/" + ee.requiredApprovals + " · từ chối " + ee.rejectCount + " · tổ chức #" + ee.orgId : "";
     if (S.election) renderVoteFlow();
   }
 
@@ -5163,90 +5385,10 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     toast("ok", e.approvalCount + 1 >= e.requiredApprovals ? "Đã ký duyệt. Cuộc bầu cử đủ chữ ký và đã kích hoạt!" : "Đã ký duyệt.");
   }
 
-  /** Đọc form tạo cuộc bầu cử, kiểm tra theo đúng giới hạn của hợp đồng. */
-  function readCreateForm() {
-    const checks = [];   // [ok:boolean, text]
-    const add = (ok, text) => checks.push([ok, text]);
-    const title = $("cTitle").value.trim();
-    const names = $("cNames").value.split("\n").map((s) => s.trim()).filter(Boolean);
-    const reg = Number($("cReg").value), com = Number($("cCommit").value), rev = Number($("cReveal").value);
-    const quorum = Number($("cQuorum").value);
-    const required = Number($("cRequired").value);
-    const ap = parseAddresses($("cApprovers").value);
-    const vt = parseAddresses($("cVoters").value);
-
-    add(title.length > 0 && utf8Len(title) <= LIMITS.MAX_TITLE_BYTES, "Tên cuộc bầu cử: 1–" + LIMITS.MAX_TITLE_BYTES + " byte (hiện " + utf8Len(title) + ").");
-    add(names.length >= 2 && names.length <= LIMITS.MAX_CANDIDATES, "Số ứng viên: 2–" + LIMITS.MAX_CANDIDATES + " (hiện " + names.length + ").");
-    const badName = names.find((n) => utf8Len(n) > LIMITS.MAX_NAME_BYTES);
-    add(!badName, "Mỗi tên ứng viên tối đa " + LIMITS.MAX_NAME_BYTES + " byte" + (badName ? " (“" + badName.slice(0, 20) + "…” quá dài)." : "."));
-    add(new Set(names.map((n) => n.toLowerCase())).size === names.length, "Tên ứng viên không trùng nhau (khuyến nghị).");
-    const minOk = (x) => Number.isInteger(x) && x >= 1 && x <= LIMITS.MAX_PHASE_MINUTES;
-    add(minOk(reg) && minOk(com) && minOk(rev), "Mỗi pha 1–" + LIMITS.MAX_PHASE_MINUTES + " phút (số nguyên).");
-    add(Number.isInteger(quorum) && quorum >= 0 && quorum <= LIMITS.BPS, "Quorum 0–10.000 bps (hiện " + (Number.isFinite(quorum) ? bpsStr(quorum) : "?") + ").");
-    add(ap.errors.length === 0, "Địa chỉ người duyệt hợp lệ" + (ap.errors.length ? " (sai: " + ap.errors.slice(0, 2).join(", ") + ")." : "."));
-    add(ap.list.length >= 1 && ap.list.length <= LIMITS.MAX_APPROVERS, "Số người duyệt: 1–" + LIMITS.MAX_APPROVERS + " (hiện " + ap.list.length + ").");
-    add(!ap.dups.length, "Người duyệt không trùng nhau.");
-    add(!S.account || !ap.list.includes(S.account), "Người duyệt không được là ví của bạn (ban tổ chức).");
-    add(Number.isInteger(required) && required >= 1 && required <= Math.max(ap.list.length, 1), "Số chữ ký cần có: 1–số người duyệt (hiện " + (Number.isFinite(required) ? required : "?") + ").");
-    add(vt.errors.length === 0, "Địa chỉ cử tri hợp lệ" + (vt.errors.length ? " (sai: " + vt.errors.slice(0, 2).join(", ") + ")." : "."));
-    add(vt.list.length >= 1 && vt.list.length <= LIMITS.MAX_VOTERS, "Số cử tri: 1–" + LIMITS.MAX_VOTERS.toLocaleString("vi-VN") + " (hiện " + vt.list.length + ").");
-    if (vt.dups.length) add(true, "Đã loại " + vt.dups.length + " địa chỉ cử tri trùng.");
-    return { checks, title, names, reg, com, rev, quorum, required, approvers: ap.list, voters: vt.list, ok: checks.every((c) => c[0]) };
-  }
-
   function showChecks(form) {
     const ul = $("cChecks");
     clear(ul);
     for (const [ok, text] of form.checks) ul.appendChild(el("li", ok ? "good" : "bad", text));
-  }
-
-  function buildPreview() {
-    const form = readCreateForm();
-    showChecks(form);
-    S.lastBuilt = null;
-    $("btnDownloadProofs").disabled = true;
-    const box = $("cPreview");
-    if (!form.voters.length) { box.classList.add("hidden"); return form; }
-    const tree = buildTree(form.voters);
-    S.lastBuilt = { form, tree };
-    clear(box);
-    box.classList.remove("hidden");
-    const dl = el("dl", "kv");
-    for (const [k, v] of [["Merkle root", tree.root], ["Số cử tri (voterCount)", String(tree.voterCount)], ["Độ sâu cây", String(tree.depth) + " tầng (mỗi proof " + tree.depth + " phần tử)"], ["Tổng thời gian", form.reg + form.com + form.rev + " phút"]]) {
-      dl.appendChild(el("dt", "", k)); dl.appendChild(el("dd", k === "Merkle root" ? "mono" : "", v));
-    }
-    box.appendChild(dl);
-    $("btnDownloadProofs").disabled = false;
-    return form;
-  }
-
-  async function doCreate() {
-    if (!S.contract) throw new UserError("Hãy kết nối ví MetaMask (và nhập địa chỉ hợp đồng) trước.");
-    const form = buildPreview();
-    if (!form.ok) throw new UserError("Còn mục chưa hợp lệ trong danh sách kiểm tra. Hãy sửa rồi thử lại.");
-    const tree = S.lastBuilt.tree;
-    const p = {
-      title: form.title, names: form.names, regMinutes: form.reg, commitMinutes: form.com, revealMinutes: form.rev,
-      quorumBps: form.quorum, voterCount: tree.voterCount, merkleRoot: tree.root, approvers: form.approvers, requiredApprovals: form.required,
-    };
-    await S.contract.createElection.estimateGas(p);
-    const { rc } = await sendTx("Tạo cuộc bầu cử", () => S.contract.createElection(p));
-    let newId = null;
-    for (const lg of rc.logs) { try { const ev = IFACE.parseLog(lg); if (ev && ev.name === "ElectionCreated") newId = ev.args.id; } catch (_) { /* log khác */ } }
-    const box = $("cResult");
-    clear(box); box.classList.remove("hidden");
-    const a = el("div", "alert ok");
-    a.appendChild(el("span", "", "🎉"));
-    const msg = el("span", "", "Đã tạo cuộc bầu cử" + (newId !== null ? " #" + newId : "") + ". Giờ hãy: (1) gửi cho người duyệt ký trong " + form.reg + " phút đầu, (2) công bố danh sách cử tri và proofs.json cho cử tri.");
-    a.appendChild(msg);
-    box.appendChild(a);
-    if (newId !== null) {
-      const b = el("button", "btn soft sm", "Mở cuộc bầu cử #" + newId);
-      b.style.marginTop = "10px";
-      b.onclick = () => { $("electionId").value = String(newId); selectTab("vote"); run("btnLoad", "Đang tải…", () => loadElection(false)); };
-      box.appendChild(b);
-    }
-    toast("ok", "Đã tạo cuộc bầu cử thành công.");
   }
 
   /* ------------------------------------------------------------------
@@ -5365,10 +5507,10 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   const SVGNS = "http://www.w3.org/2000/svg";
   const MAX_SCAN = 60;          // số cuộc bầu cử mới nhất được quét cho dashboard
   const MAX_FEED = 8;           // số dòng hiển thị ở "Hoạt động gần đây"
-  const ROUTES = ["dashboard", "elections", "election", "vote", "create", "approve", "result", "log", "tools", "about"];
+  const ROUTES = ["dashboard", "elections", "org", "election", "vote", "create", "approve", "result", "log", "tools", "about"];
   const CTX_ROUTES = ["election", "vote", "approve", "result", "log"];   // màn hình hiện chip "đang chọn"
   const ROUTE_TITLE = {
-    dashboard: "Dashboard", elections: "Bầu cử", election: "Chi tiết cuộc bầu cử", vote: "Bỏ phiếu", create: "Tạo cuộc bầu cử",
+    dashboard: "Dashboard", elections: "Bầu cử", org: "Tổ chức", election: "Chi tiết cuộc bầu cử", vote: "Bỏ phiếu", create: "Tạo cuộc bầu cử",
     approve: "Phê duyệt", result: "Kết quả", log: "Nhật ký hoạt động", tools: "Công cụ kiểm tra", about: "Giới thiệu",
   };
   const PALETTE = ["#1f5eea", "#0f9d8a", "#b86e00", "#6d5bd0", "#c93752", "#5a6c8c"];
@@ -5449,14 +5591,15 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   /** Huy hiệu trạng thái cuộc bầu cử, dùng thống nhất mọi nơi. */
   function electionBadge(e) {
     let cls = "gray", text = "—";
-    if (e.phase === 0) { if (e.isActivated) { cls = "teal"; text = "Đã duyệt · chờ nộp phiếu"; } else { cls = "amber"; text = "Chờ phê duyệt"; } }
+    if (e.closed) { cls = e.reqStatus === 2 ? "red" : "gray"; text = REQ_VI[e.reqStatus]; }
+    else if (e.phase === 0) { if (e.isActivated) { cls = "teal"; text = "Đã duyệt · chờ nộp phiếu"; } else { cls = "amber"; text = "Chờ phê duyệt"; } }
     else if (e.phase === 1) { cls = "blue"; text = e.isActivated ? "Đang nộp phiếu kín" : "Nộp phiếu · chưa đủ chữ ký"; }
     else if (e.phase === 2) { cls = "blue"; text = "Đang mở phiếu"; }
     else { cls = "gray"; text = "Đã kết thúc"; }
     return el("span", "badge " + cls, text);
   }
   /** Nhóm lọc: chờ duyệt (chưa kích hoạt, chưa hết cuộc) / nộp phiếu / mở phiếu / kết thúc. */
-  const phaseKey = (s) => (s.phase < 3 && !s.isActivated ? "pending" : ["commit", "commit", "reveal", "ended"][s.phase]);
+  const phaseKey = (s) => (s.closed ? "ended" : s.phase < 3 && !s.isActivated ? "pending" : ["commit", "commit", "reveal", "ended"][s.phase]);
 
   /* ----- đồng bộ thông tin kết nối (sidebar, welcome, topbar) ----- */
   function syncChain() {
@@ -5497,8 +5640,10 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     $("ctxBar").classList.toggle("hidden", !(CTX_ROUTES.includes(route) && S.election));
     window.scrollTo(0, 0);
     if (route === "log" && !S.events && readReady() && S.election) loadLogs().catch(() => {});
-    if (route === "approve") renderPending();
-    if (route === "election") ensureEE();
+    if (route === "approve") { renderPending(); if (S.election && readReady()) refreshMetaVerify().catch(() => {}); }
+    if (route === "election") { ensureEE(); if (S.election && readReady()) refreshMetaVerify().catch(() => {}); }
+    if (route === "org" && !S.orgs && readReady()) loadOrgs().catch(() => {});
+    if (route === "create" && S.account && !S.orgs && readReady()) loadOrgs().catch(() => {});
   }
 
   function renderCtx() {
@@ -5512,20 +5657,22 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
 
   /* ----- quét toàn bộ cuộc bầu cử để dựng dashboard ----- */
   async function fetchSummary(c, id) {
-    const [info, st, ph, names] = await Promise.all([c.getElectionBasicInfo(id), c.getElectionStats(id), c.phase(id), c.getCandidates(id)]);
+    const [info, st, ph, names, org] = await Promise.all([c.getElectionBasicInfo(id), c.getElectionStats(id), c.phase(id), c.getCandidates(id), c.getElectionOrg(id)]);
     const s = {
       id: Number(id), title: info.title, admin: ethers.getAddress(info.admin), isActivated: info.isActivated, merkleRoot: info.merkleRoot,
       regEnd: Number(st.regEnd), commitEnd: Number(st.commitEnd), revealEnd: Number(st.revealEnd),
       quorumBps: BigInt(st.quorumBps), voterCount: BigInt(st.voterCount), revealedCount: BigInt(st.revealedCount),
       requiredApprovals: Number(st.requiredApprovals), approvalCount: Number(st.approvalCount),
       phase: Number(ph), candidateCount: names.length, names: Array.from(names), res: null, isApprover: false, hasApproved: false,
+      orgId: Number(org.organizationId), reqStatus: Number(org.status), rejectCount: Number(org.rejectCount), hasRejected: false,
     };
+    s.closed = s.reqStatus === 2 || s.reqStatus === 3;
     if (s.phase === 3 && s.isActivated) {
       try { const r = await c.result(id); s.res = { valid: r.valid, winner: Number(r.winnerId), top: Number(r.topVotes) }; } catch (_) { s.res = null; }
     }
     if (S.account) {
-      const [ia, ha] = await Promise.all([c.isApprover(id, S.account), c.hasApproved(id, S.account)]);
-      s.isApprover = ia; s.hasApproved = ha;
+      const [ia, ha, hr] = await Promise.all([c.isApprover(id, S.account), c.hasApproved(id, S.account), c.hasRejected(id, S.account)]);
+      s.isApprover = ia; s.hasApproved = ha; s.hasRejected = hr;
     }
     return s;
   }
@@ -5570,7 +5717,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     $("kpiTotal").textContent = String(S.count);
     $("kpiTotalSub").textContent = all.length < S.count ? "Hiển thị " + all.length + " cuộc mới nhất" : "Tất cả cuộc bầu cử trong hợp đồng";
     $("kpiActive").textContent = String(active.length);
-    $("kpiActiveSub").textContent = all.filter((s) => s.phase === 0 && !s.isActivated).length + " cuộc đang chờ phê duyệt";
+    $("kpiActiveSub").textContent = all.filter((s) => s.reqStatus === 0).length + " cuộc đang chờ phê duyệt";
     $("kpiVoters").textContent = voters.toLocaleString("vi-VN");
     $("kpiVotersSub").textContent = "Tổng voterCount do ban tổ chức khai báo";
     $("kpiVotes").textContent = votes.toLocaleString("vi-VN");
@@ -5582,7 +5729,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   function pickFeatured() {
     const all = S.all || [];
     return all.find((s) => s.isActivated && (s.phase === 1 || s.phase === 2))
-      || all.find((s) => s.phase === 0 && !s.isActivated)
+      || all.find((s) => s.reqStatus === 0)
       || all.find((s) => s.phase === 0)
       || all[0] || null;
   }
@@ -5635,8 +5782,8 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       $("pendingInfo").textContent = "—"; nb.classList.add("hidden");
       return;
     }
-    const pend = all.filter((s) => s.phase === 0 && !s.isActivated);
-    const mine = pend.filter((s) => s.isApprover && !s.hasApproved);
+    const pend = all.filter((s) => s.reqStatus === 0 || s.reqStatus === 4);
+    const mine = pend.filter((s) => s.reqStatus === 0 && s.isApprover && !s.hasApproved && !s.hasRejected);
     $("pendingInfo").textContent = pend.length + " cuộc chờ duyệt" + (S.account ? " · " + mine.length + " cuộc cần bạn ký" : "");
     if (mine.length) { nb.textContent = String(mine.length); nb.classList.remove("hidden"); } else nb.classList.add("hidden");
 
@@ -5648,22 +5795,36 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       const tr = el("tr");
       const c1 = el("td"); c1.appendChild(el("div", "", s.title)); c1.firstChild.style.fontWeight = "650"; c1.appendChild(el("div", "tiny faint", "#" + s.id)); tr.appendChild(c1);
       const c2 = el("td"); c2.appendChild(addrEl(s.admin)); tr.appendChild(c2);
-      const c3 = el("td"); c3.appendChild(el("b", "", s.approvalCount + "/" + s.requiredApprovals));
+      const c3 = el("td"); c3.appendChild(el("b", "", s.approvalCount + "/" + s.requiredApprovals + (s.rejectCount ? " · " + s.rejectCount + " từ chối" : "")));
       const bar = el("div", "bar teal"), fill = el("i"); fill.style.width = Math.min(100, (s.approvalCount / Math.max(1, s.requiredApprovals)) * 100) + "%"; bar.appendChild(fill); bar.style.marginTop = "5px"; bar.style.width = "90px"; c3.appendChild(bar); tr.appendChild(c3);
       const left = s.regEnd - chainNow();
-      const c4 = el("td"); c4.appendChild(el("div", "", fmtDate(s.regEnd))); c4.appendChild(el("div", "tiny faint", left > 0 ? "còn " + fmtDur(left) : "đã hết hạn")); tr.appendChild(c4);
+      const c4 = el("td"); c4.appendChild(el("div", "", fmtDate(s.regEnd))); c4.appendChild(el("div", "tiny faint", s.reqStatus === 4 ? "đã hết hạn" : left > 0 ? "còn " + fmtDur(left) : "đã hết hạn")); tr.appendChild(c4);
       const c5 = el("td");
       if (!S.account) c5.appendChild(el("span", "badge gray", "Chưa kết nối ví"));
       else if (!s.isApprover) c5.appendChild(el("span", "badge gray", "Không phải người duyệt"));
       else if (s.hasApproved) c5.appendChild(el("span", "badge teal", "Đã ký"));
+      else if (s.hasRejected) c5.appendChild(el("span", "badge red", "Đã từ chối"));
       else c5.appendChild(el("span", "badge amber", "Cần bạn ký"));
       tr.appendChild(c5);
       const c6 = el("td", "right");
       const row = el("div", "row tight"); row.style.justifyContent = "flex-end";
-      if (S.account && s.isApprover && !s.hasApproved && left > 0) {
+      if (S.account && s.reqStatus === 0 && s.isApprover && !s.hasApproved && !s.hasRejected && left > 0) {
         const b = el("button", "btn primary sm"); b.id = "apr-" + s.id; b.appendChild(icon("badge-check", "sm")); b.appendChild(document.createTextNode("Ký duyệt"));
         b.onclick = () => run(b.id, "Đang ký…", () => approveById(s.id));
         row.appendChild(b);
+        const r = el("button", "btn outline sm", "Từ chối"); r.id = "rej-" + s.id;
+        r.onclick = () => run(r.id, "Đang gửi…", () => doReject(s.id));
+        row.appendChild(r);
+      }
+      if (s.reqStatus === 4) {
+        const rl = el("button", "btn ghost sm", "Ghi nhận hết hạn"); rl.id = "rel-" + s.id;
+        rl.onclick = () => run(rl.id, "Đang gửi…", () => doRelease(s.id));
+        row.appendChild(rl);
+      }
+      if (s.reqStatus === 0 && S.account && sameAddr(s.admin, S.account) && s.approvalCount === 0 && s.rejectCount === 0) {
+        const w = el("button", "btn ghost sm", "Rút"); w.id = "wd-" + s.id;
+        w.onclick = () => run(w.id, "Đang gửi…", () => doWithdraw(s.id));
+        row.appendChild(w);
       }
       const d = el("button", "btn ghost sm", "Chi tiết"); d.onclick = () => openElection(s.id, "election");
       row.appendChild(d); c6.appendChild(row); tr.appendChild(c6);
@@ -6014,6 +6175,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
 
   /* ----- trạng thái hiển thị: Sắp diễn ra / Đang diễn ra / Đã kết thúc ----- */
   function statusInfo(s) {
+    if (s.closed) return { key: "ended", cls: "ended", label: REQ_VI[s.reqStatus], sub: s.reqStatus === 2 ? "Người duyệt từ chối" : "Người tạo đã rút" };
     if (s.phase === 3) return { key: "ended", cls: "ended", label: "Đã kết thúc", sub: s.isActivated ? "" : "Không được duyệt" };
     if (!s.isActivated && s.phase >= 1) return { key: "void", cls: "void", label: "Không đủ chữ ký", sub: "Hết hạn duyệt" };
     if (s.phase === 0) return { key: "soon", cls: "soon", label: "Sắp diễn ra", sub: s.isActivated ? "Đã duyệt · chờ nộp phiếu" : "Chờ phê duyệt" };
@@ -6708,6 +6870,712 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   }
 
   /* ------------------------------------------------------------------
+   * 13. NỀN TẢNG: METADATA, SUPABASE, TỔ CHỨC
+   * Dữ liệu quan trọng nằm trên chuỗi; Supabase chỉ lưu nội dung đi kèm (mô tả, ảnh, hồ sơ)
+   * và luôn được đối chiếu lại với hash trên chuỗi ngay trong trình duyệt.
+   * ------------------------------------------------------------------ */
+
+  /*META-START*/
+  // Chuẩn hóa JSON + keccak256: PHẢI cho ra hash y hệt scripts/metadata.js (có test đối chiếu test/web_metadata.test.js).
+  function canonicalize(v) {
+    if (v === null) return "null";
+    switch (typeof v) {
+      case "boolean": return v ? "true" : "false";
+      case "number":
+        if (!Number.isSafeInteger(v)) throw new Error("metadata chỉ nhận số nguyên an toàn");
+        return String(v);
+      case "string": return JSON.stringify(v.normalize("NFC"));
+      case "object": {
+        if (Array.isArray(v)) return "[" + v.map(canonicalize).join(",") + "]";
+        const keys = Object.keys(v).map((k) => [k.normalize("NFC"), k]).sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
+        for (let i = 1; i < keys.length; i++) if (keys[i][0] === keys[i - 1][0]) throw new Error("khóa bị trùng sau khi chuẩn hóa");
+        return "{" + keys.map(([nk, k]) => JSON.stringify(nk) + ":" + canonicalize(v[k])).join(",") + "}";
+      }
+      default: throw new Error("metadata không hỗ trợ kiểu " + typeof v);
+    }
+  }
+  const metadataHash = (obj) => ethers.keccak256(ethers.toUtf8Bytes(canonicalize(obj)));
+  const mkElectionMeta = (o) => ({
+    schema: "votechain.election.v1",
+    organizationId: o.organizationId, title: o.title, description: o.description || "", purpose: o.purpose || "",
+    eligibility: o.eligibility || "", schedule: o.schedule || null, extra: o.extra || null, cover: o.cover || null,
+  });
+  const mkCandidateMeta = (o) => ({
+    schema: "votechain.candidate.v1",
+    index: o.index, fullName: o.fullName, bio: o.bio || "", experience: o.experience || "", achievements: o.achievements || "",
+    manifesto: o.manifesto || "", avatar: o.avatar || null, documents: o.documents || [],
+  });
+  /*META-END*/
+
+  const ORG_STATUS_VI = ["—", "Chờ xác minh", "Đã xác minh", "Tạm ngưng"];
+  const ORG_STATUS_CLS = ["gray", "amber", "teal", "red"];
+  const ROLE_VI = ["Không", "Member", "Proposer", "Manager"];
+  const REQ_VI = ["Chờ duyệt", "Đã duyệt", "Bị từ chối", "Đã rút", "Hết hạn"];
+  const REQ_CLS = ["amber", "teal", "red", "gray", "gray"];
+  const IMG_EXT = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
+  const MAX_IMG = { "organization-assets": 2 * 1024 * 1024, "election-assets": 10 * 1024 * 1024, "candidate-assets": 10 * 1024 * 1024 };
+  const lc = (a) => String(a || "").toLowerCase();
+  const sameAddr = (a, b) => !!a && !!b && lc(a) === lc(b);
+
+  async function pool(items, n, fn) {
+    const out = new Array(items.length);
+    let next = 0;
+    const worker = async () => { while (next < items.length) { const i = next++; out[i] = await fn(items[i], i); } };
+    await Promise.all(Array.from({ length: Math.min(n, items.length) }, worker));
+    return out;
+  }
+
+  /* ----- Supabase (fetch thuần: khóa công khai + phiên đăng nhập bằng ví; không có khóa bí mật) ----- */
+  const SB = { session: null };
+  const SB_STORE = "votechain:sb";
+  function jwtPayload(t) {
+    try {
+      const b = String(t).split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+      const bin = atob(b + "=".repeat((4 - (b.length % 4)) % 4));
+      return JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0))));
+    } catch (_) { return null; }
+  }
+  const sbWallet = () => {
+    const p = SB.session && jwtPayload(SB.session.access_token);
+    return p && p.app_metadata && typeof p.app_metadata.wallet === "string" ? lc(p.app_metadata.wallet) : null;
+  };
+  const sbConfigured = () => /^https:\/\/[a-z0-9]+\.supabase\.co$/.test(CONFIG.SUPABASE_URL || "") && !!CONFIG.SUPABASE_KEY;
+  const sbActive = () => !!(SB.session && S.account && sbWallet() === lc(S.account) && SB.session.expires_at * 1000 > Date.now() + 15000);
+  function sbStore() {
+    try { if (SB.session) sessionStorage.setItem(SB_STORE, JSON.stringify(SB.session)); else sessionStorage.removeItem(SB_STORE); } catch (_) { /* chế độ riêng tư */ }
+  }
+  function sbRestore() {
+    try {
+      const j = JSON.parse(sessionStorage.getItem(SB_STORE) || "null");
+      if (j && typeof j.access_token === "string" && j.expires_at) SB.session = j;
+    } catch (_) { /* bỏ qua */ }
+  }
+  async function sbRaw(url, init) {
+    const headers = Object.assign({ apikey: CONFIG.SUPABASE_KEY }, (init && init.headers) || {});
+    if (SB.session && sbActive() && !headers.Authorization && url.indexOf("/auth/v1/") < 0 && url.indexOf("/functions/v1/") < 0) headers.Authorization = "Bearer " + SB.session.access_token;
+    let r;
+    try { r = await fetch(url, Object.assign({}, init, { headers })); }
+    catch (_) { throw new UserError("Không kết nối được Supabase (mạng hoặc CORS). Kiểm tra SUPABASE_URL và domain được phép."); }
+    let j = null;
+    try { j = await r.json(); } catch (_) { /* không có nội dung */ }
+    return { ok: r.ok, status: r.status, json: j };
+  }
+  const sbMsg = (r) => (r.json && (r.json.message || r.json.error || r.json.msg)) || "";
+  async function sbGet(path) {
+    if (!sbConfigured()) throw new UserError("Chưa cấu hình Supabase.");
+    const r = await sbRaw(CONFIG.SUPABASE_URL + "/rest/v1/" + path, { method: "GET", headers: { Accept: "application/json" } });
+    if (!r.ok) throw new UserError("Supabase từ chối đọc dữ liệu (" + r.status + ")" + (sbMsg(r) ? ": " + sbMsg(r) : "."));
+    return r.json;
+  }
+
+  async function sbLogin() {
+    if (!sbConfigured()) throw new UserError("Chưa cấu hình Supabase trong trang.");
+    if (!S.signer || !S.account) throw new UserError("Hãy kết nối MetaMask trước khi đăng nhập dữ liệu.");
+    const wallet = lc(S.account);
+    const fn = CONFIG.SUPABASE_URL + "/functions/v1/wallet-auth";
+    const post = async (url, body, what) => {
+      const r = await sbRaw(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      if (!r.ok) throw new UserError(what + " thất bại (" + r.status + ")" + (sbMsg(r) ? ": " + sbMsg(r) : "."));
+      return r.json;
+    };
+    const n = await post(fn, { action: "nonce", wallet }, "Xin nonce đăng nhập");
+    // Chống thông điệp lạ: thông điệp phải đúng ví, nonce và mạng của bạn trước khi ký.
+    const msg = String((n && n.message) || "");
+    if (!n || !/^[0-9a-f]{32}$/.test(String(n.nonce)) || !msg.includes("Nonce: " + n.nonce) || !msg.includes(S.account) || !msg.includes("Chain ID: " + CHAIN_ID) || msg.length > 600) {
+      throw new UserError("Thông điệp đăng nhập từ máy chủ không đúng định dạng, đã hủy để an toàn.");
+    }
+    const signature = await S.signer.signMessage(msg);
+    const v = await post(fn, { action: "verify", wallet, nonce: n.nonce, signature }, "Xác thực chữ ký");
+    if (!v || typeof v.token_hash !== "string") throw new UserError("Máy chủ không trả về mã đăng nhập hợp lệ.");
+    const ses = await post(CONFIG.SUPABASE_URL + "/auth/v1/verify", { type: v.type || "magiclink", token_hash: v.token_hash }, "Tạo phiên đăng nhập");
+    if (!ses || typeof ses.access_token !== "string") throw new UserError("Không nhận được phiên đăng nhập.");
+    const p = jwtPayload(ses.access_token);
+    if (!p || !p.app_metadata || lc(p.app_metadata.wallet) !== wallet) throw new UserError("Phiên đăng nhập không gắn với ví của bạn, đã hủy.");
+    SB.session = { access_token: ses.access_token, refresh_token: ses.refresh_token || null, expires_at: Number(p.exp) || nowSec() + Number(ses.expires_in || 3600) };
+    sbStore();
+    renderLoginState();
+    toast("ok", "Đã đăng nhập dữ liệu bằng ví " + shortAddr(S.account) + ".");
+  }
+  async function ensureLogin() { if (!sbActive()) await sbLogin(); }
+  function sbLogout() { SB.session = null; sbStore(); renderLoginState(); }
+  function renderLoginState() {
+    const b = $("btnSbLogin");
+    if (!b) return;
+    const on = sbActive();
+    b.textContent = on ? "Đã đăng nhập dữ liệu" : "Đăng nhập dữ liệu";
+    b.className = "btn sm " + (on ? "soft" : "outline");
+    b.title = on ? "Bấm để đăng xuất khỏi Supabase (ví vẫn kết nối)" : "Ký một thông điệp (không tốn phí gas) để lưu và sửa nội dung";
+    b.classList.toggle("hidden", !sbConfigured() || !S.account);
+  }
+
+  const publicUrl = (bucket, path) => CONFIG.SUPABASE_URL + "/storage/v1/object/public/" + bucket + "/" + path;
+
+  /** Đọc ảnh người dùng chọn, kiểm tra loại và dung lượng, tính checksum nội dung (keccak256 của byte tệp). */
+  async function prepareImage(file, bucket, orgId, kind) {
+    if (!file) return null;
+    const ext = IMG_EXT[file.type];
+    if (!ext) throw new UserError("Ảnh “" + file.name + "” phải là PNG, JPEG hoặc WebP.");
+    if (file.size > MAX_IMG[bucket]) throw new UserError("Ảnh “" + file.name + "” vượt " + (MAX_IMG[bucket] / 1048576) + " MB.");
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const checksum = ethers.keccak256(bytes);
+    const path = orgId + "/" + kind + "/" + checksum + "." + ext;
+    return { bucket, path, bytes, mime: file.type, name: file.name.slice(0, 120), size: bytes.length, checksum, url: publicUrl(bucket, path) };
+  }
+  const fileEntry = (role, f) => ({ role, name: f.name, mime: f.mime, size: f.size, checksum: f.checksum, url: f.url });
+  async function sbUpload(f) {
+    await ensureLogin();
+    const r = await sbRaw(CONFIG.SUPABASE_URL + "/storage/v1/object/" + f.bucket + "/" + f.path, { method: "POST", headers: { "Content-Type": f.mime, "x-upsert": "false", "cache-control": "max-age=31536000" }, body: f.bytes });
+    if (r.ok) return;
+    const m = sbMsg(r);
+    if (r.status === 409 || /already exists|Duplicate/i.test(m)) return;   // cùng nội dung đã có (tên = checksum)
+    throw new UserError("Tải ảnh “" + f.name + "” lên thất bại (" + r.status + ")" + (m ? ": " + m : "."));
+  }
+
+  async function sbOrgUuid(onchainId) {
+    const rows = await sbGet("organizations?organization_id_onchain=eq." + Number(onchainId) + "&select=id,name,description,logo_url,organization_type,verification_status,synced_at");
+    return rows && rows[0] ? rows[0] : null;
+  }
+  async function sbSaveDraft(orgUuid, type, candidateIndex, hash, content) {
+    const row = { organization_id: orgUuid, metadata_type: type, candidate_id_onchain: type === "candidate" ? candidateIndex : null, metadata_hash: hash, content, created_by: lc(S.account) };
+    const r = await sbRaw(CONFIG.SUPABASE_URL + "/rest/v1/metadata_history", { method: "POST", headers: { "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify(row) });
+    if (r.ok) return;
+    if (r.status === 409 && r.json && r.json.code === "23505") return;   // bản nháp y hệt đã có
+    if (r.status === 401 || r.status === 403) throw new UserError("Supabase từ chối lưu bản nháp: ví của bạn cần là Proposer/Manager của tổ chức đã xác minh và được đồng bộ sang Supabase.");
+    throw new UserError("Lưu bản nháp thất bại (" + r.status + ")" + (sbMsg(r) ? ": " + sbMsg(r) : "."));
+  }
+
+  /* ----- Registry: tổ chức ----- */
+  async function regAddress() {
+    if (S.regAddr) return S.regAddr;
+    const c = reader();
+    if (!c) throw new UserError("Hãy nhập địa chỉ ProjectCore hoặc kết nối ví trước.");
+    S.regAddr = ethers.getAddress(await c.registry());
+    return S.regAddr;
+  }
+  async function regRead() { return new ethers.Contract(await regAddress(), REG_ABI, chainProvider()); }
+  async function regWrite() {
+    if (!S.signer) throw new UserError("Hãy kết nối MetaMask trước.");
+    return new ethers.Contract(await regAddress(), REG_ABI, S.signer);
+  }
+  async function regTx(label, method, args) {
+    const c = await regWrite();
+    await c[method].estimateGas(...args);
+    const out = await sendTx(label, () => c[method](...args));
+    return out;
+  }
+
+  async function loadOrgs() {
+    const reg = await regRead();
+    const n = Number(await reg.organizationCount());
+    const ids = [];
+    for (let i = n; i >= Math.max(1, n - 49); i--) ids.push(i);
+    const list = await pool(ids, 4, async (id) => {
+      const v = await reg.getOrganization(id);
+      const role = S.account ? Number(await reg.roleOf(id, S.account)) : 0;
+      return { id, owner: ethers.getAddress(v.owner), status: Number(v.status), name: v.name, infoHash: v.infoHash, members: Number(v.memberCount), approvers: Number(v.approverCount), role };
+    });
+    const admin = ethers.getAddress(await reg.platformAdmin());
+    S.orgs = list; S.orgCount = n; S.platformAdmin = admin;
+    renderOrgs();
+    fillCreateOrgs();
+  }
+
+  function renderOrgs() {
+    const body = $("orgRows");
+    clear(body);
+    const orgs = S.orgs;
+    if (!orgs) { const tr = el("tr", "empty"); const td = el("td", "", "Chưa tải dữ liệu."); td.colSpan = 4; tr.appendChild(td); body.appendChild(tr); return; }
+    $("orgInfo").textContent = S.orgCount + " tổ chức" + (orgs.length < S.orgCount ? " · hiển thị " + orgs.length + " mới nhất" : "") + (S.platformAdmin ? " · quản trị nền tảng " + shortAddr(S.platformAdmin) : "");
+    if (!orgs.length) { const tr = el("tr", "empty"); const td = el("td", "", "Chưa có tổ chức nào. Hãy đăng ký tổ chức đầu tiên."); td.colSpan = 4; tr.appendChild(td); body.appendChild(tr); return; }
+    for (const o of orgs) {
+      const tr = el("tr");
+      const c1 = el("td"); const t = el("div", "", o.name); t.style.fontWeight = "650"; c1.appendChild(t); c1.appendChild(el("div", "tiny faint", "#" + o.id + " · " + o.members + " thành viên · " + o.approvers + " người duyệt")); tr.appendChild(c1);
+      const c2 = el("td"); c2.appendChild(el("span", "badge " + ORG_STATUS_CLS[o.status], ORG_STATUS_VI[o.status])); tr.appendChild(c2);
+      const c3 = el("td"); c3.appendChild(el("span", "badge " + (o.role ? "blue" : "gray"), o.role ? ROLE_VI[o.role] : "—")); tr.appendChild(c3);
+      const c4 = el("td", "right"); const b = el("button", "btn ghost sm", "Chi tiết"); b.onclick = () => run("btnOrgReload", "Đang tải…", () => pickOrg(o.id)); c4.appendChild(b); tr.appendChild(c4);
+      body.appendChild(tr);
+    }
+  }
+
+  async function pickOrg(id) {
+    const reg = await regRead();
+    const [v, m, ap] = await Promise.all([reg.getOrganization(id), reg.getMembers(id), reg.getApprovers(id)]);
+    const role = S.account ? Number(await reg.roleOf(id, S.account)) : 0;
+    const o = {
+      id, owner: ethers.getAddress(v.owner), status: Number(v.status), name: v.name, infoHash: v.infoHash, members: Number(v.memberCount), approvers: Number(v.approverCount),
+      memberList: Array.from(m.addrs).map((a, i) => ({ addr: ethers.getAddress(a), role: Number(m.roles[i]) })), approverList: Array.from(ap).map(ethers.getAddress), role,
+    };
+    S.orgPick = o;
+    $("orgManage").classList.remove("hidden");
+    renderOrgManage();
+    loadOrgMirror(o).catch(() => {});
+  }
+
+  function addrCell(a) { const td = el("td"); td.appendChild(addrEl(a)); return td; }
+
+  function renderOrgManage() {
+    const o = S.orgPick;
+    if (!o) return;
+    const isMgr = o.role === 3, verified = o.status === 2, isAdmin = sameAddr(S.account, S.platformAdmin);
+    $("omTitle").textContent = o.name + " · #" + o.id;
+    $("omSub").textContent = "Chủ sở hữu " + shortAddr(o.owner) + " · " + ORG_STATUS_VI[o.status] + " · vai trò của bạn: " + (o.role ? ROLE_VI[o.role] : "không có");
+    const adm = $("omAdmin"); clear(adm);
+    if (isAdmin) {
+      if (o.status !== 2) { const b = el("button", "btn primary sm", "Xác minh tổ chức"); b.id = "btnOrgVerify"; b.onclick = () => run("btnOrgVerify", "Đang gửi…", () => orgAdminAct("verifyOrganization", "Xác minh tổ chức #")); adm.appendChild(b); }
+      if (o.status === 2) { const b = el("button", "btn outline sm", "Tạm ngưng"); b.id = "btnOrgSuspend"; b.onclick = () => run("btnOrgSuspend", "Đang gửi…", () => orgAdminAct("suspendOrganization", "Tạm ngưng tổ chức #")); adm.appendChild(b); }
+    }
+    const al = $("omAlert"); clear(al);
+    if (!verified) al.appendChild(el("div", "alert warn", "Tổ chức chưa được xác minh nên chưa quản lý được thành viên và người duyệt, và chưa tạo được cuộc bầu cử." + (isAdmin ? "" : " Hãy nhờ quản trị nền tảng xác minh.")));
+    else if (!isMgr) al.appendChild(el("div", "alert info", "Chỉ Manager mới quản lý được thành viên và người duyệt. Vai trò hiện tại của bạn: " + (o.role ? ROLE_VI[o.role] : "không có") + "."));
+    const canEdit = isMgr && verified;
+
+    const mb = $("omMembers"); clear(mb);
+    for (const m of o.memberList) {
+      const tr = el("tr"); tr.appendChild(addrCell(m.addr));
+      const tdr = el("td"); tdr.appendChild(el("span", "badge " + (m.role === 3 ? "blue" : m.role === 2 ? "teal" : "gray"), ROLE_VI[m.role] + (sameAddr(m.addr, o.owner) ? " · chủ sở hữu" : ""))); tr.appendChild(tdr);
+      const tda = el("td", "right");
+      if (canEdit && !sameAddr(m.addr, o.owner)) {
+        const rm = el("button", "btn ghost sm", "Xóa"); rm.id = "rmM-" + m.addr; rm.onclick = () => run(rm.id, "Đang gửi…", () => orgAct("removeMember", [o.id, m.addr], "Xóa thành viên"));
+        tda.appendChild(rm);
+      }
+      tr.appendChild(tda); mb.appendChild(tr);
+    }
+    const ab = $("omApprovers"); clear(ab);
+    if (!o.approverList.length) { const tr = el("tr", "empty"); const td = el("td", "", "Chưa có người duyệt. Cần ít nhất 2 người để tạo cuộc bầu cử."); td.colSpan = 2; tr.appendChild(td); ab.appendChild(tr); }
+    for (const a of o.approverList) {
+      const tr = el("tr"); tr.appendChild(addrCell(a));
+      const tda = el("td", "right");
+      if (canEdit) {
+        const rep = el("button", "btn ghost sm", "Thay bằng ví ở ô bên dưới"); rep.id = "repA-" + a; rep.onclick = () => run(rep.id, "Đang gửi…", async () => {
+          const nw = $("apAddr").value.trim(); if (!ethers.isAddress(nw)) throw new UserError("Hãy nhập ví người duyệt mới ở ô bên dưới.");
+          await orgAct("replaceApprover", [o.id, a, ethers.getAddress(nw)], "Thay người duyệt");
+        });
+        const rm = el("button", "btn ghost sm", "Gỡ"); rm.id = "rmA-" + a; rm.onclick = () => run(rm.id, "Đang gửi…", () => orgAct("removeApprover", [o.id, a], "Gỡ người duyệt"));
+        tda.appendChild(rep); tda.appendChild(rm);
+      }
+      tr.appendChild(tda); ab.appendChild(tr);
+    }
+    $("omThreshold").textContent = o.approverList.length ? "· " + o.approverList.length + " người, ngưỡng ký " + Math.ceil((2 * o.approverList.length) / 3) : "";
+    $("omMemberForm").classList.toggle("hidden", !canEdit);
+    $("omApproverForm").classList.toggle("hidden", !canEdit);
+    $("omInfoBox").classList.toggle("hidden", !(isMgr && verified));
+  }
+
+  async function orgAct(method, args, label) {
+    const o = S.orgPick;
+    await regTx(label + " (tổ chức #" + o.id + ")", method, args);
+    toast("ok", label + " thành công.");
+    await pickOrg(o.id);
+    await loadOrgs();
+  }
+  async function orgAdminAct(method, label) {
+    const o = S.orgPick;
+    await regTx(label + o.id, method, [o.id]);
+    toast("ok", "Đã cập nhật trạng thái tổ chức #" + o.id + ".");
+    await pickOrg(o.id);
+    await loadOrgs();
+  }
+
+  async function doOrgRegister() {
+    const name = $("oName").value.trim();
+    if (!name || utf8Len(name) > 64) throw new UserError("Tên tổ chức phải dài 1–64 byte.");
+    const infoHash = metadataHash({ schema: "votechain.organization.v1", name, organizationType: $("oType").value });
+    const { rc } = await regTx("Đăng ký tổ chức", "registerOrganization", [name, infoHash]);
+    let id = null;
+    for (const lg of rc.logs) { try { const ev = REG_IFACE.parseLog(lg); if (ev && ev.name === "OrganizationRegistered") id = Number(ev.args.id); } catch (_) { /* log khác */ } }
+    toast("ok", "Đã đăng ký tổ chức" + (id ? " #" + id : "") + ". Chờ quản trị nền tảng xác minh.");
+    $("oName").value = "";
+    await loadOrgs();
+    if (id) await pickOrg(id);
+  }
+
+  async function doAddMember() {
+    const o = S.orgPick;
+    const a = $("mAddr").value.trim();
+    if (!ethers.isAddress(a)) throw new UserError("Địa chỉ ví thành viên không hợp lệ.");
+    const addr = ethers.getAddress(a), role = Number($("mRole").value);
+    const existing = o.memberList.find((m) => sameAddr(m.addr, addr));
+    if (existing) await orgAct("updateMemberRole", [o.id, addr, role], "Đổi vai trò");
+    else await orgAct("addMember", [o.id, addr, role], "Thêm thành viên");
+    $("mAddr").value = "";
+  }
+  async function doAddApprover() {
+    const o = S.orgPick;
+    const a = $("apAddr").value.trim();
+    if (!ethers.isAddress(a)) throw new UserError("Địa chỉ ví người duyệt không hợp lệ.");
+    await orgAct("addApprover", [o.id, ethers.getAddress(a)], "Thêm người duyệt");
+    $("apAddr").value = "";
+  }
+
+  async function loadOrgMirror(o) {
+    const box = $("omSync");
+    box.textContent = "Đang đọc Supabase…";
+    let row = null;
+    try { row = sbConfigured() ? await sbOrgUuid(o.id) : null; } catch (e) { box.textContent = "Không đọc được Supabase: " + explain(e); return; }
+    S.orgMirror = row;
+    if (!row) { box.textContent = "Tổ chức chưa được đồng bộ sang Supabase (chain-sync chưa chạy hoặc chưa tới lượt). Chưa lưu được mô tả và logo."; return; }
+    box.textContent = "Đã đồng bộ" + (row.synced_at ? " lúc " + new Date(row.synced_at).toLocaleString("vi-VN") : "") + ".";
+    $("oiType").value = row.organization_type || "other";
+    $("oiDesc").value = row.description || "";
+  }
+
+  async function doOrgInfoSave() {
+    const o = S.orgPick;
+    const row = S.orgMirror;
+    if (!row) throw new UserError("Tổ chức chưa được đồng bộ sang Supabase nên chưa lưu được.");
+    await ensureLogin();
+    const body = { organization_type: $("oiType").value, description: $("oiDesc").value.trim().slice(0, 2000) };
+    const file = $("oiLogo").files && $("oiLogo").files[0];
+    if (file) {
+      const f = await prepareImage(file, "organization-assets", o.id, "logo");
+      await sbUpload(f);
+      body.logo_url = f.url;
+    }
+    const r = await sbRaw(CONFIG.SUPABASE_URL + "/rest/v1/organizations?id=eq." + row.id, { method: "PATCH", headers: { "Content-Type": "application/json", Prefer: "return=representation" }, body: JSON.stringify(body) });
+    if (!r.ok) throw new UserError("Lưu thông tin thất bại (" + r.status + ")" + (sbMsg(r) ? ": " + sbMsg(r) : "."));
+    if (!Array.isArray(r.json) || !r.json.length) throw new UserError("Supabase không cho sửa (cần là Manager của tổ chức đã xác minh, đã đăng nhập bằng đúng ví).");
+    toast("ok", "Đã lưu thông tin tổ chức.");
+    await loadOrgMirror(o);
+  }
+
+  /* ----- Tạo cuộc bầu cử: chọn tổ chức, người duyệt chụp lại, ứng viên ----- */
+  S.createCtx = null;
+  S.candForm = [];
+
+  function fillCreateOrgs() {
+    const sel = $("cOrg");
+    if (!sel) return;
+    const prev = sel.value;
+    clear(sel);
+    const ok = (S.orgs || []).filter((o) => o.status === 2 && o.role >= 2);
+    if (!S.account) sel.appendChild(new Option("Kết nối ví để tải danh sách…", ""));
+    else if (!ok.length) sel.appendChild(new Option("Bạn chưa là Proposer/Manager của tổ chức đã xác minh nào", ""));
+    else {
+      sel.appendChild(new Option("— Chọn tổ chức —", ""));
+      for (const o of ok) sel.appendChild(new Option(o.name + " (#" + o.id + ", " + ROLE_VI[o.role] + ")", String(o.id)));
+      if (prev && ok.some((o) => String(o.id) === prev)) sel.value = prev;
+    }
+    $("cOrgHelp").textContent = S.account ? ok.length + " tổ chức phù hợp." : "Chưa kết nối ví.";
+    loadCreateCtx().catch(() => {});
+  }
+
+  async function loadCreateCtx() {
+    const id = Number($("cOrg").value);
+    if (!id || !S.account) { S.createCtx = null; renderCreateCtx(); return; }
+    const reg = await regRead(), core = reader();
+    const [verified, can, approvers, pw, po, mw, mo] = await Promise.all([
+      reg.isVerified(id), reg.canPropose(id, S.account), reg.getApprovers(id),
+      core.pendingCountOfWallet(S.account), core.pendingCountOfOrg(id), core.maxPendingPerWallet(), core.maxPendingPerOrg(),
+    ]);
+    S.createCtx = { orgId: id, verified, canPropose: can, approvers: Array.from(approvers).map(ethers.getAddress), pendW: Number(pw), pendO: Number(po), maxW: Number(mw), maxO: Number(mo) };
+    renderCreateCtx();
+  }
+
+  function candidateWalletsOf(names) {
+    return S.candForm.slice(0, names.length).map((f) => ((f && f.wallet) || "").trim()).filter(Boolean);
+  }
+  function eligibleApprovers(names) {
+    const ctx = S.createCtx;
+    if (!ctx) return [];
+    const excl = new Set([lc(S.account)].concat(candidateWalletsOf(names).map(lc)));
+    return ctx.approvers.filter((a) => !excl.has(lc(a)));
+  }
+  function renderCreateCtx() {
+    const box = $("cApprovers"), ctx = S.createCtx;
+    clear(box);
+    if (!ctx) { box.textContent = "Chọn tổ chức để xem người duyệt."; $("cOrgInfo").textContent = ""; return; }
+    const names = candNamesList();
+    const elig = eligibleApprovers(names);
+    const need = Math.ceil((2 * elig.length) / 3);
+    $("cOrgInfo").textContent = "Yêu cầu đang chờ: " + ctx.pendW + "/" + ctx.maxW + " của ví bạn, " + ctx.pendO + "/" + ctx.maxO + " của tổ chức.";
+    const sum = el("div", "small"); sum.style.marginBottom = "8px";
+    sum.textContent = "Hợp lệ " + elig.length + "/" + ctx.approvers.length + " người duyệt · cần " + (elig.length >= 2 ? need : "—") + " chữ ký (2/3 làm tròn lên).";
+    box.appendChild(sum);
+    const ul = el("ul", "checklist");
+    for (const a of ctx.approvers) {
+      const out = lc(a) === lc(S.account) ? "ví của bạn (bị loại)" : candidateWalletsOf(names).map(lc).includes(lc(a)) ? "trùng ví ứng viên (bị loại)" : "";
+      ul.appendChild(el("li", out ? "bad" : "good", a + (out ? " · " + out : "")));
+    }
+    box.appendChild(ul);
+  }
+
+  const candNamesList = () => $("cNames").value.split("\n").map((s) => s.trim()).filter(Boolean);
+
+  function renderCandEditors() {
+    const names = candNamesList();
+    const box = $("cCandBox");
+    clear(box);
+    names.forEach((nm, i) => {
+      const f = S.candForm[i] || (S.candForm[i] = { bio: "", experience: "", achievements: "", manifesto: "", wallet: "", avatar: null });
+      const d = el("details", "card");
+      d.style.padding = "10px 14px";
+      const sm = el("summary", "", "Hồ sơ ứng viên " + (i + 1) + ": " + nm);
+      sm.style.cursor = "pointer"; sm.style.fontWeight = "650";
+      d.appendChild(sm);
+      const mk = (label, key, tag, ph) => {
+        const w = el("div", "field"); w.style.marginTop = "10px";
+        const l = el("label", "f", label); w.appendChild(l);
+        const inp = tag === "textarea" ? el("textarea") : el("input"); if (tag !== "textarea") inp.type = "text";
+        if (tag === "textarea") { inp.style.fontFamily = "var(--sans)"; inp.style.minHeight = "60px"; }
+        inp.value = f[key]; inp.placeholder = ph || ""; inp.spellcheck = false;
+        inp.oninput = () => { f[key] = inp.value; if (key === "wallet") renderCreateCtx(); };
+        w.appendChild(inp); return w;
+      };
+      d.appendChild(mk("Ví ứng viên (tùy chọn; nếu trùng người duyệt thì người đó bị loại)", "wallet", "input", "0x…"));
+      d.appendChild(mk("Tiểu sử", "bio", "textarea"));
+      d.appendChild(mk("Kinh nghiệm", "experience", "textarea"));
+      d.appendChild(mk("Thành tích", "achievements", "textarea"));
+      d.appendChild(mk("Chương trình hành động", "manifesto", "textarea"));
+      const w = el("div", "field"); w.style.marginTop = "10px";
+      w.appendChild(el("label", "f", "Ảnh đại diện (tùy chọn, công khai)"));
+      const fi = el("input"); fi.type = "file"; fi.accept = "image/png,image/jpeg,image/webp";
+      fi.onchange = () => { f.avatar = fi.files && fi.files[0] ? fi.files[0] : null; };
+      w.appendChild(fi); d.appendChild(w);
+      box.appendChild(d);
+    });
+    renderCreateCtx();
+  }
+
+  function readCreateForm() {
+    const checks = [];
+    const add = (ok, text) => checks.push([ok, text]);
+    const ctx = S.createCtx;
+    const title = $("cTitle").value.trim();
+    const names = candNamesList();
+    const reg = Number($("cReg").value), com = Number($("cCommit").value), rev = Number($("cReveal").value);
+    const quorum = Number($("cQuorum").value);
+    const vt = parseAddresses($("cVoters").value);
+    const wallets = candidateWalletsOf(names);
+    const badWallets = wallets.filter((w) => !ethers.isAddress(w));
+    const elig = eligibleApprovers(names);
+
+    add(!!ctx, "Đã chọn tổ chức.");
+    if (ctx) {
+      add(ctx.verified, "Tổ chức đã được xác minh.");
+      add(ctx.canPropose, "Ví của bạn là Proposer hoặc Manager của tổ chức.");
+      add(elig.length >= 2, "Còn ít nhất 2 người duyệt hợp lệ sau khi loại ví của bạn và ví ứng viên (hiện " + elig.length + ").");
+      add(ctx.pendW < ctx.maxW, "Chưa chạm hạn mức yêu cầu chờ duyệt của ví (" + ctx.pendW + "/" + ctx.maxW + ").");
+      add(ctx.pendO < ctx.maxO, "Chưa chạm hạn mức yêu cầu chờ duyệt của tổ chức (" + ctx.pendO + "/" + ctx.maxO + ").");
+    }
+    add(title.length > 0 && utf8Len(title) <= LIMITS.MAX_TITLE_BYTES, "Tên cuộc bầu cử: 1–" + LIMITS.MAX_TITLE_BYTES + " byte (hiện " + utf8Len(title) + ").");
+    add(names.length >= 2 && names.length <= LIMITS.MAX_CANDIDATES, "Số ứng viên: 2–" + LIMITS.MAX_CANDIDATES + " (hiện " + names.length + ").");
+    const badName = names.find((n) => utf8Len(n) > LIMITS.MAX_NAME_BYTES);
+    add(!badName, "Mỗi tên ứng viên tối đa " + LIMITS.MAX_NAME_BYTES + " byte" + (badName ? " (“" + badName.slice(0, 20) + "…” quá dài)." : "."));
+    add(new Set(names.map((n) => n.toLowerCase())).size === names.length, "Tên ứng viên không trùng nhau (khuyến nghị).");
+    add(badWallets.length === 0, "Ví ứng viên (nếu có) hợp lệ" + (badWallets.length ? " (sai: " + badWallets.slice(0, 2).join(", ") + ")." : "."));
+    const minOk = (x) => Number.isInteger(x) && x >= 1 && x <= LIMITS.MAX_PHASE_MINUTES;
+    add(minOk(reg) && minOk(com) && minOk(rev), "Mỗi pha 1–" + LIMITS.MAX_PHASE_MINUTES + " phút (số nguyên).");
+    add(Number.isInteger(reg) && reg * 60 <= 7 * 86400, "Thời gian duyệt tối đa 7 ngày (10.080 phút) để yêu cầu không hết hạn trước khi hết pha duyệt.");
+    add(Number.isInteger(quorum) && quorum >= 0 && quorum <= LIMITS.BPS, "Quorum 0–10.000 bps (hiện " + (Number.isFinite(quorum) ? bpsStr(quorum) : "?") + ").");
+    add(vt.errors.length === 0, "Địa chỉ cử tri hợp lệ" + (vt.errors.length ? " (sai: " + vt.errors.slice(0, 2).join(", ") + ")." : "."));
+    add(vt.list.length >= 1 && vt.list.length <= LIMITS.MAX_VOTERS, "Số cử tri: 1–" + LIMITS.MAX_VOTERS.toLocaleString("vi-VN") + " (hiện " + vt.list.length + ").");
+    if (vt.dups.length) add(true, "Đã loại " + vt.dups.length + " địa chỉ cử tri trùng.");
+    return { checks, title, names, reg, com, rev, quorum, voters: vt.list, candidateWallets: wallets.filter((w) => ethers.isAddress(w)).map(ethers.getAddress), orgId: ctx ? ctx.orgId : 0, ok: checks.every((c) => c[0]) };
+  }
+
+  /** Dựng toàn bộ metadata (kể cả checksum và đường dẫn ảnh) để hash xem trước == hash gửi lên chuỗi. */
+  async function buildMeta(form) {
+    const files = [];
+    const coverFile = $("cCover").files && $("cCover").files[0];
+    const cover = await prepareImage(coverFile, "election-assets", form.orgId, "cover");
+    if (cover) files.push(cover);
+    const election = mkElectionMeta({
+      organizationId: form.orgId, title: form.title, description: $("cDesc").value.trim(), purpose: $("cPurpose").value.trim(),
+      eligibility: $("cEligibility").value.trim(), cover: cover ? fileEntry("cover", cover) : null,
+    });
+    const candidates = [];
+    for (let i = 0; i < form.names.length; i++) {
+      const f = S.candForm[i] || {};
+      const av = await prepareImage(f.avatar, "candidate-assets", form.orgId, "avatar");
+      if (av) files.push(av);
+      candidates.push(mkCandidateMeta({ index: i, fullName: form.names[i], bio: (f.bio || "").trim(), experience: (f.experience || "").trim(), achievements: (f.achievements || "").trim(), manifesto: (f.manifesto || "").trim(), avatar: av ? fileEntry("avatar", av) : null }));
+    }
+    return { election, candidates, electionHash: metadataHash(election), candidateHashes: candidates.map(metadataHash), files };
+  }
+
+  async function buildPreview() {
+    const form = readCreateForm();
+    S.lastBuilt = null;
+    $("btnDownloadProofs").disabled = true;
+    $("btnDownloadMeta").disabled = true;
+    const box = $("cPreview");
+    let meta = null;
+    try { meta = await buildMeta(form); } catch (e) { form.checks.push([false, explain(e)]); form.ok = false; }
+    showChecks(form);
+    if (!form.voters.length) { box.classList.add("hidden"); return form; }
+    const tree = buildTree(form.voters);
+    S.lastBuilt = { form, tree, meta };
+    clear(box);
+    box.classList.remove("hidden");
+    const dl = el("dl", "kv");
+    const rows = [["Merkle root", tree.root], ["Số cử tri (voterCount)", String(tree.voterCount)], ["Độ sâu cây", String(tree.depth) + " tầng (mỗi proof " + tree.depth + " phần tử)"], ["Tổng thời gian", form.reg + form.com + form.rev + " phút"]];
+    if (meta) { rows.push(["Hash cuộc bầu cử", meta.electionHash]); rows.push(["Hash ứng viên", meta.candidateHashes.length + " hồ sơ (" + shortHash(meta.candidateHashes[0]) + "…)"]); if (meta.files.length) rows.push(["Ảnh sẽ tải lên (công khai)", String(meta.files.length)]); }
+    for (const [k, v] of rows) { dl.appendChild(el("dt", "", k)); dl.appendChild(el("dd", /root|Hash/.test(k) ? "mono" : "", v)); }
+    box.appendChild(dl);
+    $("btnDownloadProofs").disabled = false;
+    $("btnDownloadMeta").disabled = !meta;
+    return form;
+  }
+
+  async function doCreate() {
+    if (!S.contract) throw new UserError("Hãy kết nối ví MetaMask (và nhập địa chỉ hợp đồng) trước.");
+    await loadCreateCtx();
+    const form = await buildPreview();
+    if (!form.ok || !S.lastBuilt || !S.lastBuilt.meta) throw new UserError("Còn mục chưa hợp lệ trong danh sách kiểm tra. Hãy sửa rồi thử lại.");
+    const { tree, meta } = S.lastBuilt;
+    const save = $("cSave").checked;
+    if (!save && meta.files.length) throw new UserError("Bạn đã chọn ảnh nhưng tắt lưu lên Supabase. Hãy bỏ ảnh hoặc bật lại mục lưu nội dung.");
+
+    if (save) {
+      await ensureLogin();
+      const org = await sbOrgUuid(form.orgId);
+      if (!org) throw new UserError("Tổ chức này chưa được đồng bộ sang Supabase (chain-sync chưa chạy). Hãy chờ đồng bộ, hoặc bỏ chọn mục “Lưu nội dung” và tự giữ file metadata.");
+      for (const f of meta.files) await sbUpload(f);
+      await sbSaveDraft(org.id, "election", null, meta.electionHash, meta.election);
+      for (let i = 0; i < meta.candidates.length; i++) await sbSaveDraft(org.id, "candidate", i, meta.candidateHashes[i], meta.candidates[i]);
+    }
+
+    const p = {
+      organizationId: BigInt(form.orgId), title: form.title, names: form.names, candidateWallets: form.candidateWallets,
+      regMinutes: form.reg, commitMinutes: form.com, revealMinutes: form.rev, quorumBps: form.quorum, voterCount: tree.voterCount, merkleRoot: tree.root,
+      metadataHash: meta.electionHash, candidateMetadataHashes: meta.candidateHashes,
+    };
+    await S.contract.createElection.estimateGas(p);
+    const { rc } = await sendTx("Gửi yêu cầu tạo cuộc bầu cử", () => S.contract.createElection(p));
+    let newId = null;
+    for (const lg of rc.logs) { try { const ev = IFACE.parseLog(lg); if (ev && ev.name === "ElectionCreated") newId = ev.args.id; } catch (_) { /* log khác */ } }
+    const box = $("cResult");
+    clear(box); box.classList.remove("hidden");
+    const a = el("div", "alert ok");
+    a.appendChild(el("span", "", "🎉"));
+    a.appendChild(el("span", "", "Đã gửi yêu cầu" + (newId !== null ? " #" + newId : "") + ". Nhóm người duyệt của tổ chức có " + form.reg + " phút để ký (cần đủ ngưỡng 2/3). Hãy công bố danh sách cử tri và proofs.json cho cử tri."
+      + (save ? " Nội dung sẽ hiện và được xác thực với hash trên chuỗi sau khi chain-sync đồng bộ." : " Nội dung CHƯA lưu lên Supabase: hãy giữ file metadata (JSON).")));
+    box.appendChild(a);
+    if (newId !== null) {
+      const b = el("button", "btn soft sm", "Mở cuộc bầu cử #" + newId);
+      b.style.marginTop = "10px";
+      b.onclick = () => { $("electionId").value = String(newId); goto("approve"); run("btnLoad", "Đang tải…", () => loadElection(false)); };
+      box.appendChild(b);
+    }
+    toast("ok", "Đã gửi yêu cầu tạo cuộc bầu cử.");
+  }
+
+  /* ----- Xác thực nội dung với hash trên chuỗi (chạy ngay trong trình duyệt, không tin cột content_valid của máy chủ) ----- */
+  async function loadMetaVerify(e) {
+    const c = reader();
+    const n = e.candidates.length;
+    const chainCands = await pool(Array.from({ length: n }, (_, i) => i), 4, async (i) => { const r = await c.getCandidateMetadata(e.id, i); return { hash: lc(r.metadataHash), version: Number(r.version) }; });
+    const res = { election: { chainHash: lc(e.metaHash), version: e.metaVersion, state: "none" }, candidates: chainCands.map((x, i) => ({ index: i, name: e.candidates[i], chainHash: x.hash, version: x.version, state: "none" })), error: "" };
+    if (!sbConfigured()) { res.error = "Chưa cấu hình Supabase nên chưa lấy được nội dung."; return res; }
+    try {
+      const rows = await sbGet("metadata_history?election_id_onchain=eq." + Number(e.id) + "&select=metadata_type,candidate_id_onchain,metadata_hash,content&content=not.is.null&limit=500");
+      const drafts = await sbGet("metadata_history?election_id_onchain=is.null&metadata_hash=in.(" + [lc(e.metaHash)].concat(chainCands.map((x) => x.hash)).join(",") + ")&select=metadata_type,candidate_id_onchain,metadata_hash,content&content=not.is.null&limit=200").catch(() => []);
+      const pickRow = (type, idx, hash) => (rows || []).concat(drafts || []).find((r) => r.metadata_type === type && (type === "election" || Number(r.candidate_id_onchain) === idx) && lc(r.metadata_hash) === hash && r.content);
+      const judge = (type, idx, hash) => {
+        const r = pickRow(type, idx, hash);
+        if (!r) return { state: "none", content: null };
+        let got = null;
+        try { got = metadataHash(r.content); } catch (_) { got = null; }
+        const ok = got === hash && (type === "election" ? true : r.content && Number(r.content.index) === idx);
+        return { state: ok ? "ok" : "bad", content: r.content };
+      };
+      Object.assign(res.election, judge("election", 0, res.election.chainHash));
+      res.candidates.forEach((x) => Object.assign(x, judge("candidate", x.index, x.chainHash)));
+    } catch (err) { res.error = explain(err); }
+    return res;
+  }
+
+  function renderMetaVerify(boxId, res) {
+    const box = $(boxId);
+    if (!box) return;
+    clear(box);
+    if (!res) { box.appendChild(el("div", "small muted", "Chưa tải.")); return; }
+    const mk = (label, r) => {
+      const li = el("li", r.state === "ok" ? "good" : r.state === "bad" ? "bad" : "", "");
+      const tag = r.state === "ok" ? "Khớp hash trên chuỗi" : r.state === "bad" ? "KHÔNG khớp hash trên chuỗi, đừng tin nội dung này" : "Chưa có nội dung để đối chiếu";
+      li.appendChild(el("b", "", label + ": "));
+      li.appendChild(document.createTextNode(tag + " · v" + r.version + " · "));
+      li.appendChild(el("span", "mono tiny", shortHash(r.chainHash)));
+      return li;
+    };
+    const ul = el("ul", "checklist");
+    ul.appendChild(mk("Cuộc bầu cử", res.election));
+    res.candidates.forEach((x) => ul.appendChild(mk("Ứng viên " + (x.index + 1) + " (" + x.name + ")", x)));
+    box.appendChild(ul);
+    if (res.error) box.appendChild(el("div", "alert warn", res.error));
+    const el0 = res.election;
+    if (el0.state === "ok" && el0.content) {
+      const d = el("div", "small"); d.style.marginTop = "8px";
+      d.appendChild(el("b", "", "Mô tả đã xác thực: "));
+      d.appendChild(document.createTextNode(String(el0.content.description || "—").slice(0, 400)));
+      box.appendChild(d);
+    }
+  }
+  async function refreshMetaVerify() {
+    const e = S.election;
+    if (!e) { renderMetaVerify("approveMeta", null); renderMetaVerify("eeMeta", null); return; }
+    const res = await loadMetaVerify(e);
+    S.metaVerify = { id: e.id, res };
+    renderMetaVerify("approveMeta", res);
+    renderMetaVerify("eeMeta", res);
+  }
+
+  /* ----- Phê duyệt: từ chối, rút, giải phóng hạn mức ----- */
+  async function doReject(id) {
+    if (!S.contract) throw new UserError("Hãy kết nối ví MetaMask trước.");
+    id = BigInt(id);
+    await S.contract.rejectElection.estimateGas(id);
+    await sendTx("Từ chối cuộc #" + id, () => S.contract.rejectElection(id));
+    toast("ok", "Đã ghi phiếu từ chối cuộc bầu cử #" + id + ".");
+    if (S.election && S.election.id === id) await loadElection(true);
+  }
+  async function doWithdraw(id) {
+    if (!S.contract) throw new UserError("Hãy kết nối ví MetaMask trước.");
+    id = BigInt(id);
+    await S.contract.withdrawElection.estimateGas(id);
+    await sendTx("Rút yêu cầu #" + id, () => S.contract.withdrawElection(id));
+    toast("ok", "Đã rút yêu cầu #" + id + ".");
+    if (S.election && S.election.id === id) await loadElection(true);
+  }
+  async function doRelease(id) {
+    if (!S.contract) throw new UserError("Hãy kết nối ví MetaMask trước.");
+    id = BigInt(id);
+    await S.contract.releaseExpired.estimateGas(id);
+    await sendTx("Ghi nhận hết hạn #" + id, () => S.contract.releaseExpired(id));
+    toast("ok", "Đã ghi nhận yêu cầu #" + id + " hết hạn.");
+    if (S.election && S.election.id === id) await loadElection(true);
+  }
+
+  function wirePlatform2() {
+    $("btnSbLogin").onclick = async () => { await run("btnSbLogin", "Đang đăng nhập…", async () => { if (sbActive()) sbLogout(); else await sbLogin(); }); renderLoginState(); };
+    $("btnOrgReload").onclick = () => run("btnOrgReload", "Đang tải…", async () => { await loadOrgs(); if (S.orgPick) await pickOrg(S.orgPick.id); });
+    $("btnOrgRegister").onclick = () => run("btnOrgRegister", "Đang gửi…", doOrgRegister);
+    $("btnAddMember").onclick = () => run("btnAddMember", "Đang gửi…", doAddMember);
+    $("btnAddApprover").onclick = () => run("btnAddApprover", "Đang gửi…", doAddApprover);
+    $("btnOrgInfoSave").onclick = () => run("btnOrgInfoSave", "Đang lưu…", doOrgInfoSave);
+    $("btnReject").onclick = () => run("btnReject", "Đang xử lý…", () => doReject(S.election.id));
+    $("btnWithdraw").onclick = () => run("btnWithdraw", "Đang xử lý…", () => doWithdraw(S.election.id));
+    $("btnRelease").onclick = () => run("btnRelease", "Đang xử lý…", () => doRelease(S.election.id));
+    $("btnVerifyMeta").onclick = () => run("btnVerifyMeta", "Đang đối chiếu…", refreshMetaVerify);
+    $("cOrg").onchange = () => run("btnBuild", "Đang tải…", loadCreateCtx);
+    $("cNames").oninput = () => { clearTimeout(S._candT); S._candT = setTimeout(renderCandEditors, 400); };
+    $("btnDownloadMeta").onclick = () => {
+      if (!S.lastBuilt || !S.lastBuilt.meta) return;
+      const m = S.lastBuilt.meta;
+      downloadJson("votechain-metadata.json", { election: m.election, electionHash: m.electionHash, candidates: m.candidates, candidateHashes: m.candidateHashes });
+    };
+  }
+  async function initPlatform() {
+    sbRestore();
+    renderLoginState();
+    renderCandEditors();
+    if (reader()) {
+      try { await loadOrgs(); } catch (e) { console.warn("loadOrgs", e); }
+    }
+  }
+
+
+  /* ------------------------------------------------------------------
    * 12. KHỞI TẠO
    * ------------------------------------------------------------------ */
 
@@ -6734,7 +7602,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     $("btnApprove").onclick = () => run("btnApprove", "Đang xử lý…", doApprove);
     $("btnResult").onclick = () => run("btnResult", "Đang tải…", doResult);
     $("btnLog").onclick = () => run("btnLog", "Đang tải…", loadLogs);
-    $("btnBuild").onclick = () => run("btnBuild", "Đang dựng…", async () => { buildPreview(); });
+    $("btnBuild").onclick = () => run("btnBuild", "Đang dựng…", async () => { await buildPreview(); });
     $("btnCreate").onclick = () => run("btnCreate", "Đang xử lý…", doCreate);
     $("btnVerify").onclick = doVerify;
     $("btnHash").onclick = doHash;
@@ -6779,6 +7647,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     $("logSearch").oninput = () => { S.logQuery = $("logSearch").value; renderLogRows(); };
 
     wirePlatform();
+    wirePlatform2();
     $("cfgAddress").onkeydown = (ev) => { if (ev.key === "Enter") $("btnLoad").click(); };
     setInterval(tick, 1000);
     setInterval(() => { if (S.election && !S.busy && !document.hidden && S.election.phase < 3) loadElection(true).catch(() => {}); }, 30000);
@@ -6803,6 +7672,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     if (fromUrl && ethers.isAddress(fromUrl)) banner("warn", "Địa chỉ hợp đồng đang lấy từ đường dẫn. Chỉ tiếp tục nếu bạn tin cậy người gửi liên kết.");
     updateButtons();
     renderVoteFlow();
+    initPlatform().catch((e) => console.warn("initPlatform", e));
 
     // tự kết nối lại nếu ví đã cấp quyền trước đó và đúng mạng
     try {
@@ -6819,7 +7689,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   }
 
   window.addEventListener("DOMContentLoaded", init);
-  window.__votechain = { S, explain, commitmentOf, buildTree, verifyProof, parseAddresses, APP_ABI }; // phục vụ kiểm thử
+  window.__votechain = { S, explain, commitmentOf, buildTree, verifyProof, parseAddresses, APP_ABI, sbWallet, sbGet, metadataHash, REG_ABI, loadOrgs }; // phục vụ kiểm thử
 })();
 </script>
 </body>

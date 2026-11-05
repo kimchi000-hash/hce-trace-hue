@@ -9,6 +9,11 @@ const html = fs.readFileSync(path.join(__dirname, "..", "web", "index.html"), "u
 const m = html.match(/\/\*ABI-START\*\/\s*const APP_ABI = (\[[\s\S]*?\]);\s*\/\*ABI-END\*\//);
 if (!m) throw new Error("Khong tim thay khoi ABI trong web/index.html");
 const APP_ABI = JSON.parse(m[1]);
+const mr = html.match(/\/\*REG-ABI-START\*\/\s*const REG_ABI = (\[[\s\S]*?\]);\s*\/\*REG-ABI-END\*\//);
+if (!mr) throw new Error("Khong tim thay khoi REG_ABI trong web/index.html");
+const REG_ABI = JSON.parse(mr[1]);
+
+const artifactsErrors = [];
 
 describe("web/index.html khop voi ProjectCore (giao dien <-> hop dong)", function () {
   let real; // ethers.Interface tu artifact
@@ -18,6 +23,7 @@ describe("web/index.html khop voi ProjectCore (giao dien <-> hop dong)", functio
     const art = await artifacts.readArtifact("ProjectCore");
     real = new ethers.Interface(art.abi);
     app = new ethers.Interface(APP_ABI);
+    real.forEachError((e) => artifactsErrors.push(e.name));
   });
 
   it("moi ham giao dien goi deu ton tai voi dung chu ky va kieu tra ve", function () {
@@ -59,5 +65,41 @@ describe("web/index.html khop voi ProjectCore (giao dien <-> hop dong)", functio
       [0, 1, "0x" + "ab".repeat(32), voter.address]
     );
     expect(h).to.match(/^0x[0-9a-f]{64}$/);
+  });
+
+  describe("OrganizationRegistry (man hinh To chuc)", function () {
+    let real, app;
+    before(async function () {
+      const art = await artifacts.readArtifact("OrganizationRegistry");
+      real = new ethers.Interface(art.abi);
+      app = new ethers.Interface(REG_ABI);
+    });
+    it("moi ham/su kien giao dien goi deu ton tai voi dung chu ky, kieu tra ve va mutability", function () {
+      app.forEachFunction((f) => {
+        const r = real.getFunction(f.name);
+        expect(r, "thieu ham " + f.name).to.not.equal(null);
+        expect(r.format("sighash"), f.name).to.equal(f.format("sighash"));
+        expect(r.outputs.map((o) => o.format("full")).join(","), "tra ve " + f.name).to.equal(f.outputs.map((o) => o.format("full")).join(","));
+        expect(r.stateMutability, "mutability " + f.name).to.equal(f.stateMutability);
+      });
+      app.forEachEvent((e) => {
+        const r = real.getEvent(e.name);
+        expect(r, "thieu su kien " + e.name).to.not.equal(null);
+        expect(r.format("sighash")).to.equal(e.format("sighash"));
+      });
+    });
+    it("moi loi cua OrganizationRegistry deu duoc giao dien biet va dich", function () {
+      real.forEachError((e) => expect(app.getError(e.name), "REG_ABI thieu loi " + e.name).to.not.equal(null));
+      app.forEachError((e) => expect(real.getError(e.name), "khong co loi " + e.name).to.not.equal(null));
+      const errBlock = html.match(/const ERR_VI = \{([\s\S]*?)\n  \};/)[1];
+      const names = new Set();
+      real.forEachError((e) => names.add(e.name));
+      artifactsErrors.forEach((n) => names.add(n));
+      for (const n of names) expect(errBlock, "ERR_VI thieu loi " + n).to.match(new RegExp("\\b" + n + "\\s*:"));
+    });
+    it("getOrganization tra ve dung cac truong ten (giao dien doc theo ten)", function () {
+      expect(app.getFunction("getOrganization").outputs[0].format("full")).to.equal(real.getFunction("getOrganization").outputs[0].format("full"));
+      expect(app.getFunction("getMembers").outputs.map((o) => o.name)).to.deep.equal(real.getFunction("getMembers").outputs.map((o) => o.name));
+    });
   });
 });
