@@ -1,18 +1,6 @@
-# NHẬT KÝ LÀM VIỆC VỚI AI - [Tên bài]
+# NHẬT KÝ LÀM VIỆC VỚI AI — Club Voting (ECO2432)
 
-## Lần 1
-
-**Prompt:** dán nguyên văn.
-
-**AI trả về:** tóm tắt.
-
-**Đánh giá:** Dùng được / Phải sửa / Sai, bỏ.
-
-**Chỗ sai:** mô tả cụ thể, kèm dòng mã hoặc dữ liệu đối chiếu.
-
-**Cách sửa:** sinh viên đã làm gì.
-
-**Ai phát hiện:** AI tự nhận / Sinh viên phát hiện.
+Mỗi mục ghi: công cụ, prompt, AI trả về, đánh giá, chỗ sai, cách sửa, **ai phát hiện**. Các mục Lab 09–13 giữ nguyên như đã nộp (hợp đồng lúc đó là bản một cuộc bầu cử, dùng `registerVoters`; xem `GATE_REVIEW_1.md` phụ lục về thay đổi thiết kế sau đó).
 
 ## Lab 09 — Sinh mã và biên dịch hợp đồng lõi ProjectCore.sol
 - **Công cụ:** Antigravity IDE (Gemini).
@@ -60,3 +48,37 @@
 - **Cách sửa:** Đưa lệnh `balances[msg.sender] = 0;` lên trước lệnh `call` trong `VulnerableBank.sol`. Viết kịch bản test tự động `test/ProjectCore.test.js` sử dụng `expect(...).to.be.revertedWithCustomError(projectCore, "NotAdmin")` để chứng minh cơ chế phân quyền hoạt động tin cậy.
 - **Ai phát hiện:** Sinh viên và AI phối hợp rà soát thực nghiệm trên Remix VM.
 - **Kết quả nghiệm thu:** Bản vá triệt tiêu hoàn toàn lỗ hổng Reentrancy; kịch bản test tự động bắt chính xác lỗi `NotAdmin()` khi tài khoản lạ cố can thiệp danh sách cử tri.
+
+
+## Lab 15–17 — Đối chiếu sổ tay, đồng bộ mã–tài liệu–giao diện, kiểm thử và đo gas
+
+- **Công cụ:** Claude (Claude Code, mô hình Sonnet 5.5), chạy trên bản sao repo của nhóm; không có quyền ghi lên GitHub.
+- **Prompt 1 (nguyên văn):** "tôi mới tải lên nguồn sổ tay sinh viên, đây là học phần tiền điện tử và hợp đồng thông minh, nhóm chúng tôi đã chọn đề tài là bẩu cử và làm trên repo github với hce trace hue, bạn có thể đã đọc qua, bây giờ bạn đối chiếu xem thử là tiến độ đồ án hiện tại tôi ổn chưa, cần bổ sung gì để điểm cao không, vì tôi cảm thấy chưa ổn lắm. như phần spec hay nhiều phần khác trong repo nhóm"
+- **AI trả về:** bản đối chiếu repo với sổ tay, nêu các lệch pha lớn giữa mã và tài liệu; đưa hai hướng (A: quay về hợp đồng ~125 dòng khớp tài liệu; B: giữ hợp đồng 287 dòng và sửa mọi thứ cho khớp).
+- **Prompt 2 (nguyên văn):** "có thể quá 150 dòng như phải hoàn hảo. tôi cần đồ án điểm cao"
+- **AI trả về:** thực hiện hướng B: kiểm thử, đo gas, tối ưu nhỏ, viết lại giao diện, viết lại tài liệu.
+- **Đánh giá:** Dùng được sau khi chạy lại và đối chiếu; sinh viên phải tự đọc và giải thích được từng thay đổi trước buổi vấn đáp.
+
+### Bảng phát hiện của lần làm việc này
+
+| # | Phát hiện | Bằng chứng | Ai phát hiện | Xử lý |
+| :-: | :--- | :--- | :---: | :--- |
+| 1 | Tài liệu (SPEC, ECONOMIC_RULES, README, GATE_REVIEW) mô tả hợp đồng 125 dòng với `registerVoters`/`isVoter`, trong khi mã trong repo là bản nhiều cuộc bầu cử có Merkle và người duyệt (`createElection`, `approveElection`) | So tên hàm/lỗi trong tài liệu với `ProjectCore.sol` | **AI phát hiện** | Viết lại SPEC v3.0, ECONOMIC_RULES v3.0; thêm bài test đối chiếu ABI |
+| 2 | Giao diện `web/index.html` gọi `commit(bytes32)`, `reveal(uint256,bytes32)`, `phase()` và địa chỉ cũ, không còn khớp hợp đồng hiện tại | So ABI trong HTML với ABI biên dịch | **AI phát hiện** | Viết lại `web/` (config.js, abi.js, app.js); chạy thử đầu cuối 14 bước trên Hardhat; địa chỉ để trống chờ deploy mới |
+| 3 | Test cũ (`test/ProjectCore.test.js`) kiểm `NotAdmin()` — lỗi không còn trong hợp đồng hiện tại — nên không bao phủ hợp đồng đang nộp | So tên lỗi trong test với ABI biên dịch | **AI phát hiện** | Viết lại bộ test: nhóm A–H (luồng đúng, biên, gian lận, Merkle); nay 77 ca xanh |
+| 4 | `voterCount` không có trần: giá trị rất lớn làm `result()` tràn số và revert vĩnh viễn (TB4) | Đọc hạng mục 4 của danh mục Lab 14, viết test tái hiện | **AI phát hiện**, nhóm xác nhận bằng test | Thêm `MAX_VOTERS = 1 000 000` + test |
+| 5 | `evidence/lab-11/README.md` ghi TxHash ca 2 chỉ 63 ký tự hex (không hợp lệ); `GATE_REVIEW_1.md` ghi 64 ký tự | Đếm ký tự | **AI phát hiện** | Sửa theo bản 64 ký tự **nhưng nhóm phải mở Etherscan đối chiếu lại** |
+| 6 | Giao dịch Lab 11 gọi `commit(0x1111…)` là cam kết giả, chưa có đủ vòng commit → reveal → result trên Sepolia | Đọc evidence lab-11 | **AI phát hiện** | Ghi chú trung thực trong evidence; chuẩn bị `SEPOLIA_RUNBOOK.md` để nhóm tự làm bản đầy đủ |
+| 7 | Tối ưu gas: mapping `hasRevealed` có thể thay bằng giá trị đánh dấu ghi đè lên `commitments` (−19,5 nghìn gas mỗi lần mở phiếu) | Đo trước/sau, `GAS_REPORT.md` | **AI đề xuất**, test xác nhận hành vi không đổi | Áp dụng, giữ hàm `hasRevealed()` cho tương thích |
+
+### Chỗ AI làm sai hoặc phải chỉnh
+
+- Bản tối ưu đầu tiên (chỉ bỏ kiểm tra tràn số ở vòng lặp) **làm triển khai đắt hơn ≈ 1,7%** mà chỉ tiết kiệm ≈ 1,1 nghìn gas mỗi `commit`; lợi ích thật nằm ở thay đổi số 7. Báo cáo gas ghi cả hai mốc để không phóng đại.
+- Bảng gas trong ECONOMIC_RULES cũ (ví dụ `commit` ≈ 44 500, triển khai ≈ 620 000) là **ước tính cho hợp đồng cũ**, không phải số đo, và không còn khớp hợp đồng hiện tại (đo được ≈ 68 650 và ≈ 2,6 triệu). Đã thay bằng số đo.
+- AI không thể làm thay các việc cần ví thật: triển khai Sepolia, ghi giao dịch, ảnh Etherscan, poster, video. Các mục này để trống trong tài liệu, **không được điền số liệu giả**.
+
+### Việc sinh viên cần tự kiểm chứng (chưa làm bởi AI)
+
+- Chạy lại `npm install && npx hardhat test` trên máy mình và đọc kết quả.
+- Mở từng hàm trong `ProjectCore.sol` và giải thích bằng lời của mình (đặc biệt `REVEALED`, Merkle, `phase()`).
+- Đối chiếu lại các mã giao dịch Lab 11 trên Etherscan.

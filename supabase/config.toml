@@ -1,0 +1,21 @@
+# Cau hinh Supabase CLI cho VoteChain. Chi chua gia tri cong khai; KHONG dat khoa bi mat o day.
+# project_id chi la nhan cuc bo cua CLI; project that duoc noi bang `supabase link --project-ref vfzuniykinaivchhuiul`.
+project_id = "vfzuniykinaivchhuiul"
+
+[auth]
+# Tai khoan chi duoc tao boi Edge Function wallet-auth (admin API) sau khi xac minh chu ky vi.
+enable_signup = false
+enable_anonymous_sign_ins = false
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+
+[auth.email]
+enable_signup = false
+enable_confirmations = false
+
+# Hai ham tu kiem tra danh tinh (chu ky vi / bi mat dong bo / JWT nguoi dung), nen tat verify_jwt mac dinh.
+[functions.wallet-auth]
+verify_jwt = false
+
+[functions.chain-sync]
+verify_jwt = false

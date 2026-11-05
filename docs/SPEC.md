@@ -1,109 +1,126 @@
-# ĐẶC TẢ YÊU CẦU NGHIỆP VỤ (SPECIFICATION) — CLUB VOTING V2.0
-## Hệ thống Bầu cử Kín 2 pha (Commit - Reveal) kết hợp Quorum (Basis Points)
+# SPEC — CLUB VOTING (Bầu cử kín Commit–Reveal)
 
-- **Học phần:** ECO2432 — Web3 Starter
-- **Hợp đồng áp dụng:** [`contracts/project/ProjectCore.sol`](../contracts/project/ProjectCore.sol)
-- **Nhóm thực hiện:**
-  - Nguyễn Thị Kim Chi (23K4300025) — Đặc tả (BA) & Smart Contract Dev
-  - Võ Thị Thư (23K4300038) — Tester & Frontend
+- **Học phần:** ECO2432 — Tiền điện tử & Hợp đồng thông minh
+- **Hợp đồng:** [`contracts/project/ProjectCore.sol`](../contracts/project/ProjectCore.sol) (Solidity `^0.8.20`, biên dịch 0.8.20)
+- **Phiên bản đặc tả:** v3.0 — khớp với mã nguồn hiện tại (bầu cử nhiều cuộc, Merkle, người duyệt). Thay thế v2.0 (một cuộc, `registerVoters`).
+- **Nhóm:** Nguyễn Thị Kim Chi (23K4300025), Võ Thị Thư (23K4300038)
 
----
-
-## 1. Mục đích & Bối cảnh Nâng cấp
-Hệ thống bầu cử ban cán sự lớp / CLB phiên bản v2.0 nâng cấp toàn diện cơ chế bỏ phiếu nhằm khắc phục hoàn toàn nhược điểm lộ thông tin bầu cử trên mạng blockchain công khai:
-- **Bảo mật tuyệt đối ý đồ bầu cử (Secret Ballot):** Ứng dụng kỹ thuật Mật mã hóa 2 pha **Commit - Reveal**, đảm bảo không ai biết trước cử tri bầu cho ai cho đến khi hết hạn nộp phiếu.
-- **Chống sao chép phiếu & Tấn công Front-running (Copy-voting Defense):** Ràng buộc trực tiếp địa chỉ ví của cử tri (`msg.sender`) vào hàm băm `keccak256`.
-- **Ràng buộc ngưỡng túc số (Quorum Threshold):** Chuẩn hóa tỷ lệ tham gia tối thiểu bằng **Basis Points (bps)**, ngăn ngừa tình trạng thiểu số thao túng cuộc bầu cử.
-- **Tính toán người chiến thắng tự động & Xử lý hòa phiếu:** Tự động phát hiện trường hợp bằng phiếu hoặc không đạt túc số để vô hiệu hóa kết quả một cách khách quan.
+> Mọi tên hàm, lỗi, sự kiện trong tài liệu này được đối chiếu tự động với bản biên dịch (xem `test/web_abi.test.js`) và mỗi quy tắc R1–R8 có test tương ứng trong `test/ProjectCore.test.js` (cột "Kiểm chứng").
 
 ---
 
-## 2. Các Pha Bầu cử & Cấu trúc Dữ liệu
+## 1. Mục đích
 
-### 2.1 Chu trình 4 Pha Bầu cử (`enum Phase`)
-Hợp đồng quản lý chu kỳ sống (lifecycle) tự động theo mốc thời gian khối (`block.timestamp`):
-```solidity
-enum Phase { Registration, Commit, Reveal, Ended }
-```
-1. **Pha 0 — `Registration` ($\text{block.timestamp} \le \text{regEnd}$):** Quản trị viên nạp danh sách cử tri sinh viên hợp lệ theo lô. Cổng bầu cử chưa mở.
-2. **Pha 1 — `Commit` ($\text{regEnd} < \text{block.timestamp} \le \text{commitEnd}$):** Cử tri nộp mã băm bí mật (`commitment`). Không ai có thể giải mã lá phiếu.
-3. **Pha 2 — `Reveal` ($\text{commitEnd} < \text{block.timestamp} \le \text{revealEnd}$):** Cử tri công khai lá phiếu và mã khóa ngẫu nhiên (`salt`) để hợp đồng đối soát và ghi nhận số phiếu.
-4. **Pha 3 — `Ended` ($\text{block.timestamp} > \text{revealEnd}$):** Khóa sổ toàn diện. Hợp đồng mở hàm `result()` để xác định người chiến thắng hợp lệ.
+Cho phép một lớp hoặc câu lạc bộ **bầu ban cán sự bằng phiếu kín trên blockchain**: không ai thấy cử tri bầu cho ai trước khi chính cử tri mở phiếu, mỗi ví trong danh sách chỉ được một phiếu, và kết quả chỉ được công nhận khi đủ tỷ lệ tham gia (quorum) và có đúng một người dẫn đầu.
 
-### 2.2 Hằng số & Biến trạng thái cốt lõi
-- `MAX_CANDIDATES = 20`: Khống chế tối đa 20 ứng cử viên, bảo vệ giới hạn tính toán lặp khi duyệt kết quả.
-- `MAX_BATCH = 200`: Giới hạn danh sách cử tri tối đa 200 địa chỉ ví trong mỗi lần gọi `registerVoters` nhằm chống vượt trần Block Gas Limit.
-- `quorumBps`: Ngưỡng cử tri tối thiểu tính theo basis point ($1\% = 100 \text{ bps}$, ví dụ: $5,000 \text{ bps} = 50.00\%$).
-- `voterCount`: Tổng số lượng cử tri hợp lệ duy nhất được cấp quyền trong pha Registration.
-- `revealedCount`: Tổng số cử tri đã tiết lộ lá phiếu thành công trong pha Reveal.
-- `candidates` (`string[]`): Danh sách tên các ứng cử viên ($2 \le \text{names.length} \le 20$).
-- `votes` (`uint256[]`): Mảng đếm số phiếu tương ứng của từng ứng cử viên.
-- `isVoter` (`mapping(address => bool)`): Danh sách cử tri hợp lệ.
-- `commitments` (`mapping(address => bytes32)`): Lưu trữ mã băm bí mật của từng cử tri.
-- `hasRevealed` (`mapping(address => bool)`): Đánh dấu trạng thái cử tri đã mở phiếu thành công.
+Người dùng: **ban tổ chức** (tạo cuộc bầu cử), **người duyệt** (xác nhận cuộc bầu cử hợp lệ), **cử tri** (nộp và mở phiếu), **người xem** (đọc kết quả).
 
 ---
 
-## 3. Bộ 5 Quy tắc Nghiệp vụ Cốt lõi (Core Business Rules)
+## 2. Đầu vào
 
-### R1 — Phân quyền Cử tri & Ràng buộc Pha Đăng ký (`Registration`)
-- Chỉ địa chỉ ví được kích hoạt trong danh sách cử tri (`isVoter[voter] == true`) mới có quyền tham gia bỏ phiếu.
-- Việc đăng ký chỉ được phép thực hiện trong pha `Registration` (`inPhase(Phase.Registration)`). Một khi đã chuyển sang pha `Commit`, Admin **hoàn toàn không thể thêm người giữa chừng**, loại bỏ triệt để nguy cơ bơm thêm ví ảo khi cuộc bầu cử đang diễn ra.
-- Mỗi lô nạp danh sách không được vượt quá `MAX_BATCH` (200 địa chỉ). Bỏ qua các địa chỉ trùng lặp và từ chối địa chỉ rỗng `address(0)` với lỗi `InvalidParams()`.
+### 2.1 Tạo cuộc bầu cử — `createElection(NewElection p)` (do ban tổ chức gọi)
 
-### R2 — Pha 1: Cam kết Bí mật Lá phiếu (`Commit`)
-- Trong pha `Commit`, cử tri chỉ gửi lên chuỗi một giá trị băm duy nhất:
-  $$\text{commitment} = \text{keccak256}(\text{abi.encodePacked}(\text{candidateId}, \text{salt}, \text{msg.sender}))$$
-  Trong đó `salt` là một chuỗi ngẫu nhiên 32-byte (`bytes32`) do cử tri tự sinh ra và lưu giữ bí mật ngoại chuỗi.
-- Nhờ đặc tính một chiều của hàm băm Keccak-256, không ai (kể cả Admin, thợ đào hay đối thủ) có thể đọc được cử tri đang bầu cho ai.
-- Mỗi cử tri chỉ được nộp mã băm đúng 1 lần duy nhất; nếu gọi lại sẽ bị hoàn tác với lỗi `AlreadyCommitted()`.
+| Trường | Kiểu | Ai cung cấp | Ràng buộc (vi phạm → `InvalidParams()`) |
+| :--- | :--- | :--- | :--- |
+| `title` | `string` | Ban tổ chức | 1–120 byte |
+| `names` | `string[]` | Ban tổ chức | 2–20 ứng viên; mỗi tên 1–64 byte |
+| `regMinutes` | `uint256` | Ban tổ chức | 1 – 43 200 (30 ngày). Thời gian chờ người duyệt |
+| `commitMinutes` | `uint256` | Ban tổ chức | 1 – 43 200. Thời gian nộp phiếu kín |
+| `revealMinutes` | `uint256` | Ban tổ chức | 1 – 43 200. Thời gian mở phiếu |
+| `quorumBps` | `uint256` | Ban tổ chức | 0 – 10 000 (1% = 100 bps; 5000 = 50%) |
+| `voterCount` | `uint256` | Ban tổ chức | 1 – 1 000 000 (`MAX_VOTERS`). Số cử tri **do ban tổ chức tự khai** (xem mục 6 và `SELF_AUDIT.md` TB1) |
+| `merkleRoot` | `bytes32` | Ban tổ chức (sinh bằng `scripts/merkle.js`) | khác 0 |
+| `approvers` | `address[]` | Ban tổ chức | 1–10 địa chỉ; khác 0, không trùng, **không được là người tạo** |
+| `requiredApprovals` | `uint256` | Ban tổ chức | 1 – số người duyệt |
 
-### R3 — Pha 2: Tiết lộ Phiếu & Chống Sao chép Phiếu (`Reveal`)
-- Trong pha `Reveal`, cử tri thực hiện công khai lá phiếu bằng cách gọi hàm `reveal(candidateId, salt)`.
-- Hợp đồng tái tạo lại mã băm và đối soát trực tiếp:
-  $$\text{keccak256}(\text{abi.encodePacked}(\text{candidateId}, \text{salt}, \text{msg.sender})) \stackrel{?}{=} \text{commitments}[\text{msg.sender}]$$
-- **Cơ chế chống sao chép phiếu (Anti Copy-Voting):** Nhờ tham số `msg.sender` được đóng gói bên trong mã băm, kẻ xấu không thể sao chép chuỗi `commitment` của người khác để nộp lại. Nếu kẻ xấu dùng ví khác để mở phiếu, hàm băm sẽ không khớp và bị từ chối với lỗi `BadReveal()`.
-- **Mô hình Checks-Effects-Interactions (CEI):** Trạng thái `hasRevealed[msg.sender] = true;` được ghi nhận trước khi cộng dồn phiếu `votes[candidateId] += 1` và tăng biến đếm `revealedCount += 1`.
+### 2.2 Các thao tác khác
 
-### R4 — Ngưỡng Túc số Bắt buộc bằng Điểm cơ bản (Quorum via Basis Points)
-- Kết quả bầu cử chỉ được xem là hợp lệ khi số cử tri hoàn tất tiết lộ phiếu (`revealedCount`) đạt tỷ lệ tối thiểu `quorumBps` trên tổng số cử tri (`voterCount`):
-  $$\text{revealedCount} \times 10,000 \ge \text{voterCount} \times \text{quorumBps}$$
-  *(Ví dụ: Với $\text{quorumBps} = 5,000$, nếu lớp có 60 sinh viên thì tối thiểu 30 sinh viên phải tiết lộ phiếu).*
-- Nếu không đạt ngưỡng Quorum này, cuộc bầu cử bị xem là thất bại và hàm `result()` sẽ trả về `(valid = false, winnerId = 0, topVotes = 0)`.
-
-### R5 — Khóa sổ & Tự động Xử lý Hòa phiếu (`Ended`)
-- Khi hết thời gian pha Reveal, hợp đồng tự động chuyển sang pha `Ended`.
-- Hàm `result()` duyệt qua mảng phiếu bầu để tìm ứng viên có số phiếu cao nhất (`topVotes`):
-  - Nếu có từ 2 ứng cử viên trở lên có cùng số phiếu cao nhất (`tied > 1`), không thể xác định người chiến thắng duy nhất.
-  - Nếu không có ai bỏ phiếu hoặc không ai tiết lộ phiếu (`topVotes == 0`).
-  $\Rightarrow$ Trong cả hai trường hợp trên, hàm `result()` trả về `valid = false`.
-- Kết quả chỉ được công nhận `valid = true` khi và chỉ khi: Đạt đủ Quorum **VÀ** có duy nhất 1 ứng cử viên dẫn đầu (`tied == 1 && topVotes > 0`).
-
----
-
-## 4. Đặc tả Giao diện & Mã lỗi Tùy biến (Custom Errors)
-
-### 4.1 Danh mục Sự kiện (Events)
-- `event VoterRegistered(address indexed voter);`: Phát ra khi cử tri được thêm vào Whitelist.
-- `event Committed(address indexed voter);`: Phát ra khi cử tri nộp mã băm bí mật thành công.
-- `event Revealed(address indexed voter, uint256 indexed candidateId);`: Phát ra khi cử tri mở phiếu thành công.
-
-### 4.2 Danh mục Lỗi tùy biến (Custom Errors)
-| Tên Lỗi | Điều kiện phát sinh | Ý nghĩa an ninh |
+| Hàm | Đầu vào | Người gọi |
 | :--- | :--- | :--- |
-| `NotAdmin()` | Người gọi hàm `registerVoters` không phải là `admin` | Bảo vệ quyền quản trị |
-| `WrongPhase(Phase current)` | Gọi hàm không đúng với pha hiện tại của hợp đồng | Kiểm soát chặt chẽ quy trình thời gian |
-| `NotEligible()` | Ví gọi `commit()` không nằm trong danh sách `isVoter` | Chống xâm nhập và cử tri không hợp lệ |
-| `AlreadyCommitted()` | Cử tri cố tình gửi lại `commitment` lần 2 | Chống thay đổi ý định trong pha cam kết |
-| `NoCommitment()` | Cử tri gọi `reveal()` nhưng chưa từng nộp mã băm | Chặn cử tri chưa qua pha Commit |
-| `AlreadyRevealed()` | Cử tri cố tình mở phiếu lần thứ 2 | Chống tăng số phiếu nhiều lần |
-| `BadReveal()` | Mã băm từ `(candidateId, salt, msg.sender)` không khớp | Chặn gian lận, tráo phiếu hoặc sai khóa |
-| `InvalidCandidate()` | `candidateId >= candidates.length` | Chặn bỏ phiếu cho ứng viên không tồn tại |
-| `InvalidParams()` | Tham số đầu vào không hợp lệ (địa chỉ 0, danh sách rỗng, bps > 10,000) | Bảo vệ tính toàn vẹn tham số |
-| `BatchTooLarge()` | Mảng `voters.length > MAX_BATCH` (200 ví) | Chống vượt trần Block Gas Limit |
+| `approveElection(id)` | `id` cuộc bầu cử | Người duyệt đã đăng ký |
+| `commit(id, commitment, merkleProof)` | `commitment = keccak256(abi.encodePacked(id, candidateId, salt, msg.sender))` (`salt` là `string`); `merkleProof` = bằng chứng ví nằm trong danh sách | Cử tri |
+| `reveal(id, candidateId, salt)` | ID ứng viên và chính chuỗi `salt` đã dùng khi commit | Cử tri |
+| `result(id)`, `phase(id)`, `get*` | `id` | Bất kỳ ai (hàm đọc, không tốn gas) |
+
+**Danh sách cử tri** không nằm trên chuỗi: chỉ có `merkleRoot`. Lá cây = `keccak256(abi.encodePacked(address))`; cặp nút được sắp xếp; nút lẻ ở cuối tầng được đưa nguyên lên tầng trên (`scripts/merkle.js`).
 
 ---
 
-## 5. Ngoài phạm vi phiên bản v2.0
-- Chưa áp dụng ZK-SNARKs để tự động xác thực phiếu kín mà không cần pha Reveal thứ 2 (dự kiến nghiên cứu ở các giai đoạn sau).
-- Việc lưu trữ `salt` do người dùng tự quản lý trên Frontend hoặc ghi chép cá nhân. Nếu người dùng làm mất `salt`, lá phiếu sẽ không thể mở ở pha Reveal và không được tính vào kết quả.
+## 3. Quy tắc nghiệp vụ
+
+Mỗi quy tắc là một khẳng định kiểm tra được. Cột cuối là nhóm test chứng minh (`npx hardhat test`).
+
+| # | Quy tắc | Kiểm chứng |
+| :-: | :--- | :--- |
+| **R1** | **Pha theo thời gian, không có công tắc thủ công.** `phase(id)` suy ra từ `block.timestamp`: `Registration` (≤ `regEnd`) → `Commit` (≤ `commitEnd`) → `Reveal` (≤ `revealEnd`) → `Ended`. Các mốc là `regEnd = tạo + regMinutes`, `commitEnd = regEnd + commitMinutes`, `revealEnd = commitEnd + revealMinutes` và **không đổi sau khi tạo**. Mốc biên: tại đúng giây `regEnd` vẫn là pha cũ, sau 1 giây là pha mới. | Nhóm G |
+| **R2** | **Cuộc bầu cử chỉ có hiệu lực khi đủ chữ ký duyệt.** Chỉ người duyệt đăng ký mới gọi được `approveElection`, mỗi người một lần, **chỉ trong pha `Registration`**. Khi `approvalCount ≥ requiredApprovals` thì `isActivated = true`. Chưa kích hoạt thì `commit` bị từ chối (`ElectionNotActive`). Người tạo không thể tự làm người duyệt. | Nhóm B, E |
+| **R3** | **Chỉ ví trong danh sách mới nộp được phiếu.** `commit` yêu cầu `merkleProof` hợp lệ cho `keccak256(msg.sender)` so với `merkleRoot`; sai → `InvalidProof`. Mỗi ví nộp **một lần** (`AlreadyCommitted`). `commitment` bằng 0 hoặc bằng giá trị đánh dấu nội bộ bị từ chối (`InvalidParams`). Chỉ nộp được trong pha `Commit`. | Nhóm C, E, H |
+| **R4** | **Mở phiếu phải khớp cam kết.** `reveal` chỉ trong pha `Reveal`; ví phải đã commit (`NoCommitment`), chưa mở (`AlreadyRevealed`), `candidateId` hợp lệ (`InvalidCandidate`), và `keccak256(id, candidateId, salt, msg.sender)` phải bằng cam kết đã nộp (`BadReveal`). Thành công thì cộng đúng 1 phiếu, tăng `revealedCount`, phát `Revealed`. | Nhóm D, E |
+| **R5** | **Chống sao chép và phát lại phiếu.** Băm có `msg.sender` (không dùng được cam kết của người khác) và có `id` (cam kết của cuộc bầu cử này vô dụng ở cuộc khác). | Nhóm E |
+| **R6** | **Quorum bằng basis points.** Kết quả chỉ có thể hợp lệ khi `revealedCount × 10000 ≥ voterCount × quorumBps`. Bằng đúng ngưỡng vẫn đạt. Cam kết mà không mở phiếu **không** được tính vào quorum. | Nhóm F |
+| **R7** | **Kết quả chỉ đọc được sau khi kết thúc và chỉ hợp lệ khi có đúng một người dẫn đầu.** `result(id)` chỉ gọi được ở pha `Ended` (`WrongPhase`). Trả về `valid = true` khi đạt quorum **và** đúng một ứng viên có số phiếu cao nhất > 0. Hòa nhất, không ai có phiếu, hoặc không đủ quorum → `(false, 0, 0)`. | Nhóm F |
+| **R8** | **Nhiều cuộc bầu cử độc lập.** Mỗi `id` có dữ liệu riêng; phiếu và kết quả cuộc này không ảnh hưởng cuộc khác. Không có tài khoản quản trị toàn cục, không có hàm tạm dừng, không có hàm sửa cuộc bầu cử sau khi tạo. | Nhóm G |
+
+**Sự kiện (mọi thay đổi trạng thái đều phát sự kiện):**
+`ElectionCreated(id, admin, title)`, `ElectionApproved(id, approver)`, `ElectionActivated(id)`, `Committed(id, voter)`, `Revealed(id, voter, candidateId)`.
+
+---
+
+## 4. Đầu ra
+
+| Đầu ra | Ở đâu | Nội dung |
+| :--- | :--- | :--- |
+| `createElection` → `id` | giá trị trả về, sự kiện `ElectionCreated` | ID tăng dần từ 0 (`electionCount`) |
+| `phase(id)` | hàm đọc, giao diện `web/` | `Registration / Commit / Reveal / Ended` |
+| `getElectionBasicInfo`, `getElectionStats` | hàm đọc, giao diện | admin, tên, đã kích hoạt, `merkleRoot`; các mốc thời gian, quorum, số cử tri, số đã mở phiếu, số chữ ký |
+| `getCandidates`, `getVotes` | hàm đọc, giao diện | tên ứng viên; số phiếu (số phiếu chỉ tăng ở pha Reveal) |
+| `getVoterStatus(id, voter)` | hàm đọc | `(committed, revealed)` |
+| `result(id)` | hàm đọc, nút "Xem kết quả" | `(valid, winnerId, topVotes)` |
+| Lỗi tùy biến | giao dịch bị revert; giao diện dịch sang tiếng Việt | xem mục 5 |
+| Sự kiện | nhật ký giao dịch trên Etherscan | xem mục 3 |
+
+Bảng lỗi và nghĩa:
+
+| Lỗi | Khi nào |
+| :--- | :--- |
+| `ElectionNotFound` | `id ≥ electionCount` |
+| `WrongPhase(current)` | gọi hàm sai pha (kèm pha hiện tại) |
+| `InvalidParams` | tham số tạo cuộc bầu cử vi phạm mục 2.1; hoặc `commitment` không hợp lệ |
+| `NotApprover` / `AlreadyApproved` | không phải người duyệt / duyệt lần hai |
+| `ElectionNotActive` | `commit` khi chưa đủ chữ ký duyệt |
+| `InvalidProof` | ví không nằm trong danh sách cử tri |
+| `AlreadyCommitted` / `NoCommitment` / `AlreadyRevealed` | nộp lần hai / mở phiếu khi chưa nộp / mở lần hai |
+| `InvalidCandidate` | `candidateId` không tồn tại |
+| `BadReveal` | `candidateId` hoặc `salt` không khớp cam kết |
+
+---
+
+## 5. Trường hợp ngoại lệ
+
+| # | Tình huống | Hệ thống phải | Kiểm chứng |
+| :-: | :--- | :--- | :--- |
+| E1 | Cử tri nộp phiếu khi cuộc bầu cử chưa đủ chữ ký duyệt (hoặc hết hạn duyệt mà thiếu chữ ký) | Từ chối `ElectionNotActive`; cuộc bầu cử không bao giờ mở được vì không thể duyệt sau pha `Registration` | Nhóm B, C |
+| E2 | Ví ngoài danh sách (hoặc dùng bằng chứng của người khác) cố nộp phiếu | Từ chối `InvalidProof`, không ghi gì | Nhóm E |
+| E3 | Cử tri nộp phiếu lần hai, hoặc mở phiếu lần hai | `AlreadyCommitted` / `AlreadyRevealed`; số phiếu không đổi | Nhóm C, D, E |
+| E4 | Kẻ gian chép `commitment` của người khác rồi tự mở phiếu | `BadReveal` (băm có `msg.sender`) | Nhóm E |
+| E5 | Dùng cam kết của cuộc bầu cử 0 cho cuộc bầu cử 1 | `BadReveal` (băm có `id`) | Nhóm E |
+| E6 | Mở phiếu sau khi pha Reveal hết hạn (phiếu trễ) | `WrongPhase(Ended)`, phiếu **không** được tính | Nhóm D |
+| E7 | Cử tri nộp nhưng không mở phiếu; số người mở chưa đạt quorum | `result` trả `(false, 0, 0)`; không ai bị mất quyền hay tiền | Nhóm F |
+| E8 | Hai hoặc nhiều ứng viên cùng số phiếu cao nhất | `valid = false`; cần bầu lại hoặc hiệp thương ngoài chuỗi | Nhóm F |
+| E9 | Đọc kết quả khi chưa kết thúc | `WrongPhase`, tránh lộ tỷ số sớm qua `result` | Nhóm E |
+| E10 | Tham số tạo cuộc bầu cử vô lý (1 ứng viên, 0 phút, quorum > 100%, người duyệt trùng/là người tạo, root rỗng…) | `InvalidParams`, không tạo cuộc bầu cử | Nhóm A |
+| E11 | Cử tri mất `salt` | Không mở được phiếu → không được tính (giao diện giảm rủi ro bằng file dự phòng `.json`) | Giao diện; xem `ECONOMIC_RULES.md` |
+
+---
+
+## 6. Ngoài phạm vi
+
+- **Không** xác thực danh tính thật (KYC). Hợp đồng chỉ biết "ví nằm trong danh sách Merkle"; việc ví nào thuộc sinh viên nào do ban tổ chức và người duyệt kiểm tra ngoài chuỗi.
+- **Không** kiểm chứng `voterCount` trên chuỗi: Merkle root không cho biết số lá. Ban tổ chức khai sai (nhỏ hơn thực tế) có thể hạ ngưỡng quorum. Giảm thiểu bằng cách công bố danh sách cử tri để người duyệt tự dựng lại root và đếm; người duyệt là chốt kiểm soát chính.
+- **Không** che số phiếu trong lúc mở phiếu: sự kiện `Revealed` và `getVotes` công khai ngay khi từng người mở. Bí mật chỉ áp dụng trước khi cử tri tự mở phiếu. Cử tri đến sau có thể thấy xu hướng rồi quyết định có mở phiếu hay không (xem `SELF_AUDIT.md` TB3).
+- **Không** có vòng bầu lại, ủy quyền phiếu, token, trọng số phiếu, phí, hay hoàn tiền.
+- **Không** dùng chứng minh không tri thức (ZK) hay bỏ pha mở phiếu.
+- **Không** sửa/hủy cuộc bầu cử sau khi tạo; sai tham số thì tạo cuộc mới.
+- **Không** chống sockpuppet ở khâu người duyệt: nếu ban tổ chức tự điều khiển các ví duyệt thì chữ ký duyệt vô nghĩa (TB2).
+- Giao diện `web/` là bản minh họa cho đồ án; không thay thế kiểm toán chuyên nghiệp.

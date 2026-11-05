@@ -1,99 +1,130 @@
-# QUY TẮC KINH TẾ VÀ QUẢN TRỊ DÒNG ĐIỀU KHIỂN (ECONOMIC RULES & GOVERNANCE) — V2.0
-## Đề tài: Hệ thống Bầu cử Kín 2 pha (Commit - Reveal) kết hợp Quorum (Basis Points)
+# QUY TẮC KINH TẾ — CLUB VOTING (v3.0)
 
-- **Học phần:** ECO2432 — Web3 Starter
-- **Hợp đồng áp dụng:** [`contracts/project/ProjectCore.sol`](../contracts/project/ProjectCore.sol)
-- **Nhóm thực hiện:**
-  - Nguyễn Thị Kim Chi (23K4300025) — Đặc tả (BA) & Smart Contract Dev
-  - Võ Thị Thư (23K4300038) — Tester & Frontend
+- **Hợp đồng:** [`contracts/project/ProjectCore.sol`](../contracts/project/ProjectCore.sol) · **Đặc tả:** [`SPEC.md`](SPEC.md) (R1–R8)
+- **Nhóm:** Nguyễn Thị Kim Chi (23K4300025), Võ Thị Thư (23K4300038)
+
+Hệ thống này **không giữ tiền và không phát token**. "Giá trị" ở đây là **quyền biểu quyết** (một ví một phiếu, giữ kín đến lúc mở) và **chi phí gas** mà mỗi bên phải trả. Tài liệu theo bốn mục của sổ tay (dòng tiền/quyền lợi, giới hạn chống lạm dụng, quyền quản trị, tình huống người dùng bị thiệt), thêm chi phí đo thật và phản biện.
 
 ---
 
-## 1. Tổng quan mô hình kinh tế (Economic Model Overview)
+## 1. Dòng tiền và quyền lợi
 
-### 1.1 Cơ chế Khuyến khích & Bảo mật Ý đồ Bầu cử
-- **Loại bỏ hiệu ứng tâm lý đám đông (Anti-Bandwagon Effect):** 
-  - Trong mô hình bầu cử mở (v1.0), số phiếu hiển thị tức thời khiến cử tri bầu sau bị ảnh hưởng bởi xu hướng dẫn đầu hoặc chịu áp lực xã hội/hối lộ.
-  - Mô hình bầu cử kín 2 pha (**Commit - Reveal**) giải quyết triệt để bài toán này: Lá phiếu được mã hóa bằng hàm băm mật mã học trong suốt thời gian nhận phiếu, bảo đảm sự độc lập và công bằng tuyệt đối cho mọi quyết định.
-- **Bài toán chi phí giao dịch 2 pha (Two-Phase Gas Cost):**
-  - Cử tri cần thực hiện 2 giao dịch trên chuỗi: 1 lệnh `commit(bytes32)` và 1 lệnh `reveal(uint256, bytes32)`.
-  - Cả 2 giao dịch đều có mức tiêu thụ gas cực thấp (~35,000–50,000 gas), tổng chi phí trên Layer-2 (Arbitrum/Optimism/Base) dưới $0.006 USD, hoàn toàn phù hợp với mô hình CLB sinh viên.
-  - Trên mạng Sepolia Testnet của trường, sinh viên được tài trợ faucet miễn phí hoàn toàn.
+### 1.1 Ai nhận quyền gì
 
----
+| Bên | Quyền | Nguồn quyền |
+| :--- | :--- | :--- |
+| Ban tổ chức (người gọi `createElection`) | Đặt tên, ứng viên, mốc thời gian, quorum, danh sách cử tri (qua Merkle root), người duyệt. **Không** có quyền gì sau khi tạo | Tham số lúc tạo |
+| Người duyệt (1–10 ví) | Ký xác nhận trong pha `Registration`; đủ `requiredApprovals` chữ ký thì cuộc bầu cử mới hoạt động | Do ban tổ chức chỉ định, nhưng **không được là chính ban tổ chức** |
+| Cử tri | Một phiếu kín, một lần mở phiếu | Ví nằm trong danh sách Merkle |
+| Người xem | Đọc mọi dữ liệu, gồm `result` sau khi kết thúc | Công khai |
 
-## 2. Bộ 5 Quy tắc Cốt lõi (Core Economic & Governance Rules)
+Không có quyền chuyển nhượng, bán, ủy quyền phiếu, hay rút tiền: phiếu không có giá trị tiền tệ, nên không có thị trường mua phiếu trong hợp đồng.
 
-### R1 — Phân quyền Cử tri & Đóng băng Danh sách theo Pha
-- **Thời hạn đăng ký cố định:** Admin chỉ có thể nạp danh sách cử tri hợp lệ (`registerVoters`) trong pha `Registration` ($\text{block.timestamp} \le \text{regEnd}$).
-- **Đóng băng quyền lực (Admin Freeze):** Ngay khi bước sang pha `Commit`, hàm `registerVoters` bị khóa vĩnh viễn (`WrongPhase`). Admin **hoàn toàn không thể bổ sung thêm ví mới giữa chừng**, loại bỏ rủi ro admin gian lận bơm thêm ví khi thấy ứng viên của mình bất lợi.
-- **Khống chế trần xử lý lô (`MAX_BATCH = 200`):** Mỗi lần nạp chỉ tối đa 200 địa chỉ ví để đảm bảo không vượt quá Block Gas Limit của mạng (30,000,000 gas). Bỏ qua ví trùng để bảo toàn tính toàn vẹn của biến đếm `voterCount`.
+### 1.2 Ai trả phí gì (đo thật, xem mục 5)
 
-### R2 — Pha 1 (Commit): Cam kết Bí mật Tuyệt đối trên Chuỗi
-- **Mã hóa lá phiếu ngoại chuỗi:** Cử tri nộp mã băm:
-  $$\text{commitment} = \text{keccak256}(\text{abi.encodePacked}(\text{candidateId}, \text{salt}, \text{msg.sender}))$$
-- **Bảo mật trạng thái:** Lưu trữ dưới dạng `bytes32` trong mapping `commitments[msg.sender]`. Không có bất kỳ dữ liệu nào về `candidateId` được giải mã trên blockchain hoặc mempool trong suốt pha này.
-- **Giới hạn 1 cam kết duy nhất:** Cử tri chỉ được nộp một mã băm duy nhất (`AlreadyCommitted`), ngăn ngừa việc gửi nhiều cam kết gây nhiễu loạn dữ liệu.
+| Bên | Giao dịch | Gas đo được |
+| :--- | :--- | ---: |
+| Ban tổ chức | `createElection` (một lần mỗi cuộc) | 593 264 |
+| Mỗi người duyệt | `approveElection` | 79 525 (chưa đủ ngưỡng) / 83 753 (chữ ký kích hoạt) |
+| Mỗi cử tri | `commit` | ≈ 68 650 |
+| Mỗi cử tri | `reveal` | 89 927 (phiếu đầu tiên của một ứng viên) / 55 727 (các phiếu sau) |
+| Nhóm (một lần) | Triển khai hợp đồng | 2 619 144 |
 
-### R3 — Pha 2 (Reveal): Tiết lộ Hợp thức & Chống Sao chép Phiếu (Anti Copy-Voting)
-- **Ràng buộc danh tính ví (`msg.sender`):** Mã băm bắt buộc chứa `msg.sender`. Nhờ đó:
-  - Nếu một kẻ tấn công sao chép chuỗi băm của người khác để nộp trong pha Commit, đến pha Reveal khi gọi từ ví của hắn, hàm `keccak256` sẽ trả về giá trị khác và bị từ chối ngay lập tức với lỗi `BadReveal()`.
-  - Không ai có thể "bầu theo" hoặc mạo danh phiếu của người khác.
-- **Tuân thủ mô hình Checks-Effects-Interactions (CEI):** Đánh dấu `hasRevealed[msg.sender] = true;` trước khi ghi nhận cộng phiếu `votes[candidateId] += 1` và `revealedCount += 1`, loại bỏ triệt để rủi ro gọi lại (Reentrancy).
-
-### R4 — Ràng buộc Ngưỡng Túc số (Quorum via Basis Points)
-- **Quy chuẩn tỷ lệ Điểm cơ bản (Basis Points):** Tuân thủ chặt chẽ quy ước `AGENTS.md`, mọi tỷ lệ phần trăm đều dùng basis point ($1\% = 100 \text{ bps}$, $100\% = 10,000 \text{ bps}$).
-- **Điều kiện Quorum hợp lệ:**
-  $$\text{revealedCount} \times 10,000 \ge \text{voterCount} \times \text{quorumBps}$$
-  *(Ví dụ: Với $\text{quorumBps} = 5000$, tức là tối thiểu 50.00% cử tri hợp lệ phải hoàn tất mở phiếu).*
-- **Bảo vệ tính đại diện:** Nếu tỷ lệ mở phiếu $< \text{quorumBps}$, cuộc bầu cử bị xem là không đạt túc số (Quorum Failed). Kết quả không có giá trị pháp lý và hàm `result()` sẽ trả về `valid = false`.
-
-### R5 — Khóa sổ & Thuật toán Xử lý Hòa phiếu Tự động (`Ended`)
-- **Tự động chuyển pha khi hết hạn:** Khi `block.timestamp > revealEnd`, hợp đồng chuyển sang pha `Ended`.
-- **Xác định người chiến thắng minh bạch:** Hàm `result()` duyệt mảng `votes` để tìm số phiếu cao nhất (`topVotes`):
-  - Nếu có 2 ứng viên trở lên cùng đạt số phiếu cao nhất (`tied > 1`), không thể phân định người chiến thắng duy nhất.
-  - Nếu chưa có phiếu nào được mở hợp lệ (`topVotes == 0`).
-  $\Rightarrow$ Hợp đồng lập tức trả về `(valid = false, winnerId = 0, topVotes = 0)`.
-- Chỉ khi đạt Quorum **VÀ** có duy nhất một ứng viên đứng đầu (`tied == 1 && topVotes > 0`) thì mới trả về `valid = true` kèm theo `winnerId` và `topVotes`.
+Cử tri tự trả gas hai lần (commit + reveal). Không có phí giao thức, không có người nhận phí. Trên Sepolia, gas là ETH thử nghiệm miễn phí từ faucet; chi phí quy đổi xem mục 5.2.
 
 ---
 
-## 3. Kịch bản Quản trị rủi ro & Ngăn chặn Gian lận
+## 2. Giới hạn chống lạm dụng
 
-### 3.1 Rủi ro Cử tri không Tiết lộ Phiếu (Unrevealed Votes)
-- **Kịch bản:** Cử tri nộp `commit` ở Pha 1 nhưng cố tình hoặc vô ý không gọi `reveal` ở Pha 2 (ví dụ: làm mất chuỗi `salt`, hoặc thấy xu hướng không như ý muốn nên bỏ cuộc).
-- **Cách thức xử lý của hệ thống:**
-  - Phiếu không được `reveal` sẽ vĩnh viễn không được cộng vào `votes` và không tính vào `revealedCount`.
-  - Nếu quá nhiều cử tri không reveal khiến `revealedCount` không đạt `quorumBps`, toàn bộ kết quả bầu cử sẽ bị hủy bỏ (`valid = false`). Điều này tạo động lực kinh tế-xã hội buộc các nhóm cử tri phải nhắc nhở nhau hoàn tất nghĩa vụ bầu cử.
+| Giới hạn | Giá trị | Chặn điều gì | Test |
+| :--- | :--- | :--- | :--- |
+| Một phiếu mỗi ví | `AlreadyCommitted`, `AlreadyRevealed` | Bỏ phiếu nhiều lần | Nhóm C, D, E |
+| Chỉ ví trong Merkle root | `InvalidProof` | Ví lạ vào bầu | Nhóm E, H |
+| Băm gắn `msg.sender` | `BadReveal` | Chép cam kết của người khác để "bầu theo" | Nhóm E |
+| Băm gắn `id` cuộc bầu cử | `BadReveal` | Dùng lại cam kết giữa các cuộc | Nhóm E |
+| Không đổi ý sau khi nộp | `BadReveal` nếu đổi ứng viên | Đổi phiếu theo xu hướng | Nhóm D |
+| Mốc thời gian cố định | `WrongPhase` | Nộp trễ, mở sớm/trễ; phiếu trễ không tính | Nhóm D, G |
+| Duyệt chỉ trong `Registration` | `WrongPhase` | Duyệt muộn để "cứu" cuộc bầu cử | Nhóm B |
+| Người duyệt khác người tạo, không trùng, khác 0 | `InvalidParams` | Tự duyệt chính mình | Nhóm A, E |
+| `MAX_CANDIDATES = 20`, `MAX_APPROVERS = 10`, tên ≤ 64 byte, tiêu đề ≤ 120 byte | `InvalidParams` | Spam dữ liệu; vòng lặp `result` vượt trần gas | Nhóm A |
+| `MAX_VOTERS = 1 000 000` cho `voterCount` | `InvalidParams` | `voterCount` cực lớn làm phép nhân quorum tràn số, khiến `result()` revert vĩnh viễn (phát hiện khi tự rà soát, TB4) | Nhóm A |
+| `MAX_PHASE_MINUTES = 43 200` (30 ngày) mỗi pha | `InvalidParams` | Mốc thời gian vô lý; tràn số khi nhân 60 | Nhóm A |
+| Quorum ≤ 10 000 bps | `InvalidParams` | Quorum không thể đạt | Nhóm A |
+| `result` chỉ ở pha `Ended` | `WrongPhase` | Dùng kết quả sớm | Nhóm E |
 
-### 3.2 Hạn chế tối đa Đặc quyền của Admin (Least Privilege)
-- Admin chỉ có quyền trong pha khởi tạo (`constructor`) và pha đăng ký cử tri (`registerVoters`).
-- Admin không thể:
-  - Can thiệp vào mảng `commitments` hay giải mã trước kết quả.
-  - Ngăn cản cử tri hợp lệ thực hiện `reveal`.
-  - Thay đổi mốc thời gian hoặc ép buộc ứng viên nào thắng cuộc.
-  - Dùng hàm `pause()` đơn phương (hợp đồng không thiết kế hàm `pause` để bảo đảm tính trung lập của mã nguồn).
-
----
-
-## 4. Bảng đo lường Ngân sách Gas dự kiến (V2.0)
-
-| Thao tác nghiệp vụ | Hàm thực thi | Pha áp dụng | Gas ước tính | Chi phí Sepolia ETH | Chi phí quy đổi Layer-2 ($) |
-| :--- | :--- | :---: | :---: | :---: | :---: |
-| **Triển khai hợp đồng** | `constructor` (3 ứng viên, quorum 50%) | — | ~620,000 gas | 0.00124 ETH | ~$0.035 |
-| **Đăng ký cử tri theo lô** | `registerVoters` (50 ví/lô) | `Registration` | ~1,150,000 gas | 0.00230 ETH | ~$0.045 |
-| **Pha 1: Nộp cam kết bí mật** | `commit(bytes32)` | `Commit` | ~44,500 gas | 0.000089 ETH | ~$0.002 |
-| **Pha 2: Mở lá phiếu** | `reveal(uint256, bytes32)` | `Reveal` | ~49,200 gas | 0.000098 ETH | ~$0.003 |
-| **Đọc kết quả bầu cử** | `result()` (View call) | `Ended` | 0 gas | 0 ETH | Miễn phí |
+**Hạn chế đã biết (không chặn được trong mã, ghi nhận trung thực):** khai sai `voterCount`, người duyệt là ví giả do ban tổ chức điều khiển, và việc cử tri thấy tỷ số trong pha `Reveal` rồi quyết định không mở phiếu. Chi tiết và biện pháp giảm thiểu ở mục 4 và `SELF_AUDIT.md`.
 
 ---
 
-## 5. Bảng giải trình 5 Phản biện Kinh tế & Kỹ thuật của AI (V2.0)
+## 3. Quyền quản trị
 
-| STT | Luận điểm phản biện của AI | Phân tích rủi ro | Phương án giải trình & Khắc phục của Nhóm |
-| :---: | :--- | :--- | :--- |
-| **1** | **Rủi ro lộ bí mật phiếu bầu:** Liệu việc công khai giao dịch trên blockchain có làm lộ lựa chọn của cử tri không? | Áp lực xã hội, thao túng tâm lý bầu cử nếu lộ kết quả sớm. | Áp dụng cơ chế **Commit - Reveal 2 pha**. Lá phiếu chỉ nộp dưới dạng mã băm Keccak-256 ở pha Commit, giải mật hoàn toàn nguy cơ lộ ý định trước giờ kết thúc. |
-| **2** | **Tấn công sao chép phiếu (Copy-voting / Front-running):** Cử tri lười suy nghĩ có thể copy mã băm của cử tri uy tín trong mempool để nộp theo. | Kết quả bị thiên lệch do sao chép hàng loạt mà không có chủ ý. | Hàm băm ràng buộc chặt chẽ địa chỉ ví `msg.sender` (`keccak256(candidateId, salt, msg.sender)`). Kẻ sao chép nộp chuỗi băm của người khác sẽ bị lỗi `BadReveal()` khi mở phiếu từ ví của hắn. |
-| **3** | **Quên khóa `salt` dẫn đến mất phiếu:** Cử tri làm mất chuỗi `salt` ngoại chuỗi thì sao? | Cử tri mất quyền biểu quyết hợp lệ. | Được giải quyết ở tầng Frontend/DApp: Tự động mã hóa và lưu trữ `salt` vào LocalStorage hoặc cho phép người dùng tải file dự phòng JSON an toàn khi ấn Commit. |
-| **4** | **Rủi ro thiểu số thao túng khi ít người tham gia:** Nếu lớp có 60 người nhưng chỉ 3 người vote thì kết quả có giá trị không? | Thiếu tính đại diện cho tập thể lớp/CLB. | Bắt buộc kiểm tra ngưỡng túc số `quorumBps` (tính theo basis points). Nếu `revealedCount * 10,000 < voterCount * quorumBps`, hàm `result()` trả về `valid = false`. |
-| **5** | **Tranh chấp khi hai ứng viên bằng phiếu:** Nếu hai người có cùng số phiếu cao nhất thì ai thắng? | Tranh chấp vị trí ban cán sự, không có quy tắc phân xử. | Hợp đồng tự động đếm biến `tied`. Nếu `tied > 1`, hàm `result()` trả về `valid = false`, yêu cầu Ban cố vấn tổ chức vòng bầu cử hiệp thương bổ sung. |
+- **Không có chủ sở hữu toàn cục**, không có `onlyOwner`, không có hàm tạm dừng, nâng cấp hay rút tiền. Hợp đồng không giữ ETH nên không có gì để rút.
+- **Ban tổ chức** chỉ có quyền ở khoảnh khắc `createElection`. Sau đó mọi tham số bất biến (thời hạn, quorum, root, người duyệt, ngưỡng duyệt).
+- **Người duyệt** chỉ có một quyền: ký trong pha `Registration`. Không thể hủy, sửa, hay chặn cử tri đã có bằng chứng hợp lệ.
+- **Không ai** (kể cả nhóm phát triển) đọc được phiếu chưa mở, xoá phiếu, hay đổi kết quả. Số phiếu chỉ tăng qua `reveal` hợp lệ.
+- **Ràng buộc tin cậy còn lại:** ban tổ chức quyết định **ai là cử tri** (qua root) và **`voterCount`** (tự khai). Hai người duyệt trở lên độc lập là biện pháp kiểm soát. Muốn tin cậy hơn, nên chọn người duyệt là giảng viên/cố vấn không thuộc ban tổ chức và để họ tự dựng lại root từ danh sách công bố.
+
+---
+
+## 4. Tình huống người dùng bị thiệt
+
+| # | Tình huống | Thiệt hại | Hệ thống xử lý / ai chịu rủi ro |
+| :-: | :--- | :--- | :--- |
+| U1 | Cử tri **mất salt** (xóa trình duyệt, đổi máy) | Không mở được phiếu → phiếu không được tính, vẫn mất phí commit | Giao diện lưu salt vào localStorage **và** tự tải file `.json` dự phòng, có nút "Nạp file dự phòng". Hợp đồng không thể khôi phục. **Chấp nhận rủi ro**: cử tri chịu |
+| U2 | Cử tri **quên mở phiếu** | Phiếu không tính; nếu nhiều người quên → không đủ quorum, cả cuộc bầu cử vô hiệu | Giao diện hiện đếm ngược pha Reveal. Cuộc bầu cử vô hiệu không ai mất tiền; tổ chức lại |
+| U3 | **Ví hợp lệ bị loại khỏi danh sách** (ban tổ chức bỏ sót) | Mất quyền bầu | Không sửa được trên chuỗi. Người duyệt phải đối chiếu danh sách công bố trước khi ký; thiếu người thì tạo cuộc bầu cử mới |
+| U4 | Ban tổ chức khai **`voterCount` nhỏ** để hạ ngưỡng quorum | Thiểu số có thể quyết định | Không kiểm chứng được trên chuỗi. Người duyệt phải kiểm tra `voterCount` = số lá của root; công bố danh sách. **Rủi ro tin cậy người duyệt** |
+| U5 | Ban tổ chức điều khiển cả các ví "người duyệt" | Chữ ký duyệt vô nghĩa | Hợp đồng chỉ chặn tự duyệt bằng chính ví tạo. Người dùng nên kiểm tra danh tính người duyệt (`getApprovers`) trước khi bỏ phiếu. **Chấp nhận rủi ro** |
+| U6 | Cử tri **thấy xu hướng** trong pha Reveal rồi cố ý không mở phiếu | Bầu chiến lược; có thể làm hụt quorum | Không chặn được trong mã. Giảm thiểu: pha Reveal ngắn, ghi trong SPEC rằng bí mật chỉ bảo vệ đến lúc từng người tự mở |
+| U7 | Hòa phiếu / không đủ quorum | Không có người thắng | `valid = false`; tổ chức bầu lại ngoài chuỗi |
+| U8 | Cử tri nộp phiếu rồi bị lộ `salt`/máy bị chiếm trước khi mở | Người khác có thể mở phiếu thay (cần ví của cử tri để ký, nên chỉ có chủ ví) | Hợp đồng ràng `msg.sender`: không ai mở thay được nếu không có khóa ví |
+| U9 | Giao dịch commit đã gửi nhưng giao diện/ mạng lỗi | Cử tri tưởng chưa nộp | Giao diện lưu salt **trước** khi gửi giao dịch và đọc lại `getVoterStatus` khi tải trang |
+
+---
+
+## 5. Chi phí gas đã đo
+
+Đo bằng Hardhat (Solidity 0.8.20, **optimizer tắt** cho khớp Remix), kịch bản 500 cử tri, bằng chứng Merkle sâu 9 tầng, tái lập bằng `npm run gas`. Chi tiết trước/sau tối ưu: [`GAS_REPORT.md`](GAS_REPORT.md).
+
+### 5.1 Bảng gas
+
+| Thao tác | Gas | Ghi chú |
+| :--- | ---: | :--- |
+| Triển khai `ProjectCore` | 2 619 144 | một lần |
+| `createElection` | 593 264 | không phụ thuộc số cử tri (chỉ lưu root) |
+| `approveElection` | 79 525 / 83 753 | lần duyệt kích hoạt tốn thêm do ghi `isActivated` |
+| `commit` | 68 652 | đo ở độ sâu Merkle 9; cây nhỏ hơn thì rẻ hơn một chút |
+| `reveal` (phiếu đầu của ứng viên) | 89 927 | ô đếm phiếu từ 0 lên 1 |
+| `reveal` (phiếu tiếp theo) | 55 727 | |
+| `result` | ≈ 37 887 | hàm đọc, **0 gas** khi gọi ngoài giao dịch |
+
+### 5.2 Chi phí quy đổi (công thức và ví dụ)
+
+`chi phí (ETH) = gas × giá gas (gwei) × 10⁻⁹`
+
+Cử tri trong trường hợp xấu nhất tốn `68 652 + 89 927 = 158 579` gas; trường hợp thường `68 652 + 55 727 = 124 379` gas.
+
+| Giá gas giả định | Cử tri (thường) | Cử tri (xấu nhất) | Cuộc bầu cử 60 cử tri, 2 ứng viên, 1 người duyệt* |
+| :--- | ---: | ---: | ---: |
+| 1 gwei (L1 thấp) | 0,000124 ETH | 0,000159 ETH | ≈ 0,0082 ETH |
+| 0,05 gwei (L2 điển hình, bỏ qua phí dữ liệu L1) | 0,0000062 ETH | 0,0000079 ETH | ≈ 0,00041 ETH |
+
+\* `createElection + 1 duyệt kích hoạt + 60 commit + 60 reveal` ≈ 8,2 triệu gas (60 commit × ≈ 68,6 nghìn + 2 phiếu đầu × 89,9 nghìn + 58 phiếu sau × 55,7 nghìn + 593 nghìn + 83,8 nghìn). Lớp 60 người có cây Merkle sâu 6 nên `commit` rẻ hơn con số đo ở độ sâu 9 một chút.
+
+Giá gas và giá ETH thay đổi theo ngày; các cột trên là **giả định minh họa**, không phải báo giá. Nhân với giá ETH tại thời điểm nộp bài để ra USD/VND. Trên Sepolia chi phí thực là 0 đồng (ETH thử nghiệm).
+
+---
+
+## 6. Phản biện của AI và câu trả lời của nhóm (Lab 08, cập nhật cho v3.0)
+
+Prompt đã dùng: *"Bạn là người dùng thận trọng. Chỉ dựa trên SPEC và ECONOMIC_RULES… nêu 5 cách lạm dụng… chỉ rõ quy tắc nào chưa đủ chặt."* Các điểm yếu và quyết định của nhóm:
+
+| # | Điểm yếu | Quyết định |
+| :-: | :--- | :--- |
+| 1 | Ban tổ chức khai sai `voterCount` để hạ quorum | **Chấp nhận rủi ro, có biện pháp**: người duyệt đối chiếu danh sách công bố; ghi rõ trong SPEC mục 6 và U4 |
+| 2 | Ban tổ chức tự điều khiển ví "người duyệt" | **Chấp nhận rủi ro**: chỉ chặn tự duyệt bằng ví tạo; người dùng kiểm `getApprovers` (U5) |
+| 3 | Cử tri chờ xem tỷ số rồi mới mở phiếu hoặc bỏ | **Chấp nhận rủi ro**: không đổi thiết kế để giữ hợp đồng đơn giản; ghi nhận ở U6 |
+| 4 | Mất salt = mất phiếu | **Giảm thiểu ở giao diện** (file dự phòng + nạp lại); không thể giải quyết trên chuỗi (U1) |
+| 5 | Hòa phiếu không có luật phân xử | **Chủ động**: `valid = false`, bầu lại ngoài chuỗi (U7); tránh tự chế luật ngẫu nhiên có thể bị thao túng |
+| 6 | Phiếu trễ / mở phiếu sau hạn | **Đã chặn trong mã**: `WrongPhase(Ended)`, có test |
+| 7 | Chép cam kết, phát lại giữa cuộc bầu cử | **Đã chặn trong mã**: băm gắn `msg.sender` và `id`, có test |

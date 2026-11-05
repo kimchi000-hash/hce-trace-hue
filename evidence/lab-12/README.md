@@ -12,6 +12,8 @@
 
 ---
 
+> **Ghi chú cập nhật (sau Lab 14):** biên bản này giữ nguyên như đã nghiệm thu. Các con số "125 dòng", `registerVoters` và địa chỉ `0x7D3b…3Ddd` thuộc hợp đồng lúc đó; thay đổi sau này được ghi ở phụ lục của [`docs/GATE_REVIEW_1.md`](../../docs/GATE_REVIEW_1.md).
+
 ## 1. Kết quả Kiểm tra Sức khỏe Codebase (Health Checklist 5/5)
 
 | Tiêu chuẩn thẩm định | Yêu cầu chuẩn | Kết quả tự đánh giá | Bằng chứng kiểm tra |

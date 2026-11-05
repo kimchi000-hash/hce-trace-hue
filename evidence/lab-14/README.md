@@ -5,3 +5,8 @@
 
 ---
 *Ghi chú: Lịch sử chi tiết và các phản hồi từ nhóm được rà soát được cập nhật đồng bộ trực tiếp trong thư mục tài liệu chung (`docs/`).*
+
+
+## Tự rà soát hợp đồng của nhóm
+
+Báo cáo tự rà soát theo 10 hạng mục, có trích số dòng, một lỗi đã sửa (`MAX_VOTERS`) và bốn điểm yếu thiết kế: [`docs/SELF_AUDIT.md`](../../docs/SELF_AUDIT.md). Báo cáo do nhóm bạn viết về hợp đồng của nhóm sẽ được điền vào mục 4 của tệp đó khi nhận.

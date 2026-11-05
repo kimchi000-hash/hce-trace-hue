@@ -3,3 +3,12 @@ node_modules/
 .DS_Store
 artifacts/
 cache/
+.deps/
+.states/
+hardhat.offline.config.js
+
+# Supabase
+supabase/.temp/
+supabase/.env.functions
+supabase/.branches/
+.env.local

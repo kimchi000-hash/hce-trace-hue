@@ -82,5 +82,26 @@ gantt
 | STT | Nhiệm vụ bắt buộc | Người phụ trách chính | Hạn hoàn thành | Sản phẩm bàn giao |
 | :---: | :--- | :---: | :---: | :--- |
 | **1** | **Lab 13:** Thiết kế bộ Test Suite kiểm thử 7 kịch bản tấn công gian lận và tối ưu an ninh hợp đồng | **Nguyễn Thị Kim Chi** | Trước buổi Lab 13 | [`evidence/lab-13/`](../evidence/lab-13/), Test suite Remix/Hardhat |
-| **2** | **Lab 14:** Tổ chức rà soát chéo (Cross-audit) với nhóm bạn, lập ma trận lỗi và phương án khắc phục | **Nguyễn Thị Kim Chi** & **Võ Thị Thư** | Trước buổi Lab 14 | [`docs/CROSS_AUDIT.md`](../docs/CROSS_AUDIT.md), Báo cáo phản biện chéo |
+| **2** | **Lab 14:** Tổ chức rà soát chéo (Cross-audit) với nhóm bạn, lập ma trận lỗi và phương án khắc phục | **Nguyễn Thị Kim Chi** & **Võ Thị Thư** | Trước buổi Lab 14 | [`docs/AUDIT_REPORT.md`](AUDIT_REPORT.md), Báo cáo phản biện chéo |
 | **3** | **Lab 15:** Xây dựng Giao diện Web DApp tự động băm `commitment` với `ethers.js v6` và deploy GitHub Pages | **Võ Thị Thư** | Trước buổi Lab 15 | [`web/`](../web/), DApp URL trên GitHub Pages |
+
+---
+
+## PHỤ LỤC (sau Lab 14) — ĐIỀU CHỈNH THIẾT KẾ VÀ PHẠM VI
+
+> Các mục 1–3 ở trên là hồ sơ Gate Review 1 **như đã nộp** (hợp đồng lúc đó: một cuộc bầu cử, `registerVoters`, 125 dòng, địa chỉ `0x7D3b…3Ddd`). Phụ lục này ghi những gì đã thay đổi để hồ sơ không mâu thuẫn với mã hiện tại.
+
+| Mục Gate Review 1 | Lúc nộp | Hiện tại | Lý do |
+| :--- | :--- | :--- | :--- |
+| Hợp đồng | 125 dòng, một cuộc bầu cử | 313 dòng, nhiều cuộc bầu cử | Đã phát triển thêm sau Gate Review |
+| Danh sách cử tri | `registerVoters`, mapping `isVoter`, tối đa 200 ví/lô | Merkle root + bằng chứng khi nộp phiếu | Danh sách không phải trả gas theo số cử tri; không còn trần 200 |
+| Quản trị | `admin` đăng ký cử tri | Người tạo + 1–10 người duyệt độc lập, cần đủ chữ ký | Tách quyền lập danh sách và quyền xác nhận |
+| Băm cam kết | `keccak256(candidateId, salt, msg.sender)`, `salt` là `bytes32` | `keccak256(id, candidateId, salt, msg.sender)`, `salt` là `string` | Chống phát lại giữa các cuộc bầu cử |
+| Cắt phạm vi: "dưới 150 dòng" | 125 dòng | **313 dòng — vượt** | Xem bên dưới |
+| Cắt phạm vi: "một vòng, không đa cuộc" | Một cuộc bầu cử | Nhiều cuộc **độc lập** (không phải đa vòng) | `electionCount` + dữ liệu riêng mỗi `id`; vẫn không có vòng bầu lại |
+| Địa chỉ Sepolia | `0x7D3bC21A8532d2011cF970C0701413C236C53Ddd` | _chưa triển khai bản mới_ | ABI đã đổi nên phải triển khai lại |
+
+**Về mốc 150 dòng:** bộ lọc phạm vi của sổ tay yêu cầu `ProjectCore.sol` dưới 150 dòng. Mã hiện tại vượt (313 dòng, gồm 16 dòng thư viện Merkle và các hàm đọc). Nhóm cân nhắc hai hướng: (A) quay về bản ~125 dòng khớp hồ sơ gốc; (B) giữ bản đầy đủ, đồng bộ toàn bộ tài liệu/test/giao diện, và **nêu rõ việc vượt mốc**. Nhóm chọn B vì có thêm lớp kiểm soát (người duyệt, Merkle, nhiều cuộc) đã được test; bản đầy đủ có 77 ca test xanh. **Cần giảng viên xác nhận chấp nhận điều chỉnh này** — chưa được xác nhận tính đến thời điểm viết phụ lục.
+
+**Nhiệm vụ Lab 13–15 so với kế hoạch:** Lab 13 (test) và Lab 17 (≥ 3 ca gồm gian lận) hoàn thành bằng `test/ProjectCore.test.js` (72 ca) và `test/web_abi.test.js` (5 ca). Lab 14: `docs/SELF_AUDIT.md` và `docs/AUDIT_REPORT.md`; báo cáo nhận từ nhóm bạn đang chờ. Lab 15: `web/` đã viết lại, chờ triển khai Sepolia (`docs/SEPOLIA_RUNBOOK.md`).
+

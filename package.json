@@ -4,5 +4,19 @@
   "description": "ECO2432 starter kit. Optional: run npm install so local editors resolve OpenZeppelin imports; Remix IDE resolves them automatically.",
   "dependencies": {
     "@openzeppelin/contracts": "^5.0.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.15",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.29.1"
+  },
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "gas": "hardhat run scripts/gas_report.js",
+    "merkle": "node scripts/merkle.js scripts/voters.example.json web/proofs.json",
+    "web": "npx --yes http-server web -p 8080 -c-1",
+    "test:supabase": "node --test supabase/tests/rls.test.js supabase/tests/verify_sql.test.js",
+    "test:supabase:pg": "node --test supabase/tests/concurrency.test.js"
   }
 }

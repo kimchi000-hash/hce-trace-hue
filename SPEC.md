@@ -1,31 +1,5 @@
-# SPEC - [Tên bài]
+# SPEC
 
-## 1. Mục đích
+Đặc tả chính thức của sản phẩm nằm tại [`docs/SPEC.md`](docs/SPEC.md) (Club Voting — bầu cử kín Commit–Reveal).
 
-Một câu: hệ thống này giải quyết việc gì cho ai.
-
-## 2. Đầu vào
-
-- Dữ liệu hoặc tham số gì, kiểu gì, ai cung cấp.
-
-## 3. Quy tắc nghiệp vụ
-
-- R1: ...
-- R2: ...
-
-Mỗi quy tắc phải là một câu khẳng định kiểm tra được.
-
-## 4. Đầu ra
-
-- Kết quả gì, hiển thị ở đâu.
-
-## 5. Trường hợp ngoại lệ
-
-- Nếu [tình huống] thì hệ thống phải [hành vi].
-
-Tối thiểu ba trường hợp.
-
-## 6. Ngoài phạm vi
-
-- Những gì bài này không làm.
-
+Tệp này chỉ là con trỏ; mẫu trống trước đây đã được thay thế để tránh nhầm với đặc tả thật.

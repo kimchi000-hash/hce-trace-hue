@@ -1,3 +1,5 @@
+> **Ghi chú của nhóm Club Voting:** tệp này là báo cáo rà soát về hợp đồng của nhóm **VotaChain** (Soulbound Badge), không phải về `ProjectCore.sol` (Club Voting) của repo này. Theo sổ tay, báo cáo về hợp đồng của chúng ta do nhóm được ghép vòng tròn viết, nên khi nhận được hãy lưu cạnh đây và điền phản hồi vào `docs/SELF_AUDIT.md` mục 4. Báo cáo bên dưới nên gửi cho nhóm VotaChain để lưu vào repo của họ.
+
 # BÁO CÁO RÀ SOÁT CHÉO (CROSS-AUDIT REPORT) — LAB 14
 
 - **Nhóm thực hiện rà soát (Auditor):** Nhóm DETAI7

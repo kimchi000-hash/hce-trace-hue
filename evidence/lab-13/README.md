@@ -11,6 +11,9 @@
 
 ---
 
+> **Ghi chú cập nhật (sau Lab 14):** phần test `NotAdmin()`/`registerVoters` dưới đây ứng với hợp đồng lúc nộp Lab 13. Hợp đồng hiện tại không còn quyền admin toàn cục; bộ test hiện hành ở [`test/ProjectCore.test.js`](../../test/ProjectCore.test.js) (nhóm E: ca gian lận). Phần Reentrancy của `VulnerableBank` không thay đổi.
+
+
 ## 1. Phân tích Cơ chế Lỗ hổng Reentrancy (Tái nhập)
 
 ### 1.1 Nguyên nhân gốc rễ (Root Cause)

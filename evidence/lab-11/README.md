@@ -12,6 +12,10 @@
 
 ---
 
+> **Ghi chú cập nhật (sau Lab 14):** các giao dịch dưới đây được thực hiện với **bản hợp đồng cũ** (một cuộc bầu cử, `commit(bytes32)`, `registerVoters`). Hợp đồng hiện tại có ABI khác (`commit(id, commitment, merkleProof)`), nên cần chạy lại trọn vòng theo [`docs/SEPOLIA_RUNBOOK.md`](../../docs/SEPOLIA_RUNBOOK.md).
+> Hai điểm cần lưu ý trung thực: (1) Ca 1 nộp giá trị băm giả `0x1111…` (không phải băm của một phiếu thật) và chưa có bước `reveal` hay `result` trên Sepolia; (2) mã giao dịch Ca 2 trước đây bị thiếu 1 ký tự (63 ký tự hex) và đã được thay bằng bản 64 ký tự khớp `docs/GATE_REVIEW_1.md` — **nhóm cần mở Etherscan đối chiếu lại** bằng cách dán mã vào ô tìm kiếm.
+
+
 ## 1. Thông số Khởi tạo Hợp đồng trên Sepolia
 
 Hợp đồng được biên dịch bằng Solidity `0.8.20` và triển khai thông qua Remix IDE kết nối ví MetaMask Sepolia:
@@ -28,7 +32,7 @@ Hợp đồng được biên dịch bằng Solidity `0.8.20` và triển khai th
 | Ca kiểm thử | Loại kiểm nghiệm | Thao tác thực hiện | Khối (Block) | Mã giao dịch (Tx Hash) | Trạng thái on-chain | Kết quả nghiệm thu |
 | :---: | :---: | :--- | :---: | :--- | :---: | :---: |
 | **Ca 1** | **Hợp lệ (Happy Path)** | Cử tri hợp lệ gọi hàm `commit(bytes32)` trong khung giờ Pha 1 (`Phase.Commit`) | `11899220` | [`0x6e37bcfff00cfbdcb16214a7a063fdfdcc9a0666f17a6f38fdacc4183a9942ef`](https://sepolia.etherscan.io/tx/0x6e37bcfff00cfbdcb16214a7a063fdfdcc9a0666f17a6f38fdacc4183a9942ef) | **Success (Status: 1)** | ✅ PASS (Khớp quy tắc R1 & R2) |
-| **Ca 2** | **Vi phạm bị chặn (Negative / Fraud)** | Cố tình gọi lại `commit(bytes32)` lần 2 để gian lận nộp phiếu lặp hoặc gọi ngoài pha | `11899237` | [`0xd43e0c6c27ce4ffa07724dc0c6b0e5aed4eda3bdab40ddd2635f27d23bdb685`](https://sepolia.etherscan.io/tx/0xd43e0c6c27ce4ffa07724dc0c6b0e5aed4eda3bdab40ddd2635f27d23bdb685) | **Reverted (Status: 0)** | ✅ PASS (Chặn đứng theo quy tắc R2) |
+| **Ca 2** | **Vi phạm bị chặn (Negative / Fraud)** | Cố tình gọi lại `commit(bytes32)` lần 2 để gian lận nộp phiếu lặp hoặc gọi ngoài pha | `11899237` | [`0xd43e0c6c27ce4ffa07724dc0c6b0e5aed4eda3bdab40ddd2635f27d23bdb6853`](https://sepolia.etherscan.io/tx/0xd43e0c6c27ce4ffa07724dc0c6b0e5aed4eda3bdab40ddd2635f27d23bdb6853) | **Reverted (Status: 0)** | ✅ PASS (Chặn đứng theo quy tắc R2) |
 
 ---
 
@@ -52,7 +56,7 @@ Hợp đồng được biên dịch bằng Solidity `0.8.20` và triển khai th
     ```
   - **Đánh giá:** Trạng thái cam kết được lưu trữ thành công vào mapping `commitments`, lá phiếu được bảo mật hoàn toàn trên mạng lưới.
 
-![Ca 1 Hợp lệ](./01_valid_commit_sepolia.png.png)
+![Ca 1 Hợp lệ](./01_valid_commit_sepolia.png)
 
 ---
 
@@ -61,7 +65,7 @@ Hợp đồng được biên dịch bằng Solidity `0.8.20` và triển khai th
 - **Thao tác on-chain:**
   - Cùng địa chỉ ví `0xf8242815A45Aa13006a841b02677fB5853d96350` tiếp tục gửi thêm một giao dịch gọi hàm `commit(...)` với cùng mã băm hoặc mã băm mới khi đã cam kết trước đó.
 - **Kết quả ghi nhận trên Sepolia Etherscan:**
-  - **Transaction Hash:** `0xd43e0c6c27ce4ffa07724dc0c6b0e5aed4eda3bdab40ddd2635f27d23bdb685`
+  - **Transaction Hash:** `0xd43e0c6c27ce4ffa07724dc0c6b0e5aed4eda3bdab40ddd2635f27d23bdb6853`
   - **Block Height:** `11899237`
   - **Trạng thái:** `Fail — Reverted (Status: 0)`
   - **Cơ chế phòng vệ:** Hợp đồng lập tức hoàn tác giao dịch ở tầng EVM, chặn đứng hành vi gian lận nộp cam kết nhiều lần của cử tri.
