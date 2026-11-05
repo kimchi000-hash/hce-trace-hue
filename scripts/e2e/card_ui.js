@@ -64,6 +64,11 @@ const check = (n, ok, x) => log.push((ok ? "PASS " : "FAIL ") + n + (x ? " :: " 
     await ctx.route(/\/ipfs\//, (r) => r.abort());
     await ctx.addInitScript(({ me, rpc }) => {
       const call = async (method, params) => {
+        // gia lap gioi han cua RPC MetaMask/Infura: eth_getLogs toi da 10.000 block moi lan
+        if (method === "eth_getLogs" && params && params[0]) {
+          const f = params[0]; const span = (f.toBlock === "latest" ? Infinity : parseInt(f.toBlock, 16)) - parseInt(f.fromBlock, 16);
+          if (span >= 10000) { const e = new Error("range " + (span + 1) + " exceeds limit of 10000"); e.code = -32602; throw e; }
+        }
         const r = await fetch(rpc, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params: params || [] }) });
         const j = await r.json(); if (j.error) { const e = new Error(j.error.message); e.code = j.error.code; e.data = j.error.data; throw e; } return j.result;
       };
@@ -162,6 +167,14 @@ const check = (n, ok, x) => log.push((ok ? "PASS " : "FAIL ") + n + (x ? " :: " 
   await pm.waitForTimeout(800);
   check("man hinh 390px: khong tran ngang trang", await pm.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), await pm.evaluate(() => document.documentElement.scrollWidth + " vs " + window.innerWidth));
   await shot(pm, "06_mobile");
+
+  // ===== 9. Nhat ky su kien voi RPC gioi han 10.000 block (khoang quet mac dinh 20.000 phai duoc chia nho) =====
+  await provider.send("hardhat_mine", ["0x2af8"]);   // +11000 block: khoang quet mac dinh (20.000) nay vuot han muc 10.000 cua RPC gia lap
+  const pl = await open(5, await sbt.getAddress(), "vote");
+  await pl.click('.nav-item[data-route="log"]');   // nguoi dung bam muc "Nhat ky hoat dong"
+  await pl.waitForFunction(() => /sự kiện trong block/.test(document.querySelector("#logInfo").textContent), null, { timeout: 20000 });
+  check("nhat ky: quet 20.000 block qua RPC gioi han 10.000 van thanh cong (chia nho)", true, await pl.textContent("#logInfo"));
+  check("nhat ky co su kien tao/duyet/commit/reveal (quet tu block 0, qua nhieu lan goi)", (await pl.locator("#logRows tr:not(.empty)").count()) > 0, await pl.textContent("#logInfo"));
 
   await browser.close();
   console.log(log.join("\n"));

@@ -339,6 +339,7 @@ async function sbHandler(route) {
 
   // ===== 7. Hanh vi dang nhap =====
   const pl = await open(5, { route: "org" });
+  await pl.waitForFunction(() => /Đăng nhập dữ liệu/.test((document.querySelector("#btnSbLogin") || {}).textContent || ""), null, { timeout: 10000 });
   check("chua dang nhap: nut 'Đăng nhập dữ liệu' hien, trang van doc duoc", (await pl.textContent("#btnSbLogin")).includes("Đăng nhập dữ liệu") && !(await pl.locator("#btnSbLogin").evaluate((n) => n.classList.contains("hidden"))));
   await click(pl, "#btnSbLogin");
   check("dang nhap bang chu ky vi: phien gan voi dung vi", await pl.evaluate((w) => window.__votechain.sbWallet() === w, accts[5].toLowerCase()));

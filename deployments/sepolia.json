@@ -2,8 +2,15 @@
   "network": "sepolia",
   "chainId": 11155111,
   "deployedVia": "remix",
-  "registry": { "address": "0x1790495d1FD4c2d630298a492d58A309b23De811", "block": 12070353 },
-  "core": { "address": "0xbF82608546Ed0368f03856ec19e6289E43A10364" },
-  "voterCard": { "address": "0xEC79935bAE1b5353DC09D8345555c96D2d30C6cF" },
+  "registry": {
+    "address": "0x1790495d1FD4c2d630298a492d58A309b23De811",
+    "block": 12070353
+  },
+  "core": {
+    "address": "0x7f5ab140bf0118aA263A82de9e6eb02a56f474a5"
+  },
+  "voterCard": {
+    "address": "0xc16d2F1f11D95164Ff0024D49Fb7Bd51F3b291c1"
+  },
   "deployBlock": 12070353
 }

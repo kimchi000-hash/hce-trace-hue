@@ -4599,9 +4599,9 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
    *   ?contract=0x…&election=0&chain=11155111
    * ------------------------------------------------------------------ */
   const CONFIG = {
-    CONTRACT_ADDRESS: "0xbF82608546Ed0368f03856ec19e6289E43A10364",
+    CONTRACT_ADDRESS: "0x7f5ab140bf0118aA263A82de9e6eb02a56f474a5",
     // Hợp đồng thẻ cử tri (VoterCardSBT). Có thể dán ở màn hình "Thẻ cử tri" hoặc ghi đè bằng URL: ?sbt=0x…
-    SBT_ADDRESS: "0xEC79935bAE1b5353DC09D8345555c96D2d30C6cF",
+    SBT_ADDRESS: "0xc16d2F1f11D95164Ff0024D49Fb7Bd51F3b291c1",
     // CID thư mục mascot trên IPFS. Khi khớp với avatarBaseURI của hợp đồng thẻ, trang thử ảnh trong web/mascots/ trước (nhanh hơn).
     MASCOT_CID: "bafybeickdjosojmlagojcg7l4krhoffitywd74jn7rvzcqodzjti6qmony",
     ELECTION_ID: 0,
@@ -6265,14 +6265,25 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     return S.blockTs[n];
   }
 
+  // Nhiều nhà cung cấp RPC (kể cả RPC mặc định của MetaMask) từ chối eth_getLogs quá 10.000 block mỗi lần.
+  const LOG_CHUNK = 9000, LOG_MAX_RANGE = 300000;
+  async function getLogsChunked(p, filter) {
+    const logs = [];
+    for (let from = filter.fromBlock; from <= filter.toBlock; from += LOG_CHUNK) {
+      const to = Math.min(from + LOG_CHUNK - 1, filter.toBlock);
+      logs.push(...(await p.getLogs({ ...filter, fromBlock: from, toBlock: to })));
+    }
+    return logs;
+  }
+
   /** Lấy sự kiện của hợp đồng. electionId = null → toàn hợp đồng. */
   async function fetchEvents(electionId, range) {
     const p = chainProvider();
     const latest = await p.getBlockNumber();
-    const from = Math.max(0, latest - range);
+    const from = Math.max(0, latest - Math.min(range, LOG_MAX_RANGE));
     const filter = { address: S.address, fromBlock: from, toBlock: latest };
     if (electionId !== null) filter.topics = [null, ethers.zeroPadValue(ethers.toBeHex(electionId), 32)];
-    const logs = await p.getLogs(filter);
+    const logs = await getLogsChunked(p, filter);
     const out = [];
     for (const lg of logs) {
       let ev; try { ev = IFACE.parseLog(lg); } catch (_) { continue; }
