@@ -142,6 +142,15 @@ union all select 'B07', 'Ham', 'can_write_asset: dau van tay noi dung dung thiet
             and (select pg_get_functiondef(fnoid) from fn where nm = 'can_write_asset') ~ '0x\[0-9a-f\]\{64\}'
             and (select pg_get_functiondef(fnoid) from fn where nm = 'can_write_asset') !~* 'svg|html|gif|zip', false),
        'kiem tra van tay chuoi; hanh vi that duoc thu bang test (supabase/tests) va Phan G'
+union all select 'B08', 'Ham', 'save_organization_profile: SECURITY DEFINER, search_path rong, chi authenticated goi duoc (anon va PUBLIC khong), cot profile khong ghi truc tiep',
+       coalesce((select p.prosecdef and coalesce(p.proconfig, '{}') && array['search_path=""']
+                        and has_function_privilege('authenticated', p.oid, 'EXECUTE')
+                        and not has_function_privilege('anon', p.oid, 'EXECUTE')
+                        and not has_function_privilege('public', p.oid, 'EXECUTE')
+                        and not has_column_privilege('authenticated', 'public.organizations', 'profile', 'UPDATE')
+                 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+                 where n.nspname = 'public' and p.proname = 'save_organization_profile'), false),
+       'ham luu ho so to chuc (migration 20261106000001)'
 
 -- ================================================================= C. Quyen client tren bang
 union all select 'C01', 'Quyen bang', 'Quyen SELECT: anon doc 6 bang cong khai; authenticated them organization_members; KHONG doc auth_nonces/sync_state',

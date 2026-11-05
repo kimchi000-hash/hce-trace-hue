@@ -9,7 +9,7 @@ const ref = require("../scripts/metadata.js");
 const html = fs.readFileSync(path.join(__dirname, "..", "web", "index.html"), "utf8");
 const m = html.match(/\/\*META-START\*\/([\s\S]*?)\/\*META-END\*\//);
 if (!m) throw new Error("Khong tim thay khoi META trong web/index.html");
-const web = new Function("ethers", m[1] + "\nreturn { canonicalize, metadataHash, mkElectionMeta, mkCandidateMeta };")(ethers);
+const web = new Function("ethers", m[1] + "\nreturn { canonicalize, metadataHash, mkElectionMeta, mkCandidateMeta, mkOrgProfile };")(ethers);
 
 describe("web/index.html: chuan hoa metadata khop scripts/metadata.js", function () {
   const nfd = "Nguyễn Văn A";   // dau to hop (NFD)
@@ -30,6 +30,17 @@ describe("web/index.html: chuan hoa metadata khop scripts/metadata.js", function
     const c = web.mkCandidateMeta(fixtures.candidate), rc = ref.candidateMetadata(fixtures.candidate);
     expect(c).to.deep.equal(rc);
     expect(web.metadataHash(c)).to.equal(ref.metadataHash(rc));
+  });
+  it("hash ho so to chuc giong scripts/metadata.js (co va khong co nam thanh lap)", function () {
+    const f1 = { name: "CLB Công nghệ", organizationType: "club", description: "Mô tả \"dài\"\nnhiều dòng", affiliation: "Khoa Kinh tế", contactEmail: "a@b.vn", website: "https://example.vn", foundedYear: 2019 };
+    const f2 = { name: "Lớp K58", organizationType: "class" };
+    for (const f of [f1, f2]) {
+      const a = web.mkOrgProfile(f), b = ref.organizationMetadata(f);
+      expect(a).to.deep.equal(b);
+      expect(web.metadataHash(a)).to.equal(ref.metadataHash(b));
+    }
+    expect(web.mkOrgProfile(f2).foundedYear).to.equal(null);
+    expect(web.metadataHash(web.mkOrgProfile(f1))).to.not.equal(web.metadataHash(web.mkOrgProfile({ ...f1, foundedYear: 2020 })));
   });
   it("chuoi NFC va NFD cho cung mot hash (khong co hai ten 'khac nhau' vo hinh)", function () {
     const a = web.mkCandidateMeta({ index: 0, fullName: nfd }), b = web.mkCandidateMeta({ index: 0, fullName: nfc });

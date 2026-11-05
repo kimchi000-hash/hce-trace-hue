@@ -114,6 +114,35 @@ test("E. to chuc: chi Manager cua DUNG to chuc sua 3 cot ngoai chuoi; khong sua 
   assert.equal((await rows(who(OUT), "select 1 from public.organizations where id=$1", [orgB])).length, 0);
 });
 
+test("E2. ho so to chuc (save_organization_profile): quyen, luu mot lan khi Pending, ghi de khi Verified", async () => {
+  const P = (extra) => JSON.stringify(Object.assign({ schema: "votechain.organization.v1", name: "X", organizationType: "club", description: "Mo ta day du", affiliation: "Khoa A", contactEmail: "a@b.vn", website: "https://example.vn", foundedYear: 2020 }, extra || {}));
+  const save = (ctx, org, p) => run(ctx, "select public.save_organization_profile($1, $2::jsonb)", [org, p]);
+  // cot profile khong ghi truc tiep duoc
+  await denied(run(who(MGR), "update public.organizations set profile='{}'::jsonb where id=$1", [orgA]));
+  // anon / khong dang nhap / khong phai Manager / sai schema
+  await denied(save(anon, orgB, P()));
+  await denied(save(who(OUT), orgB, P()), /Manager/);
+  await denied(save(who(MEM), orgA, P()), /Manager/);
+  await denied(save(who(MGR_B), orgB, JSON.stringify({ schema: "khac", x: 1 })), /khong hop le/);
+  await denied(save(who(MGR_B), orgB, JSON.stringify([1, 2])), /khong hop le|violates|array/i);
+  await denied(save(who(MGR_B), orgB, JSON.stringify({ schema: "votechain.organization.v1", pad: "x".repeat(9000) })), /khong hop le/);
+  // to chuc Pending: Manager luu duoc MOT LAN
+  await save(who(MGR_B), orgB, P());
+  const r = (await rows(who(MGR_B), "select profile, description, organization_type from public.organizations where id=$1", [orgB]))[0];
+  assert.equal(r.profile.affiliation, "Khoa A"); assert.equal(r.description, "Mo ta day du"); assert.equal(r.organization_type, "club");
+  await denied(save(who(MGR_B), orgB, P({ description: "doi" })), /mot lan/);
+  // loai khong hop le thi giu nguyen loai cu, khong loi
+  // to chuc Verified: Manager ghi de duoc; vai tro thap hon thi khong
+  await save(who(MGR), orgA, P({ organizationType: "khong-co" }));
+  await save(who(MGR), orgA, P({ description: "Ban moi" }));
+  assert.equal((await rows(admin, "select description from public.organizations where id=$1", [orgA]))[0].description, "Ban moi");
+  await denied(save(who(PROP), orgA, P()), /Manager/);
+  // to chuc bi dinh chi: tu choi (Manager cua to chuc C khong ton tai nen cung bi chan ve vai tro)
+  await denied(save(who(MGR), orgC, P()), /Manager|dinh chi/);
+  // ho so cua to chuc Pending van an voi nguoi ngoai
+  assert.equal((await rows(who(OUT), "select 1 from public.organizations where id=$1", [orgB])).length, 0);
+});
+
 test("F. danh sach thanh vien: chi thanh vien cung to chuc xem", async () => {
   assert.equal((await rows(who(MEM), "select 1 from public.organization_members")).length, 3);
   assert.equal((await rows(who(MGR_B), "select 1 from public.organization_members")).length, 1);   // chi to chuc B
@@ -398,15 +427,16 @@ test("V. Kiem toan quyen: ma tran GRANT, RLS bat, ham SECURITY DEFINER co search
        has_function_privilege('anon', p.oid, 'EXECUTE') a, has_function_privilege('authenticated', p.oid, 'EXECUTE') u, has_function_privilege('service_role', p.oid, 'EXECUTE') s
        from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.prokind='f' order by 1`);
   const CLIENT_OK = ["auth_wallet", "has_org_role", "has_org_role_onchain", "org_is_verified", "can_write_asset"];
-  assert.equal(fns.length, 11);
+  const AUTH_ONLY = ["save_organization_profile"];   // chi nguoi dang nhap (khong anon)
+  assert.equal(fns.length, 12);
   for (const f of fns) {
     assert.ok((f.cfg || []).some((c) => /^search_path=("")?$|^search_path=""$|^search_path=$/.test(c) || c.replace(/\s/g, "") === 'search_path=""'), `${f.n} thieu search_path rong: ${JSON.stringify(f.cfg)}`);
     assert.equal(f.a, CLIENT_OK.includes(f.n), `anon EXECUTE ${f.n}`);
-    assert.equal(f.u, CLIENT_OK.includes(f.n), `authenticated EXECUTE ${f.n}`);
+    assert.equal(f.u, CLIENT_OK.includes(f.n) || AUTH_ONLY.includes(f.n), `authenticated EXECUTE ${f.n}`);
     assert.equal(f.s, true, `service_role EXECUTE ${f.n}`);
   }
   const defs = fns.filter((f) => f.def).map((f) => f.n).sort();
-  assert.deepEqual(defs, ["consume_wallet_nonce", "has_org_role", "has_org_role_onchain", "issue_wallet_nonce", "org_is_verified", "purge_expired_nonces"]);
+  assert.deepEqual(defs, ["consume_wallet_nonce", "has_org_role", "has_org_role_onchain", "issue_wallet_nonce", "org_is_verified", "purge_expired_nonces", "save_organization_profile"]);
   // PUBLIC khong con quyen EXECUTE tren cac ham nhay cam
   const pub = await rows(admin, `select p.proname n from pg_proc p join pg_namespace n on n.oid=p.pronamespace
        where n.nspname='public' and p.prokind='f' and p.proname = any($1) and has_function_privilege('public', p.oid, 'EXECUTE')`, [["issue_wallet_nonce", "consume_wallet_nonce", "purge_expired_nonces", "limit_metadata_drafts"]]);

@@ -48,4 +48,11 @@ const candidateMetadata = (o) => ({
   manifesto: o.manifesto || "", avatar: o.avatar || null, documents: o.documents || [],
 });
 
-module.exports = { canonicalize, metadataHash, fileChecksum, verifyMetadata, fileEntry, electionMetadata, candidateMetadata };
+/** Ho so to chuc: hash cua doi tuong nay duoc ghi len chuoi lam infoHash luc registerOrganization(name, infoHash). Logo KHONG nam trong ho so. */
+const organizationMetadata = (o) => ({
+  schema: "votechain.organization.v1",
+  name: o.name, organizationType: o.organizationType, description: o.description || "", affiliation: o.affiliation || "",
+  contactEmail: o.contactEmail || "", website: o.website || "", foundedYear: o.foundedYear === undefined ? null : o.foundedYear,
+});
+
+module.exports = { canonicalize, metadataHash, fileChecksum, verifyMetadata, fileEntry, electionMetadata, candidateMetadata, organizationMetadata };

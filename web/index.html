@@ -817,6 +817,7 @@ label.f {
 }
 
 input[type="text"],
+input[type="email"],
 input[type="number"],
 input[type="search"],
 select,
@@ -2181,16 +2182,24 @@ pre.code {
 }
 
 .app-foot {
-  margin-top: 40px;
-  padding-top: 18px;
+  margin-top: 48px;
+  padding: 28px 0 0;
   border-top: 1px solid var(--line);
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  font-size: 0.8rem;
   color: var(--muted);
+  font-size: 0.86rem;
 }
+.af-grid { display: grid; grid-template-columns: 1.4fr 0.9fr 0.9fr 1.3fr 1.3fr; gap: 28px 32px; }
+.af-brand p { margin: 12px 0 0; max-width: 330px; line-height: 1.55; }
+.af-brand .brand { padding: 0; }
+.af-col h5 { margin: 0 0 10px; font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); }
+.af-col a { display: block; padding: 4px 0; color: var(--muted); text-decoration: none; }
+.af-col a:hover { color: var(--brand); text-decoration: underline; }
+.af-line { padding: 3px 0; line-height: 1.45; }
+.af-line b { color: var(--ink); }
+.af-bar { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; margin-top: 26px; padding: 14px 0 22px; border-top: 1px solid var(--line); font-size: 0.78rem; }
+@media (max-width: 1100px) { .af-grid { grid-template-columns: 1fr 1fr 1fr; } }
+@media (max-width: 860px) { .af-grid { grid-template-columns: 1fr 1fr; } .af-brand { grid-column: 1 / -1; } }
+@media (max-width: 520px) { .af-grid { grid-template-columns: 1fr; } }
 
 .faq h4 {
   margin: 14px 0 3px;
@@ -3303,6 +3312,8 @@ pre.code {
 @media (prefers-reduced-motion: reduce) { .viz-fill, .viz-ring .c, .viz-ring .r { transition: none; } }
 
 .vc-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 14px; }
+
+[hidden] { display: none !important; }
 </style>
 </head>
 
@@ -3717,7 +3728,6 @@ pre.code {
     <div class="card-head">
       <div>
         <h3><svg class="ic"><use href="#i-link"/></svg>Kết nối hợp đồng</h3>
-        <div class="sub">Dán địa chỉ hợp đồng ProjectCore đã triển khai trên Sepolia. Địa chỉ được trình duyệt ghi nhớ.</div>
       </div>
       <button id="btnScan" class="btn soft sm"><svg class="ic sm"><use href="#i-refresh"/></svg>Quét lại dữ liệu</button>
     </div>
@@ -3768,7 +3778,6 @@ pre.code {
   <div class="section-head">
     <div>
       <h2><svg class="ic lg" style="color:var(--brand)"><use href="#i-flag"/></svg>Cuộc bầu cử nổi bật</h2>
-      <p>Ưu tiên cuộc đang diễn ra, sau đó đến cuộc sắp diễn ra và cuộc đã kết thúc gần nhất.</p>
     </div>
     <button class="btn outline sm" data-route="elections">Xem tất cả<svg class="ic sm"><use href="#i-chevron"/></svg></button>
   </div>
@@ -3790,7 +3799,6 @@ pre.code {
       <div class="card-head">
         <div>
           <h3><svg class="ic"><use href="#i-calendar"/></svg>Lịch sử các cuộc bầu cử</h3>
-          <div class="sub">Các cuộc đã kết thúc. Kết quả đọc từ hàm result() của hợp đồng.</div>
         </div>
       </div>
       <div class="tbl-wrap">
@@ -3805,7 +3813,7 @@ pre.code {
       <div class="card-head">
         <div>
           <h3><svg class="ic"><use href="#i-activity"/></svg>Hoạt động gần đây</h3>
-          <div class="sub" id="feedInfo">Sự kiện on-chain mới nhất</div>
+          <div class="sub" id="feedInfo" hidden>Sự kiện on-chain mới nhất</div>
         </div>
         <button class="btn ghost sm" data-route="log">Xem tất cả</button>
       </div>
@@ -3871,7 +3879,7 @@ pre.code {
         <h1 id="elTitle">—</h1>
         <div id="roleBadges" class="row tight"></div>
         <p id="elDescription" class="desc none">Chưa có mô tả giới thiệu.</p>
-        <div class="row tight"><span class="src on"><svg class="ic"><use href="#i-shield"/></svg>Tên, thời gian, trạng thái: On-chain</span><span class="src off"><svg class="ic"><use href="#i-alert"/></svg>Mô tả, mục đích: Off-chain</span></div>
+        <div class="row tight" hidden><span class="src on"><svg class="ic"><use href="#i-shield"/></svg>Tên, thời gian, trạng thái: On-chain</span><span class="src off"><svg class="ic"><use href="#i-alert"/></svg>Mô tả, mục đích: Off-chain</span></div>
         <div class="row" style="margin-top:auto">
           <div><div class="small muted">Pha hiện tại</div><div id="elPhase" style="font-weight:800;font-size:1.05rem;color:var(--brand-700)">—</div></div>
           <div id="elCountdown" class="small muted"></div>
@@ -3882,14 +3890,14 @@ pre.code {
       </div>
     </div>
 
-    <div class="src-legend" style="margin-top:14px">
+    <div class="src-legend" style="margin-top:14px" hidden>
       <span class="src on"><svg class="ic"><use href="#i-shield"/></svg>On-chain · đã xác thực</span> đọc trực tiếp từ hợp đồng, ai cũng kiểm chứng được.
       <span class="src off"><svg class="ic"><use href="#i-alert"/></svg>Off-chain · chưa xác minh</span> thông tin giới thiệu do ban tổ chức cung cấp, blockchain <b>không</b> xác minh.
     </div>
 
     <!-- các giai đoạn + tiến độ -->
     <div class="card" style="margin-top:16px">
-      <div class="card-head"><div><h3><svg class="ic"><use href="#i-clock"/></svg>Các giai đoạn bầu cử</h3><div class="sub">Hợp đồng tự chuyển pha theo thời gian khối.</div></div><span class="src on"><svg class="ic"><use href="#i-shield"/></svg>On-chain</span></div>
+      <div class="card-head"><div><h3><svg class="ic"><use href="#i-clock"/></svg>Các giai đoạn bầu cử</h3></div><span class="src on"><svg class="ic"><use href="#i-shield"/></svg>On-chain</span></div>
       <ol id="phaseSteps" class="stepper" aria-label="Các pha của cuộc bầu cử">
         <li data-step="0" data-n="1">Đăng ký &amp; duyệt<small>Người duyệt ký xác nhận</small></li>
         <li data-step="1" data-n="2">Nộp phiếu kín<small>Gửi mã băm (commit)</small></li>
@@ -3904,7 +3912,7 @@ pre.code {
     <!-- thông tin cuộc bầu cử -->
     <div class="info-grid" style="margin-top:16px">
       <div class="info-tile">
-        <div class="k"><svg class="ic sm"><use href="#i-file"/></svg>Mục đích &amp; nội dung <span class="src off" style="margin-left:auto">Off-chain</span></div>
+        <div class="k"><svg class="ic sm"><use href="#i-file"/></svg>Mục đích &amp; nội dung <span id="tagPurpose" class="src off" style="margin-left:auto">Off-chain</span></div>
         <div class="v prose none" id="elPurpose" style="font-weight:500;margin-top:8px">Chưa có thông tin mục đích và nội dung.</div>
       </div>
       <div class="info-tile">
@@ -3931,7 +3939,7 @@ pre.code {
     <div class="section-head">
       <div>
         <h2><svg class="ic lg" style="color:var(--brand)"><use href="#i-users"/></svg>Ứng viên</h2>
-        <p>Nhấn vào hồ sơ để xem thông tin đầy đủ. Tên và số thứ tự do hợp đồng lưu; phần giới thiệu là off-chain.</p>
+        <p>Nhấn vào hồ sơ để xem thông tin đầy đủ.</p>
       </div>
     </div>
     <div class="cgrid" id="candGrid"></div>
@@ -3940,7 +3948,7 @@ pre.code {
     <div class="section-head" style="margin-top:28px">
       <div>
         <h2><svg class="ic lg" style="color:var(--brand)"><use href="#i-activity"/></svg>Thống kê trực quan</h2>
-        <p>Số liệu đọc trực tiếp từ hợp đồng. Phiếu chỉ hiện từ pha mở phiếu để không lộ kết quả sớm.</p>
+        <p>Phiếu chỉ hiện từ pha mở phiếu để không lộ kết quả sớm.</p>
       </div>
     </div>
     <div class="viz-grid">
@@ -3957,14 +3965,14 @@ pre.code {
     <!-- timeline -->
     <div class="grid g-main" style="margin-top:24px">
       <div class="card">
-        <div class="card-head"><div><h3><svg class="ic"><use href="#i-activity"/></svg>Timeline quá trình bầu cử</h3><div class="sub" id="tlSub">Thời gian lấy từ trạng thái hợp đồng và sự kiện on-chain.</div></div><span class="src on"><svg class="ic"><use href="#i-shield"/></svg>On-chain</span></div>
+        <div class="card-head"><div><h3><svg class="ic"><use href="#i-activity"/></svg>Timeline quá trình bầu cử</h3><div class="sub" id="tlSub" hidden>Thời gian lấy từ trạng thái hợp đồng và sự kiện on-chain.</div></div><span class="src on"><svg class="ic"><use href="#i-shield"/></svg>On-chain</span></div>
         <ol class="tl" id="timelineList"></ol>
       </div>
 
       <div class="stack lg">
         <!-- tổng hợp cử tri ẩn danh -->
         <div class="card">
-          <div class="card-head"><div><h3><svg class="ic"><use href="#i-users"/></svg>Cử tri (số liệu tổng hợp)</h3><div class="sub">VoteChain không hiển thị họ tên, ảnh hay danh sách cử tri.</div></div><span class="src on"><svg class="ic"><use href="#i-shield"/></svg>On-chain</span></div>
+          <div class="card-head"><div><h3><svg class="ic"><use href="#i-users"/></svg>Cử tri (số liệu tổng hợp)</h3></div><span class="src on"><svg class="ic"><use href="#i-shield"/></svg>On-chain</span></div>
           <div class="agg" style="grid-template-columns:repeat(2,minmax(0,1fr))">
             <div class="mini"><div class="k">Đủ điều kiện</div><div class="v" id="aggEligible">—</div><div class="s">khai báo khi tạo</div></div>
             <div class="mini"><div class="k">Đã xác thực</div><div class="v" id="aggVerified">—</div><div class="s" id="aggVerifiedSub">đã commit (Merkle proof)</div></div>
@@ -4227,7 +4235,7 @@ pre.code {
     </div>
 
     <div class="card">
-      <div class="card-head"><div><h3><svg class="ic"><use href="#i-eye"/></svg>Xem trước thẻ</h3><div class="sub">Thẻ thật có thể hiển thị khác đôi chút trên sàn NFT.</div></div></div>
+      <div class="card-head"><div><h3><svg class="ic"><use href="#i-eye"/></svg>Xem trước thẻ</h3></div></div>
       <div id="cardPreview"></div>
     </div>
   </div>
@@ -4236,7 +4244,6 @@ pre.code {
     <div class="card-head">
       <div>
         <h3><svg class="ic"><use href="#i-box"/></svg>Bộ sưu tập của tôi</h3>
-        <div class="sub">Các thẻ cử tri của ví đang kết nối, ở mọi cuộc bầu cử.</div>
       </div>
       <button id="btnCardRefresh" class="btn outline sm" type="button"><svg class="ic sm"><use href="#i-refresh"/></svg>Làm mới</button>
     </div>
@@ -4270,6 +4277,15 @@ pre.code {
       <div class="field"><label class="f" for="oName">Tên tổ chức</label><input id="oName" type="text" maxlength="64"><div class="help">1–64 byte, công khai trên chuỗi.</div></div>
       <div class="field"><label class="f" for="oType">Loại</label><select id="oType">
         <option value="class">Lớp</option><option value="club">Câu lạc bộ</option><option value="faculty">Khoa</option><option value="university">Trường</option><option value="student_union">Đoàn/Hội</option><option value="community">Cộng đồng</option><option value="other">Khác</option></select></div>
+      <div class="field"><label class="f" for="oDesc">Giới thiệu, mục đích hoạt động</label><textarea id="oDesc" style="font-family:var(--sans);min-height:84px" maxlength="1000" placeholder="Tổ chức làm gì, ai tham gia, hoạt động ra sao…"></textarea></div>
+      <div class="grid g2">
+        <div class="field" id="oAffilF"><label class="f" for="oAffil">Đơn vị chủ quản / trực thuộc</label><input id="oAffil" type="text" maxlength="120" placeholder="VD: Khoa Kinh tế, Đoàn Trường…"></div>
+        <div class="field"><label class="f" for="oYear">Năm thành lập</label><input id="oYear" type="number" min="1900" max="2100" step="1" placeholder="VD: 2018"></div>
+        <div class="field"><label class="f" for="oEmail">Email liên hệ</label><input id="oEmail" type="email" maxlength="120" placeholder="ten@vi-du.vn"></div>
+        <div class="field" id="oWebF"><label class="f" for="oWeb">Website / Facebook</label><input id="oWeb" type="text" maxlength="200" placeholder="https://…"></div>
+      </div>
+      <div class="help" style="margin:-4px 0 12px">Hồ sơ này được băm (hash) và hash đó ghi lên chuỗi cùng tên tổ chức; nội dung lưu ở Supabase và được đối chiếu lại ngay trên trình duyệt. Email và website sẽ <b>công khai</b> khi tổ chức được xác minh. Logo thêm sau khi tổ chức được xác minh.</div>
+      <div id="oRegStatus" class="small muted" style="margin-bottom:8px"></div>
       <button id="btnOrgRegister" class="btn primary"><svg class="ic sm"><use href="#i-send"/></svg>Đăng ký tổ chức</button>
     </div>
   </div>
@@ -4278,6 +4294,7 @@ pre.code {
     <div class="card">
       <div class="card-head"><div><h3 id="omTitle">—</h3><div class="sub" id="omSub">—</div></div><div class="row tight" id="omAdmin"></div></div>
       <div id="omAlert"></div>
+      <div id="omProfile" style="margin-top:12px"></div>
       <div class="grid g2" style="align-items:start;margin-top:12px">
         <div>
           <h4 style="margin:0 0 8px">Thành viên</h4>
@@ -4604,9 +4621,43 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   </div>
 </section>
 
-<footer class="app-foot">
-  <div><b style="color:var(--ink)">VoteChain</b> · ECO2432 — Tiền điện tử &amp; Hợp đồng thông minh<br>Nguyễn Thị Kim Chi (23K4300025) · Võ Thị Thư (23K4300038)</div>
-  <div class="right">Sản phẩm phục vụ học tập trên mạng thử nghiệm, chưa được kiểm toán chuyên nghiệp.<br><span id="footerContract" class="mono tiny faint"></span></div>
+<footer class="app-foot" aria-label="Chân trang">
+  <div class="af-grid">
+    <div class="af-brand">
+      <a class="brand" href="#/dashboard" aria-label="VoteChain">
+        <svg width="40" height="40" aria-hidden="true"><use href="#i-logo"/></svg>
+        <span><span class="brand-name">Vote<b>Chain</b></span><span class="brand-tag">Bầu cử kín · Minh bạch</span></span>
+      </a>
+      <p>Bầu cử nhiều tổ chức trên blockchain, bỏ phiếu kín hai bước (commit – reveal), kết quả ai cũng kiểm chứng được.</p>
+    </div>
+    <nav class="af-col" aria-label="Chức năng">
+      <h5>Chức năng</h5>
+      <a href="#/elections" data-route="elections">Bầu cử</a>
+      <a href="#/vote" data-route="vote">Bỏ phiếu</a>
+      <a href="#/card" data-route="card">Thẻ cử tri</a>
+      <a href="#/result" data-route="result">Kết quả</a>
+    </nav>
+    <nav class="af-col" aria-label="Tìm hiểu">
+      <h5>Tìm hiểu</h5>
+      <a href="#/about" data-route="about">Giới thiệu</a>
+      <a href="#/log" data-route="log">Nhật ký hoạt động</a>
+      <a href="#/tools" data-route="tools">Công cụ kiểm tra</a>
+    </nav>
+    <div class="af-col" id="afAdmin">
+      <h5>Liên hệ quản trị</h5>
+      <div id="afAdminBody"></div>
+    </div>
+    <div class="af-col">
+      <h5>Học phần</h5>
+      <div class="af-line"><b>ECO2432</b> · Tiền điện tử &amp; Hợp đồng thông minh</div>
+      <div class="af-line">Trường Đại học Kinh tế, Đại học Huế</div>
+      <div class="af-line">Nguyễn Thị Kim Chi · Võ Thị Thư</div>
+    </div>
+  </div>
+  <div class="af-bar">
+    <span>© 2026 VoteChain · Dự án học phần ECO2432</span>
+    <span id="footerContract" class="mono tiny faint"></span>
+  </div>
 </footer>
 
 </main>
@@ -4659,6 +4710,8 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     CHAIN_ID: 11155111,
     RPC_URL: "https://ethereum-sepolia-rpc.publicnode.com",
     // Supabase: chỉ URL và khóa CÔNG KHAI (publishable). Tuyệt đối không dán service_role/secret key vào đây.
+    // Liên hệ quản trị hiển thị ở chân trang. Để trống mục nào thì mục đó không hiện.
+    ADMIN_CONTACT: { email: "nguyenchi.contact@gmail.com", zalo: "", facebook: "" },
     SUPABASE_URL: "https://vfzuniykinaivchhuiul.supabase.co",
     SUPABASE_KEY: "sb_publishable_EDmldUtxLGO4J5EvAE0DHQ__RVMvuYu",
     LOG_BLOCKS: 20000,
@@ -4824,6 +4877,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   const LS = {
     get(k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch (_) { /* chế độ riêng tư */ } },
+    del(k) { try { localStorage.removeItem(k); } catch (_) { /* chế độ riêng tư */ } },
   };
 
   class UserError extends Error {}
@@ -5104,6 +5158,21 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     }
   }
 
+  /** Chân trang: liên hệ quản trị (từ CONFIG) và ví quản trị nền tảng đọc từ Registry. */
+  function renderFooterAdmin() {
+    const box = $("afAdminBody"); if (!box) return;
+    clear(box);
+    const c = CONFIG.ADMIN_CONTACT || {};
+    const line = (label, node) => { const d = el("div", "af-line"); d.appendChild(el("b", "", label + ": ")); d.appendChild(node); box.appendChild(d); };
+    const link = (href, text) => { const a = el("a", "", text); a.href = href; a.target = "_blank"; a.rel = "noopener noreferrer"; a.style.display = "inline"; return a; };
+    if (c.email && /^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(c.email)) line("Email", link("mailto:" + c.email, c.email));
+    if (c.zalo && /^[0-9+ .]{8,20}$/.test(c.zalo)) line("Zalo", link("https://zalo.me/" + c.zalo.replace(/[^0-9]/g, ""), c.zalo));
+    if (c.facebook && /^https:\/\//.test(c.facebook)) line("Facebook", link(c.facebook, "Trang liên hệ"));
+    if (S.platformAdmin) line("Ví quản trị nền tảng", el("span", "mono tiny", shortAddr(S.platformAdmin)));
+    const has = box.childElementCount > 0;
+    box.appendChild(el("div", "af-line", has ? "Quản trị nền tảng xác minh tổ chức. Cần xác minh hoặc hỗ trợ, hãy liên hệ qua các kênh trên." : "Quản trị nền tảng xác minh tổ chức. Thông tin liên hệ đang được cập nhật."));
+  }
+
   async function importBackup(file) {
     let obj;
     try { obj = JSON.parse(await file.text()); } catch (_) { throw new UserError("File dự phòng không phải JSON hợp lệ."); }
@@ -5168,7 +5237,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       const c = new ethers.Contract(S.address, APP_ABI, provider);
       const n = await c.electionCount();
       $("electionCountText").textContent = "Hợp đồng đang có " + n + " cuộc bầu cử";
-      status.textContent = "✅ Hợp đồng hoạt động trên " + chainName(CHAIN_ID) + ".";
+      status.textContent = "";
       return true;
     } catch (e) {
       status.textContent = "⛔ Không đọc được hợp đồng (sai địa chỉ hoặc sai mạng).";
@@ -7174,6 +7243,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     const d = $("elDescription");
     d.className = "desc" + (m.description ? "" : " none");
     d.textContent = m.description || "Chưa có mô tả giới thiệu đã xác thực. Ban tổ chức cập nhật được trong pha Đăng ký.";
+    const tp = $("tagPurpose"); if (tp) { tp.className = "src " + (m.verified ? "on" : "off"); tp.textContent = m.verified ? "Đã khớp hash" : "Off-chain"; }
     const p = $("elPurpose");
     p.className = "v prose" + (m.purpose ? "" : " none");
     p.textContent = m.purpose || "Chưa có thông tin mục đích và nội dung.";
@@ -7468,7 +7538,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     let verified = null, exact = false;
     if (ee) { verified = Math.max(ee.commits, Number(e.revealedCount)); exact = ee.complete; }
     $("aggVerified").textContent = verified === null ? "—" : (exact ? String(verified) : "≥ " + verified);
-    $("aggVerifiedSub").textContent = verified === null ? "chưa đọc được sự kiện" : (exact ? "đã commit (xác thực Merkle proof)" : "trong khoảng block đã quét");
+    $("aggVerifiedSub").textContent = verified === null ? "chưa đọc được sự kiện" : (exact ? "đã commit" : "trong khoảng block đã quét");
 
     const elig = Number(e.voterCount);
     const cPct = verified === null || !elig ? 0 : Math.min(100, (verified / elig) * 100);
@@ -7522,6 +7592,11 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     schema: "votechain.candidate.v1",
     index: o.index, fullName: o.fullName, bio: o.bio || "", experience: o.experience || "", achievements: o.achievements || "",
     manifesto: o.manifesto || "", avatar: o.avatar || null, documents: o.documents || [],
+  });
+  const mkOrgProfile = (o) => ({
+    schema: "votechain.organization.v1",
+    name: o.name, organizationType: o.organizationType, description: o.description || "", affiliation: o.affiliation || "",
+    contactEmail: o.contactEmail || "", website: o.website || "", foundedYear: o.foundedYear === undefined ? null : o.foundedYear,
   });
   /*META-END*/
 
@@ -7650,7 +7725,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   }
 
   async function sbOrgUuid(onchainId) {
-    const rows = await sbGet("organizations?organization_id_onchain=eq." + Number(onchainId) + "&select=id,name,description,logo_url,organization_type,verification_status,synced_at");
+    const rows = await sbGet("organizations?organization_id_onchain=eq." + Number(onchainId) + "&select=id,name,description,logo_url,organization_type,verification_status,synced_at,info_hash,profile");
     return rows && rows[0] ? rows[0] : null;
   }
   async function sbSaveDraft(orgUuid, type, candidateIndex, hash, content) {
@@ -7693,7 +7768,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       return { id, owner: ethers.getAddress(v.owner), status: Number(v.status), name: v.name, infoHash: v.infoHash, members: Number(v.memberCount), approvers: Number(v.approverCount), role };
     });
     const admin = ethers.getAddress(await reg.platformAdmin());
-    S.orgs = list; S.orgCount = n; S.platformAdmin = admin;
+    S.orgs = list; S.orgCount = n; S.platformAdmin = admin; renderFooterAdmin();
     renderOrgs();
     fillCreateOrgs();
   }
@@ -7794,17 +7869,100 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     await loadOrgs();
   }
 
-  async function doOrgRegister() {
+  const orgDraftKey = (id) => "votechain:orgprofile:" + id + ":" + lc(S.account || "");
+  /** Một số loại tổ chức không cần mọi trường (VD: lớp học không có đơn vị chủ quản, website). Trường bị ẩn luôn rỗng trong hồ sơ. */
+  const ORG_HIDE = { class: ["oAffil", "oWeb"] };
+  function syncOrgFormFields() {
+    const hide = ORG_HIDE[$("oType").value] || [];
+    ["oAffil", "oWeb"].forEach((id) => { const off = hide.includes(id); $(id + "F").hidden = off; if (off) $(id).value = ""; });
+  }
+  function readOrgForm() {
+    syncOrgFormFields();
     const name = $("oName").value.trim();
     if (!name || utf8Len(name) > 64) throw new UserError("Tên tổ chức phải dài 1–64 byte.");
-    const infoHash = metadataHash({ schema: "votechain.organization.v1", name, organizationType: $("oType").value });
-    const { rc } = await regTx("Đăng ký tổ chức", "registerOrganization", [name, infoHash]);
+    const email = $("oEmail").value.trim(), web = $("oWeb").value.trim(), yr = $("oYear").value.trim();
+    if (email && !/^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(email)) throw new UserError("Email liên hệ không hợp lệ.");
+    if (web && !/^https:\/\/[^\s"'<>]{3,190}$/.test(web)) throw new UserError("Website / Facebook phải bắt đầu bằng https://");
+    let year = null;
+    if (yr) { year = Number(yr); if (!Number.isInteger(year) || year < 1900 || year > 2100) throw new UserError("Năm thành lập không hợp lệ (1900–2100)."); }
+    const desc = $("oDesc").value.trim();
+    if (desc.length > 1000) throw new UserError("Giới thiệu tối đa 1000 ký tự.");
+    return mkOrgProfile({ name, organizationType: $("oType").value, description: desc, affiliation: $("oAffil").value.trim().slice(0, 120), contactEmail: email, website: web, foundedYear: year });
+  }
+  async function doOrgRegister() {
+    const profile = readOrgForm();
+    const infoHash = metadataHash(profile);
+    // Đăng nhập dữ liệu TRƯỚC khi gửi giao dịch, để cửa sổ ký của ví hiện đúng lúc người dùng vừa bấm nút
+    let loginNote = "";
+    if (sbConfigured()) { try { await ensureLogin(); } catch (e) { loginNote = " Chưa đăng nhập dữ liệu nên hồ sơ chưa lưu lên Supabase; mở lại trang tổ chức và đăng nhập để lưu."; } }
+    const { rc } = await regTx("Đăng ký tổ chức", "registerOrganization", [profile.name, infoHash]);
     let id = null;
     for (const lg of rc.logs) { try { const ev = REG_IFACE.parseLog(lg); if (ev && ev.name === "OrganizationRegistered") id = Number(ev.args.id); } catch (_) { /* log khác */ } }
-    toast("ok", "Đã đăng ký tổ chức" + (id ? " #" + id : "") + ". Chờ quản trị nền tảng xác minh.");
-    $("oName").value = "";
+    toast("ok", "Đã đăng ký tổ chức" + (id ? " #" + id : "") + ". Chờ quản trị nền tảng xác minh." + loginNote);
+    ["oName", "oDesc", "oAffil", "oYear", "oEmail", "oWeb"].forEach((k) => { $(k).value = ""; });
+    if (id) LS.set(orgDraftKey(id), JSON.stringify(profile));   // giữ bản chờ lưu cho tới khi chain-sync đồng bộ tổ chức sang Supabase
     await loadOrgs();
-    if (id) await pickOrg(id);
+    if (id) { await pickOrg(id); pollOrgProfile(id); }
+  }
+
+  /** Lưu hồ sơ đã băm lúc đăng ký lên Supabase (qua hàm save_organization_profile) khi tổ chức đã được chain-sync đồng bộ. */
+  async function applyOrgProfile(id) {
+    const raw = LS.get(orgDraftKey(id));
+    if (!raw || !sbConfigured()) return "none";
+    let profile; try { profile = JSON.parse(raw); } catch (_) { LS.del(orgDraftKey(id)); return "none"; }
+    const row = await sbOrgUuid(id);
+    if (!row) return "wait";
+    if (row.profile) { LS.del(orgDraftKey(id)); return "done"; }
+    if (!sbActive()) return "login";
+    const r = await sbRaw(CONFIG.SUPABASE_URL + "/rest/v1/rpc/save_organization_profile", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ p_org: row.id, p_profile: profile }) });
+    if (!r.ok) throw new UserError("Lưu hồ sơ tổ chức thất bại (" + r.status + ")" + (sbMsg(r) ? ": " + sbMsg(r) : "."));
+    LS.del(orgDraftKey(id));
+    return "saved";
+  }
+  async function pollOrgProfile(id) {
+    const st = $("oRegStatus");
+    for (let i = 0; i < 14; i++) {
+      let res = "wait";
+      try { res = await applyOrgProfile(id); } catch (e) { st.textContent = explain(e); return; }
+      if (res === "saved") { st.textContent = "Đã lưu hồ sơ tổ chức #" + id + " lên Supabase."; toast("ok", "Đã lưu hồ sơ tổ chức lên Supabase."); if (S.orgPick && S.orgPick.id === id) loadOrgMirror(S.orgPick).catch(() => {}); return; }
+      if (res === "none" || res === "done") return;
+      if (res === "login") { st.textContent = "Hồ sơ tổ chức #" + id + " đang chờ: hãy bấm “Đăng nhập dữ liệu” để lưu."; return; }
+      st.textContent = "Đang chờ chain-sync đồng bộ tổ chức #" + id + " sang Supabase (tối đa vài phút)…";
+      await new Promise((r) => setTimeout(r, 8000));
+    }
+    st.textContent = "Hồ sơ tổ chức #" + id + " sẽ tự lưu khi bạn mở lại trang Tổ chức sau khi chain-sync đồng bộ.";
+  }
+
+  /** Thẻ "Hồ sơ tổ chức": nội dung từ Supabase, băm lại trong trình duyệt và so với infoHash trên chuỗi. */
+  function renderOrgProfile(o, row) {
+    const box = $("omProfile"); if (!box) return;
+    clear(box);
+    const card = el("div", "card"); card.style.background = "var(--surface-2)";
+    const head = el("div", "card-head"); const hd = el("div"); hd.appendChild(el("h4", "", "Hồ sơ tổ chức")); head.appendChild(hd);
+    card.appendChild(head);
+    const p = row && row.profile && typeof row.profile === "object" ? row.profile : null;
+    if (!p) {
+      const pend = LS.get(orgDraftKey(o.id));
+      card.appendChild(el("div", "small muted", pend ? "Hồ sơ đã băm lên chuỗi, đang chờ lưu lên Supabase (chain-sync đồng bộ xong sẽ tự lưu)." : "Tổ chức này chưa có hồ sơ chi tiết (đăng ký chỉ gồm tên và loại)."));
+      box.appendChild(card); return;
+    }
+    let ok = false;
+    try { ok = lc(metadataHash(p)) === lc(o.infoHash); } catch (_) { ok = false; }
+    const tag = srcTag(ok ? "on" : "off", ok ? "Khớp hash trên chuỗi" : "KHÔNG khớp hash trên chuỗi, đừng tin nội dung này");
+    head.appendChild(tag);
+    const dl = el("dl", "kv");
+    const row1 = (k, v) => { if (!v) return; dl.appendChild(el("dt", "", k)); dl.appendChild(el("dd", "", String(v))); };
+    row1("Loại", ({ class: "Lớp", club: "Câu lạc bộ", faculty: "Khoa", university: "Trường", student_union: "Đoàn/Hội", community: "Cộng đồng", other: "Khác" })[p.organizationType] || p.organizationType);
+    row1("Giới thiệu", cleanText(p.description, 1000));
+    row1("Đơn vị chủ quản", cleanText(p.affiliation, 120));
+    row1("Năm thành lập", Number.isInteger(p.foundedYear) ? p.foundedYear : "");
+    const em = cleanText(p.contactEmail, 120);
+    if (em && /^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(em)) { dl.appendChild(el("dt", "", "Email")); const dd = el("dd"); const a = el("a", "", em); a.href = "mailto:" + em; dd.appendChild(a); dl.appendChild(dd); }
+    const web = cleanText(p.website, 200);
+    if (web && /^https:\/\/[^\s"'<>]+$/.test(web)) { dl.appendChild(el("dt", "", "Website")); const dd = el("dd"); const a = el("a", "", web); a.href = web; a.target = "_blank"; a.rel = "noopener noreferrer"; dd.appendChild(a); dl.appendChild(dd); }
+    card.appendChild(dl);
+    if (row.logo_url && /^https:\/\//.test(row.logo_url)) { const im = document.createElement("img"); im.src = row.logo_url; im.alt = "Logo " + o.name; im.referrerPolicy = "no-referrer"; im.style.cssText = "width:64px;height:64px;object-fit:cover;border-radius:12px;margin-top:10px"; im.onerror = () => im.remove(); card.appendChild(im); }
+    box.appendChild(card);
   }
 
   async function doAddMember() {
@@ -7831,6 +7989,8 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     let row = null;
     try { row = sbConfigured() ? await sbOrgUuid(o.id) : null; } catch (e) { box.textContent = "Không đọc được Supabase: " + explain(e); return; }
     S.orgMirror = row;
+    renderOrgProfile(o, row);
+    if (row && !row.profile && LS.get(orgDraftKey(o.id)) && sbActive()) { applyOrgProfile(o.id).then((r) => { if (r === "saved") { toast("ok", "Đã lưu hồ sơ tổ chức lên Supabase."); loadOrgMirror(o).catch(() => {}); } }).catch((e) => toast("err", explain(e))); }
     if (!row) { box.textContent = "Tổ chức chưa được đồng bộ sang Supabase (chain-sync chưa chạy hoặc chưa tới lượt). Chưa lưu được mô tả và logo."; return; }
     box.textContent = "Đã đồng bộ" + (row.synced_at ? " lúc " + new Date(row.synced_at).toLocaleString("vi-VN") : "") + ".";
     $("oiType").value = row.organization_type || "other";
@@ -8167,6 +8327,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   function wirePlatform2() {
     $("btnSbLogin").onclick = async () => { await run("btnSbLogin", "Đang đăng nhập…", async () => { if (sbActive()) sbLogout(); else await sbLogin(); }); renderLoginState(); };
     $("btnOrgReload").onclick = () => run("btnOrgReload", "Đang tải…", async () => { await loadOrgs(); if (S.orgPick) await pickOrg(S.orgPick.id); });
+    $("oType").onchange = syncOrgFormFields; syncOrgFormFields();
     $("btnOrgRegister").onclick = () => run("btnOrgRegister", "Đang gửi…", doOrgRegister);
     $("btnAddMember").onclick = () => run("btnAddMember", "Đang gửi…", doAddMember);
     $("btnAddApprover").onclick = () => run("btnAddApprover", "Đang gửi…", doAddApprover);
@@ -8293,6 +8454,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     renderVoteFlow();
     initPlatform().catch((e) => console.warn("initPlatform", e));
     initCard().catch((e) => console.warn("initCard", e));
+    renderFooterAdmin();
 
     // tự kết nối lại nếu ví đã cấp quyền trước đó và đúng mạng
     try {
@@ -8309,7 +8471,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   }
 
   window.addEventListener("DOMContentLoaded", init);
-  window.__votechain = { S, explain, commitmentOf, buildTree, verifyProof, parseAddresses, APP_ABI, sbWallet, sbGet, metadataHash, REG_ABI, loadOrgs, SBT_ABI, mascotSources, setSbtAddress, refreshCardView }; // phục vụ kiểm thử
+  window.__votechain = { S, explain, commitmentOf, buildTree, verifyProof, parseAddresses, APP_ABI, sbWallet, sbGet, metadataHash, REG_ABI, loadOrgs, SBT_ABI, mascotSources, setSbtAddress, refreshCardView, SB, readOrgForm }; // phục vụ kiểm thử
 })();
 </script>
 </body>
