@@ -4332,14 +4332,10 @@ pre.code {
         </div>
       </div>
       <div id="omInfoBox" style="margin-top:18px">
-        <h4 style="margin:0 0 8px">Thông tin hiển thị (Supabase)</h4>
+        <h4 style="margin:0 0 8px">Logo tổ chức</h4>
         <div class="small muted" id="omSync" style="margin-bottom:8px">—</div>
-        <div class="grid g2">
-          <div class="field" style="margin:0"><label class="f" for="oiType">Loại</label><select id="oiType"><option value="class">Lớp</option><option value="club">Câu lạc bộ</option><option value="faculty">Khoa</option><option value="university">Trường</option><option value="student_union">Đoàn/Hội</option><option value="community">Cộng đồng</option><option value="other">Khác</option></select></div>
-          <div class="field" style="margin:0"><label class="f" for="oiLogo">Logo (tùy chọn)</label><input id="oiLogo" type="file" accept="image/png,image/jpeg,image/webp"><div class="help">Tối đa 2 MB. Logo là công khai.</div></div>
-        </div>
-        <div class="field" style="margin-top:12px"><label class="f" for="oiDesc">Mô tả</label><textarea id="oiDesc" style="font-family:var(--sans);min-height:70px" maxlength="2000"></textarea><div class="help">Mô tả và logo nằm ngoài chuỗi và <b>không</b> được bảo vệ bằng hash; chỉ Manager của tổ chức đã xác minh sửa được.</div></div>
-        <button id="btnOrgInfoSave" class="btn soft sm">Lưu thông tin</button>
+        <div class="field" style="margin:0"><label class="f" for="oiLogo">Ảnh logo</label><input id="oiLogo" type="file" accept="image/png,image/jpeg,image/webp"><div class="help">Tối đa 2 MB. Logo là công khai và nằm ngoài chuỗi; chỉ Manager của tổ chức đã xác minh đổi được. Tên, loại, mô tả và liên hệ sửa ở “Chỉnh sửa hồ sơ” phía trên.</div></div>
+        <button id="btnOrgInfoSave" class="btn soft sm" style="margin-top:12px">Lưu logo</button>
       </div>
     </div>
   </div>
@@ -8044,8 +8040,6 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     if (row && LS.get(orgDraftKey(o.id)) && sbActive()) { applyOrgProfile(o.id, o.infoHash).then((r) => { if (r === "saved") { toast("ok", "Đã lưu hồ sơ tổ chức lên Supabase."); loadOrgMirror(o).catch(() => {}); } }).catch((e) => toast("err", explain(e))); }
     if (!row) { box.textContent = "Tổ chức chưa được đồng bộ sang Supabase (chain-sync chưa chạy hoặc chưa tới lượt). Chưa lưu được mô tả và logo."; return; }
     box.textContent = "Đã đồng bộ" + (row.synced_at ? " lúc " + new Date(row.synced_at).toLocaleString("vi-VN") : "") + ".";
-    $("oiType").value = row.organization_type || "other";
-    $("oiDesc").value = row.description || "";
   }
 
   async function doOrgInfoSave() {
@@ -8053,17 +8047,15 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     const row = S.orgMirror;
     if (!row) throw new UserError("Tổ chức chưa được đồng bộ sang Supabase nên chưa lưu được.");
     await ensureLogin();
-    const body = { organization_type: $("oiType").value, description: $("oiDesc").value.trim().slice(0, 2000) };
     const file = $("oiLogo").files && $("oiLogo").files[0];
-    if (file) {
-      const f = await prepareImage(file, "organization-assets", o.id, "logo");
-      await sbUpload(f);
-      body.logo_url = f.url;
-    }
+    if (!file) throw new UserError("Hãy chọn một ảnh logo (PNG, JPG hoặc WebP, tối đa 2 MB).");
+    const f = await prepareImage(file, "organization-assets", o.id, "logo");
+    await sbUpload(f);
+    const body = { logo_url: f.url };
     const r = await sbRaw(CONFIG.SUPABASE_URL + "/rest/v1/organizations?id=eq." + row.id, { method: "PATCH", headers: { "Content-Type": "application/json", Prefer: "return=representation" }, body: JSON.stringify(body) });
-    if (!r.ok) throw new UserError("Lưu thông tin thất bại (" + r.status + ")" + (sbMsg(r) ? ": " + sbMsg(r) : "."));
+    if (!r.ok) throw new UserError("Lưu logo thất bại (" + r.status + ")" + (sbMsg(r) ? ": " + sbMsg(r) : "."));
     if (!Array.isArray(r.json) || !r.json.length) throw new UserError("Supabase không cho sửa (cần là Manager của tổ chức đã xác minh, đã đăng nhập bằng đúng ví).");
-    toast("ok", "Đã lưu thông tin tổ chức.");
+    toast("ok", "Đã lưu logo tổ chức."); $("oiLogo").value = "";
     await loadOrgMirror(o);
   }
 

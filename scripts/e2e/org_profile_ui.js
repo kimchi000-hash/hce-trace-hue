@@ -202,6 +202,9 @@ async function sbHandler(route) {
   await po.click("#btnOrgReload"); await po.waitForTimeout(300); await idle(po);
   await po.waitForSelector("#btnOrgEdit", { timeout: 15000 });
   check("Manager cua to chuc da xac minh thay nut Chinh sua ho so", (await po.locator("#btnOrgEdit").count()) === 1);
+  check("khoi cu chi con Logo: khong con o Loai/Mo ta trung lap", (await po.locator("#oiLogo").count()) === 1 && (await po.locator("#oiType, #oiDesc").count()) === 0 && /Logo tổ chức/.test(await po.textContent("#omInfoBox")));
+  await po.click("#btnOrgInfoSave"); await po.waitForTimeout(400); await idle(po);
+  check("luu logo khi chua chon anh: bi chan, khong gui PATCH", /chọn một ảnh logo/.test(await toasts(po)) && mock.patches.length === 0);
   await po.click("#btnOrgEdit");
   check("form sua duoc dien san tu ho so hien tai", (await po.inputValue("#eName")) === form.name && (await po.inputValue("#eDesc")) === form.desc && (await po.inputValue("#eEmail")) === form.email && (await po.inputValue("#eYear")) === "2019");
   await po.click("#btnOrgEditSave"); await po.waitForTimeout(400); await idle(po);
