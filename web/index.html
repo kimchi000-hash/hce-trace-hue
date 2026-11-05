@@ -7496,10 +7496,6 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     chain.appendChild(dl);
     body.appendChild(chain);
 
-    const warn = el("div", "alert warn flush");
-    warn.appendChild(icon("alert", "sm"));
-    warn.appendChild(el("span", "", "Phần giới thiệu bên trên do ban tổ chức cung cấp ngoài chuỗi (off-chain). Blockchain không xác minh tính đúng đắn của nội dung này."));
-    body.appendChild(warn);
 
     if (e.isActivated && e.phase === 1 && !e.committed) {
       const go = el("button", "btn primary", "Chọn ứng viên này để bỏ phiếu");
