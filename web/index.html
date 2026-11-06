@@ -2446,6 +2446,79 @@ pre.code {
 }
 
 /* ---------------------------------------------------------------------
+   16b. TRANG CHỦ (landing): chưa có thanh bên, chỉ có thanh trên
+   --------------------------------------------------------------------- */
+.landing-brand, .landing-nav, #btnEnterApp { display: none; }
+body.landing .app { grid-template-columns: minmax(0, 1fr); }
+body.landing .sidebar, body.landing .scrim, body.landing .menu-btn, body.landing .crumbs { display: none !important; }
+body.landing .landing-brand { display: flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; font-weight: 800; font-size: 1.1rem; }
+body.landing .landing-brand b { color: var(--brand); }
+body.landing .landing-nav { display: flex; gap: 4px; margin-left: 18px; }
+body.landing .landing-nav button { border: 0; background: transparent; color: var(--ink-2); font: inherit; font-weight: 600; font-size: 0.92rem; padding: 8px 12px; border-radius: 9px; cursor: pointer; }
+body.landing .landing-nav button:hover { background: var(--brand-100); color: var(--brand); }
+body.landing.has-wallet #btnEnterApp { display: inline-flex; }
+body.landing .content { max-width: none; padding: 0; }
+body.landing .app-foot { max-width: none; margin-top: 0; border-top: 0; padding: 48px max(26px, calc((100% - 1188px) / 2)) 0; background: #0f2447; color: #b4c3e0; }
+body.landing .app-foot .brand-name { color: #fff; }
+body.landing .app-foot .brand-name b { color: #7fb0ff; }
+body.landing .app-foot .brand-tag { color: #8da2c9; }
+body.landing .app-foot .af-col h5, body.landing .app-foot .af-line b { color: #fff; }
+body.landing .app-foot .af-col a { color: #b4c3e0; }
+body.landing .app-foot .af-col a:hover { color: #fff; }
+body.landing .app-foot .af-bar { border-top-color: rgba(255, 255, 255, 0.14); }
+body.landing .app-foot .faint, body.landing .app-foot .muted { color: #8da2c9; }
+body.landing .app-foot a { color: #9cc2ff; }
+.home-sec-live { background: #fff; }
+.home-sec-live .kpis { margin-top: 0; }
+.home-sec-how { background: transparent; }
+body.landing #banner { max-width: 1240px; margin: 14px auto 0 !important; }
+.home-wrap { max-width: 1240px; margin: 0 auto; padding: 0 26px; }
+.home-hero-full {
+  overflow: hidden;
+  padding: 56px 0 48px;
+  background:
+    radial-gradient(900px 420px at 88% 0, var(--brand-100) 0, rgba(220, 232, 255, 0) 70%),
+    radial-gradient(640px 320px at 0 100%, var(--teal-50) 0, rgba(230, 247, 244, 0) 70%),
+    #fff;
+}
+.home-hero-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 40px; align-items: center; min-height: min(560px, calc(100vh - var(--topbar-h) - 104px)); }
+.home-hero-text h1 { margin: 16px 0 14px; font-size: 3.2rem; font-weight: 800; line-height: 1.1; letter-spacing: -0.03em; max-width: 17ch; }
+.home-hero-text h1 em { font-style: normal; color: var(--brand); }
+.home-hero-text .lead { max-width: 54ch; font-size: 1.1rem; color: var(--muted); }
+.home-hero-text .lead b { color: var(--ink-2); }
+.home-hero-grid .hero-art svg { max-width: 600px; }
+.home-sec { padding: 76px 0 84px; border-top: 1px solid var(--line); }
+.home-sec-head { max-width: 62ch; margin: 0 auto 40px; text-align: center; }
+.home-kicker { display: inline-block; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--brand); }
+.home-sec-head h2 { margin: 10px 0 12px; font-size: 2.1rem; font-weight: 800; line-height: 1.2; letter-spacing: -0.02em; }
+.home-sec-head p { margin: 0; color: var(--muted); font-size: 1.02rem; }
+.home-steps3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.home-step { position: relative; padding: 28px 26px 26px; border: 1px solid var(--line); border-radius: 18px; background: #fff; box-shadow: var(--shadow-sm, 0 1px 2px rgba(18, 38, 74, 0.05)); }
+.home-step-n { position: absolute; top: 18px; right: 22px; font-size: 2.6rem; font-weight: 800; line-height: 1; color: var(--brand-100); }
+.home-step-ic { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 13px; background: var(--brand-100); color: var(--brand); }
+.home-step-ic .ic { width: 24px; height: 24px; }
+.home-step h3 { margin: 18px 0 8px; font-size: 1.12rem; font-weight: 700; }
+.home-step p { margin: 0; color: var(--muted); font-size: 0.96rem; line-height: 1.6; }
+.home-cta { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-top: 32px; padding: 26px 30px; border-radius: 18px; border: 1px solid var(--brand-200); background: linear-gradient(120deg, var(--brand-100), #fff); }
+.home-cta b { display: block; font-size: 1.15rem; }
+.home-cta span { color: var(--muted); font-size: 0.96rem; }
+@media (max-width: 980px) {
+  .home-hero-grid { grid-template-columns: minmax(0, 1fr); min-height: 0; gap: 8px; }
+  .home-hero-text h1 { font-size: 2.5rem; }
+  .home-steps3 { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  body.landing .landing-nav { display: none; }
+  .home-wrap { padding: 0 16px; }
+  body.landing .app-foot { padding-left: 16px; padding-right: 16px; }
+  .home-hero-full { padding: 32px 0 24px; }
+  .home-hero-text h1 { font-size: 2.1rem; }
+  .home-sec { padding: 48px 0 56px; }
+  .home-sec-head h2 { font-size: 1.6rem; }
+  .home-cta { padding: 20px; }
+}
+
+/* ---------------------------------------------------------------------
    17. HERO DASHBOARD
    --------------------------------------------------------------------- */
 .hero {
@@ -3587,7 +3660,7 @@ pre.code {
      SIDEBAR
      ===================================================================== -->
 <aside class="sidebar" id="sidebar" aria-label="Điều hướng chính">
-  <a class="brand" href="#/dashboard" aria-label="VoteChain">
+  <a class="brand" href="#/home" aria-label="VoteChain · Trang chủ">
     <svg width="40" height="40" aria-hidden="true"><use href="#i-logo"/></svg>
     <span>
       <span class="brand-name">Vote<b>Chain</b></span>
@@ -3634,6 +3707,12 @@ pre.code {
 
 <header class="topbar">
   <button class="menu-btn" id="menuBtn" aria-label="Mở menu"><svg class="ic"><use href="#i-menu"/></svg></button>
+  <a class="landing-brand" href="#/home" aria-label="VoteChain · Trang chủ"><svg width="34" height="34" aria-hidden="true"><use href="#i-logo"/></svg><span>Vote<b>Chain</b></span></a>
+  <nav class="landing-nav" aria-label="Trang chủ">
+    <button type="button" id="homeNavHow">Cách hoạt động</button>
+    <button type="button" data-route="elections">Khám phá</button>
+    <button type="button" data-route="about">Giới thiệu</button>
+  </nav>
   <div class="crumbs">
     <span class="crumb-root">VoteChain</span>
     <svg class="ic sm crumb-root"><use href="#i-chevron"/></svg>
@@ -3642,6 +3721,7 @@ pre.code {
   <span class="grow"></span>
   <span id="netPill" class="chip hide-sm" title="Mạng blockchain"><span class="dot"></span><span id="netText">Chưa kết nối</span></span>
   <span id="accountChip" class="chip ok mono hidden" title=""><svg class="ic sm"><use href="#i-wallet"/></svg><span id="accountText"></span></span>
+  <button id="btnEnterApp" class="btn primary sm" data-route="dashboard">Vào ứng dụng</button>
   <button id="btnSbLogin" class="btn outline sm hidden">Đăng nhập dữ liệu</button>
   <button id="btnConnect" class="btn primary sm"><svg class="ic sm"><use href="#i-wallet"/></svg>Kết nối MetaMask</button>
 </header>
@@ -3660,6 +3740,184 @@ pre.code {
 <!-- =====================================================================
      VIEW: DASHBOARD
      ===================================================================== -->
+<section class="view" id="view-home" data-title="Trang chủ" hidden>
+  <div class="home-hero-full">
+    <div class="home-wrap home-hero-grid">
+      <div class="home-hero-text">
+        <span class="chip"><span class="dot"></span><span>Bầu cử kín · Minh bạch · Ethereum Sepolia</span></span>
+        <h1>Bầu cử minh bạch – <em>Niềm tin được xác thực trên Blockchain</em></h1>
+        <p class="lead">VoteChain là nền tảng bầu cử điện tử cho lớp học và câu lạc bộ. Phiếu bầu được giữ <b>kín</b> bằng cơ chế Commit–Reveal, mỗi ví một phiếu, kết quả do hợp đồng thông minh tự tính nên ai cũng kiểm chứng được.</p>
+        <div class="hero-actions">
+          <button class="btn primary lg" data-route="elections"><svg class="ic"><use href="#i-search"/></svg>Khám phá cuộc bầu cử</button>
+          <button class="btn outline lg" data-route="dashboard">Vào ứng dụng</button>
+        </div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+      <svg viewBox="0 0 520 360" role="img">
+        <defs>
+          <linearGradient id="hhg1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#3f7bff"/>
+            <stop offset="1" stop-color="#1f5eea"/>
+          </linearGradient>
+          <linearGradient id="hhg2" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#14b8a6"/>
+            <stop offset="1" stop-color="#0f9d8a"/>
+          </linearGradient>
+          <filter id="hhsh" x="-20%" y="-20%" width="140%" height="150%">
+            <feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1f5eea" flood-opacity=".18"/>
+          </filter>
+        </defs>
+        <!-- nền -->
+        <circle cx="262" cy="190" r="150" fill="#dce8ff" opacity=".55"/>
+        <circle cx="262" cy="190" r="108" fill="#eef4ff"/>
+        <!-- chuỗi khối bên trái và phải -->
+        <g stroke="#bcd2ff" stroke-width="3" stroke-linecap="round">
+          <path d="M92 118 L140 150"/>
+          <path d="M92 250 L138 224"/>
+          <path d="M432 112 L388 148"/>
+          <path d="M436 252 L392 226"/>
+        </g>
+        <g filter="url(#hhsh)">
+          <rect x="44" y="88" width="62" height="52" rx="12" fill="#fff" stroke="#bcd2ff" stroke-width="2"/>
+          <rect x="52" y="98" width="30" height="5" rx="2.5" fill="#1f5eea"/>
+          <rect x="52" y="109" width="44" height="4" rx="2" fill="#bcd2ff"/>
+          <rect x="52" y="118" width="36" height="4" rx="2" fill="#bcd2ff"/>
+          <rect x="44" y="224" width="62" height="52" rx="12" fill="#fff" stroke="#bcd2ff" stroke-width="2"/>
+          <rect x="52" y="234" width="30" height="5" rx="2.5" fill="#0f9d8a"/>
+          <rect x="52" y="245" width="44" height="4" rx="2" fill="#c6ede6"/>
+          <rect x="52" y="254" width="36" height="4" rx="2" fill="#c6ede6"/>
+          <rect x="418" y="84" width="62" height="52" rx="12" fill="#fff" stroke="#bcd2ff" stroke-width="2"/>
+          <rect x="426" y="94" width="30" height="5" rx="2.5" fill="#1f5eea"/>
+          <rect x="426" y="105" width="44" height="4" rx="2" fill="#bcd2ff"/>
+          <rect x="426" y="114" width="36" height="4" rx="2" fill="#bcd2ff"/>
+          <rect x="420" y="228" width="62" height="52" rx="12" fill="#fff" stroke="#bcd2ff" stroke-width="2"/>
+          <rect x="428" y="238" width="30" height="5" rx="2.5" fill="#0f9d8a"/>
+          <rect x="428" y="249" width="44" height="4" rx="2" fill="#c6ede6"/>
+          <rect x="428" y="258" width="36" height="4" rx="2" fill="#c6ede6"/>
+        </g>
+        <!-- hộp phiếu -->
+        <g filter="url(#hhsh)" class="float">
+          <path d="M176 196 h172 a12 12 0 0 1 12 12 v84 a14 14 0 0 1 -14 14 H178 a14 14 0 0 1 -14 -14 v-84 a12 12 0 0 1 12 -12z" fill="url(#hhg1)"/>
+          <rect x="158" y="176" width="204" height="30" rx="10" fill="#1a4fc7"/>
+          <rect x="214" y="186" width="92" height="9" rx="4.5" fill="#0d2c73"/>
+          <!-- khiên xác thực -->
+          <path d="M260 226 c14 0 22 -3 26 -6 v26 c0 14 -10 24 -26 29 c-16 -5 -26 -15 -26 -29 v-26 c4 3 12 6 26 6z" fill="#fff" opacity=".96"/>
+          <path d="M249 245 l8 8 15 -17" fill="none" stroke="#0f9d8a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+        <!-- lá phiếu đang bỏ vào -->
+        <g class="float" style="animation-delay:-2s">
+          <rect x="222" y="76" width="82" height="104" rx="10" fill="#fff" stroke="#bcd2ff" stroke-width="2.5" transform="rotate(-6 263 128)"/>
+          <g transform="rotate(-6 263 128)">
+            <rect x="234" y="90" width="58" height="6" rx="3" fill="#dce8ff"/>
+            <rect x="234" y="108" width="14" height="14" rx="3.5" fill="#fff" stroke="#1f5eea" stroke-width="2"/>
+            <path d="M237 115 l4 4 8 -9" fill="none" stroke="#0f9d8a" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="256" y="111" width="36" height="6" rx="3" fill="#bcd2ff"/>
+            <rect x="234" y="130" width="14" height="14" rx="3.5" fill="#fff" stroke="#bcd2ff" stroke-width="2"/>
+            <rect x="256" y="133" width="30" height="6" rx="3" fill="#e1e9f4"/>
+            <rect x="234" y="152" width="14" height="14" rx="3.5" fill="#fff" stroke="#bcd2ff" stroke-width="2"/>
+            <rect x="256" y="155" width="34" height="6" rx="3" fill="#e1e9f4"/>
+          </g>
+        </g>
+        <!-- nhãn Commit / Reveal -->
+        <g font-family="Inter,Segoe UI,Arial,sans-serif" font-size="13" font-weight="700">
+          <g transform="translate(116 172)">
+            <rect width="92" height="30" rx="15" fill="#fff" stroke="#bcd2ff" stroke-width="2"/>
+            <circle cx="16" cy="15" r="8" fill="#eef4ff"/>
+            <rect x="12" y="15" width="8" height="6" rx="1.5" fill="#1f5eea"/>
+            <path d="M13.5 15 v-2.5 a2.5 2.5 0 0 1 5 0 V15" fill="none" stroke="#1f5eea" stroke-width="1.6"/>
+            <text x="32" y="20" fill="#153fa0">Commit</text>
+          </g>
+          <g transform="translate(312 150)">
+            <rect width="92" height="30" rx="15" fill="#fff" stroke="#c6ede6" stroke-width="2"/>
+            <circle cx="16" cy="15" r="8" fill="#e6f7f4"/>
+            <rect x="12" y="15" width="8" height="6" rx="1.5" fill="#0f9d8a"/>
+            <path d="M13.5 15 v-2.5 a2.5 2.5 0 0 1 4.6 -1.3" fill="none" stroke="#0f9d8a" stroke-width="1.6"/>
+            <text x="32" y="20" fill="#0b7f70">Reveal</text>
+          </g>
+        </g>
+        <!-- các điểm sáng -->
+        <circle cx="150" cy="70" r="5" fill="#14b8a6" opacity=".7"/>
+        <circle cx="372" cy="60" r="4" fill="#1f5eea" opacity=".6"/>
+        <circle cx="468" cy="190" r="4" fill="#14b8a6" opacity=".6"/>
+        <circle cx="48" cy="190" r="4" fill="#1f5eea" opacity=".5"/>
+      </svg>
+    </div>
+    </div>
+  </div>
+
+  <div class="home-sec home-sec-live" id="homeLive">
+    <div class="home-wrap">
+      <div class="kpis" id="homeKpis">
+        <div class="kpi primary">
+          <div class="top"><span class="k">Tổng số cuộc bầu cử</span><span class="ic-box sm"><svg class="ic sm"><use href="#i-list"/></svg></span></div>
+          <div class="v" id="hKpiTotal"><span class="skel"></span></div>
+          <div class="s" id="hKpiTotalSub">Đọc từ hợp đồng</div>
+        </div>
+        <div class="kpi">
+          <div class="top"><span class="k">Đang diễn ra</span><span class="ic-box teal sm"><svg class="ic sm"><use href="#i-play"/></svg></span></div>
+          <div class="v" id="hKpiActive"><span class="skel"></span></div>
+          <div class="s" id="hKpiActiveSub">Đã kích hoạt, chưa kết thúc</div>
+        </div>
+        <div class="kpi">
+          <div class="top"><span class="k">Tổng số cử tri</span><span class="ic-box amber sm"><svg class="ic sm"><use href="#i-users"/></svg></span></div>
+          <div class="v" id="hKpiVoters"><span class="skel"></span></div>
+          <div class="s" id="hKpiVotersSub">Tổng voterCount khai báo</div>
+        </div>
+        <div class="kpi">
+          <div class="top"><span class="k">Phiếu đã ghi nhận</span><span class="ic-box sm"><svg class="ic sm"><use href="#i-check-circle"/></svg></span></div>
+          <div class="v" id="hKpiVotes"><span class="skel"></span></div>
+          <div class="s" id="hKpiVotesSub">Phiếu đã mở (reveal) hợp lệ</div>
+        </div>
+      </div>
+      <div class="section-head" style="margin-top:34px">
+        <div><h2><svg class="ic lg" style="color:var(--brand)"><use href="#i-flag"/></svg>Cuộc bầu cử nổi bật</h2></div>
+        <button class="btn outline sm" data-route="elections">Xem tất cả<svg class="ic sm"><use href="#i-chevron"/></svg></button>
+      </div>
+      <div class="ecard-grid" id="homeFeaturedGrid">
+        <div class="empty-state" style="grid-column:1/-1">
+          <span class="ic-box"><svg class="ic lg"><use href="#i-inbox"/></svg></span>
+          <h4>Đang tải dữ liệu từ hợp đồng…</h4>
+          <p>Danh sách cuộc bầu cử sẽ hiện ở đây khi đọc xong.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="home-sec home-sec-how" id="homeSteps">
+    <div class="home-wrap">
+      <div class="home-sec-head">
+        <span class="home-kicker">Cách hoạt động</span>
+        <h2>Ba bước để một lá phiếu vừa kín, vừa kiểm chứng được</h2>
+        <p>Phiếu không bị lộ khi đang bỏ, và không ai sửa được kết quả sau khi đã mở. Mọi bước đều ghi trên chuỗi khối công khai.</p>
+      </div>
+      <div class="home-steps3">
+        <div class="home-step">
+          <span class="home-step-n">1</span>
+          <div class="home-step-ic"><svg class="ic"><use href="#i-lock"/></svg></div>
+          <h3>Commit: gửi mã băm</h3>
+          <p>Cử tri chọn ứng viên rồi chỉ gửi lên chuỗi mã băm đã khóa kèm một giá trị ngẫu nhiên. Chưa ai biết bạn chọn ai, kể cả quản trị viên.</p>
+        </div>
+        <div class="home-step">
+          <span class="home-step-n">2</span>
+          <div class="home-step-ic"><svg class="ic"><use href="#i-unlock"/></svg></div>
+          <h3>Reveal: công khai lựa chọn</h3>
+          <p>Hết pha nộp phiếu, cử tri mở phiếu của mình. Hợp đồng đối chiếu với mã băm đã gửi nên không thể đổi ý hay gian lận.</p>
+        </div>
+        <div class="home-step">
+          <span class="home-step-n">3</span>
+          <div class="home-step-ic"><svg class="ic"><use href="#i-trophy"/></svg></div>
+          <h3>Hợp đồng tính kết quả</h3>
+          <p>Mỗi ví một phiếu, danh sách cử tri kiểm bằng Merkle proof. Kết quả do hợp đồng thông minh tự tính, ai cũng đối chiếu được.</p>
+        </div>
+      </div>
+      <div class="home-cta">
+        <div><b>Sẵn sàng thử một cuộc bầu cử?</b><span>Kết nối MetaMask trên mạng Sepolia để tạo hoặc tham gia bỏ phiếu.</span></div>
+        <button class="btn primary lg" data-route="elections">Khám phá cuộc bầu cử</button>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="view" id="view-dashboard" data-title="Dashboard">
 
   <!-- HERO -->
@@ -4451,7 +4709,6 @@ Trần Thị B</textarea><div class="help">2–20 ứng viên, mỗi tên 1–64
         </div>
         <div class="help" id="cTimeHelp">Tổng: 25 phút.</div>
         <div id="cTimePlan" class="small" style="margin-top:8px"></div>
-        <div class="help">Mốc tính từ lúc giao dịch được xác nhận trên chuỗi nên có thể lệch vài giây đến vài phút so với giờ bạn chọn. Thời gian duyệt tối đa 7 ngày (10.080 phút).</div>
       </div>
 
       <div class="card">
@@ -6214,10 +6471,10 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   const SVGNS = "http://www.w3.org/2000/svg";
   const MAX_SCAN = 60;          // số cuộc bầu cử mới nhất được quét cho dashboard
   const MAX_FEED = 8;           // số dòng hiển thị ở "Hoạt động gần đây"
-  const ROUTES = ["dashboard", "elections", "org", "election", "vote", "card", "create", "approve", "result", "log", "tools", "about"];
+  const ROUTES = ["home", "dashboard", "elections", "org", "election", "vote", "card", "create", "approve", "result", "log", "tools", "about"];
   const CTX_ROUTES = ["election", "vote", "card", "approve", "result", "log"];   // màn hình hiện chip "đang chọn"
   const ROUTE_TITLE = {
-    dashboard: "Dashboard", elections: "Bầu cử", org: "Tổ chức", election: "Chi tiết cuộc bầu cử", vote: "Bỏ phiếu", card: "Thẻ cử tri", create: "Tạo cuộc bầu cử",
+    home: "Trang chủ", dashboard: "Dashboard", elections: "Bầu cử", org: "Tổ chức", election: "Chi tiết cuộc bầu cử", vote: "Bỏ phiếu", card: "Thẻ cử tri", create: "Tạo cuộc bầu cử",
     approve: "Phê duyệt", result: "Kết quả", log: "Nhật ký hoạt động", tools: "Công cụ kiểm tra", about: "Giới thiệu",
   };
   const PALETTE = ["#1f5eea", "#0f9d8a", "#b86e00", "#6d5bd0", "#c93752", "#5a6c8c"];
@@ -6380,13 +6637,16 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     $("heroNetChip").className = "chip " + (S.account && S.chainId === CHAIN_ID ? "ok" : (S.account ? "warn" : ""));
     const hn = $("heroNetChip").firstElementChild.nextElementSibling; hn.firstChild.nodeValue = chainName(CHAIN_ID) + " · ";
     const chip = $("accountChip");
+    document.body.classList.toggle("has-wallet", !!S.account);
     if (S.account) { $("accountText").textContent = shortAddr(S.account); chip.title = S.account; chip.classList.remove("hidden"); $("btnConnect").classList.add("hidden"); }
   }
 
   /* ----- router theo hash: #/dashboard, #/vote … ----- */
   function currentRoute() {
     const m = /^#\/([a-z]+)/.exec(location.hash || "");
-    return m && ROUTES.includes(m[1]) ? m[1] : "dashboard";
+    if (m && ROUTES.includes(m[1])) return m[1];
+    // không có #/route: liên kết chia sẻ (?election=N) vào thẳng ứng dụng, còn lại là trang chủ
+    return qs.has("election") ? "dashboard" : "home";
   }
   function goto(route) {
     if (!ROUTES.includes(route)) route = "dashboard";
@@ -6395,6 +6655,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   }
   function showRoute(route) {
     S.route = route;
+    document.body.classList.toggle("landing", route === "home");
     document.querySelectorAll(".view").forEach((v) => { v.hidden = v.id !== "view-" + route; });
     document.querySelectorAll(".nav-item").forEach((n) => {
       const active = n.dataset.route === route || (route === "election" && n.dataset.route === "elections");
@@ -6485,14 +6746,16 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     const active = all.filter((s) => s.isActivated && s.phase < 3);
     const voters = all.reduce((n, s) => n + s.voterCount, 0n);
     const votes = all.reduce((n, s) => n + s.revealedCount, 0n);
-    $("kpiTotal").textContent = String(S.count);
-    $("kpiTotalSub").textContent = all.length < S.count ? "Hiển thị " + all.length + " cuộc mới nhất" : "Tất cả cuộc bầu cử trong hợp đồng";
-    $("kpiActive").textContent = String(active.length);
-    $("kpiActiveSub").textContent = all.filter((s) => s.reqStatus === 0).length + " cuộc đang chờ phê duyệt";
-    $("kpiVoters").textContent = voters.toLocaleString("vi-VN");
-    $("kpiVotersSub").textContent = "Tổng voterCount do ban tổ chức khai báo";
-    $("kpiVotes").textContent = votes.toLocaleString("vi-VN");
-    $("kpiVotesSub").textContent = voters > 0n ? pctStr(votes, voters) + "% số cử tri đã mở phiếu" : "Chưa có cử tri";
+    for (const k of ["kpi", "hKpi"]) {   // Dashboard và trang chủ dùng chung số liệu
+      $(k + "Total").textContent = String(S.count);
+      $(k + "TotalSub").textContent = all.length < S.count ? "Hiển thị " + all.length + " cuộc mới nhất" : "Tất cả cuộc bầu cử trong hợp đồng";
+      $(k + "Active").textContent = String(active.length);
+      $(k + "ActiveSub").textContent = all.filter((s) => s.reqStatus === 0).length + " cuộc đang chờ phê duyệt";
+      $(k + "Voters").textContent = voters.toLocaleString("vi-VN");
+      $(k + "VotersSub").textContent = "Tổng voterCount do ban tổ chức khai báo";
+      $(k + "Votes").textContent = votes.toLocaleString("vi-VN");
+      $(k + "VotesSub").textContent = voters > 0n ? pctStr(votes, voters) + "% số cử tri đã mở phiếu" : "Chưa có cử tri";
+    }
     renderFeaturedGrid();
     renderHistory();
   }
@@ -7376,16 +7639,19 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
 
   /* ----- Dashboard: lưới cuộc bầu cử nổi bật ----- */
   function renderFeaturedGrid() {
-    const grid = $("featuredGrid");
-    if (!grid || !S.all) return;
-    clear(grid);
-    if (!S.all.length) {
-      const b1 = el("button", "btn primary sm", "Tạo cuộc bầu cử"); b1.onclick = () => goto("create");
-      grid.appendChild(emptyState("inbox", "Hợp đồng chưa có cuộc bầu cử nào", "Hãy tạo cuộc bầu cử đầu tiên để bắt đầu. Danh sách cử tri chỉ cần công bố dưới dạng Merkle root.", [b1]));
-      return;
+    if (!S.all) return;
+    for (const [gid, max] of [["featuredGrid", 6], ["homeFeaturedGrid", 3]]) {   // Dashboard: 6 cuộc, trang chủ: 3 cuộc
+      const grid = $(gid);
+      if (!grid) continue;
+      clear(grid);
+      if (!S.all.length) {
+        const b1 = el("button", "btn primary sm", "Tạo cuộc bầu cử"); b1.onclick = () => goto("create");
+        grid.appendChild(emptyState("inbox", "Hợp đồng chưa có cuộc bầu cử nào", "Hãy tạo cuộc bầu cử đầu tiên để bắt đầu. Danh sách cử tri chỉ cần công bố dưới dạng Merkle root.", [b1]));
+        continue;
+      }
+      const list = S.all.slice().sort((a, b) => (STATUS_ORDER[statusInfo(a).key] - STATUS_ORDER[statusInfo(b).key]) || (b.id - a.id)).slice(0, max);
+      list.forEach((s) => grid.appendChild(electionCard(s)));
     }
-    const list = S.all.slice().sort((a, b) => (STATUS_ORDER[statusInfo(a).key] - STATUS_ORDER[statusInfo(b).key]) || (b.id - a.id)).slice(0, 6);
-    list.forEach((s) => grid.appendChild(electionCard(s)));
   }
 
   /* ----- Dashboard: lịch sử cuộc bầu cử đã kết thúc ----- */
@@ -8014,8 +8280,6 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     host.innerHTML = sel("VisInfo", "Thông tin cuộc bầu cử (mô tả, mục đích, điều kiện, ảnh bìa)") + sel("VisCands", "Hồ sơ ứng viên (tiểu sử, quá trình, cam kết, ảnh)") + sel("VisRes", "Kết quả và số phiếu")
       + '<div id="' + p + 'VisRoles" class="hidden" style="margin:0 0 12px"><div class="small">Với phạm vi “Hạn chế”, ngoài người tạo và nhóm duyệt, cho thêm vai trò:</div>'
       + '<label class="small" style="display:inline-flex;gap:6px;margin-right:16px"><input id="' + p + 'VisMgr" type="checkbox"> Manager</label><label class="small" style="display:inline-flex;gap:6px"><input id="' + p + 'VisPro" type="checkbox"> Proposer</label></div>'
-      + '<div class="small muted">Người tạo và nhóm duyệt của tổ chức luôn xem được toàn bộ nội dung của cuộc này. Ảnh thuộc phạm vi không công khai được lưu ở kho riêng và chỉ xem qua liên kết ký có thời hạn 10 phút.</div>'
-      + '<div class="small muted" style="margin-top:6px"><b>Giới hạn thật:</b> kết quả chỉ được ẩn trên giao diện. Tên cuộc, tên ứng viên, mốc thời gian và số phiếu đã mở nằm trên chuỗi công khai (Sepolia), ai đọc sự kiện hợp đồng đều thấy. Mô tả và hồ sơ chỉ được giữ riêng ở Supabase; trên chuỗi chỉ có hash (có thêm giá trị ngẫu nhiên để không đoán ngược được).</div>'
       + (editing ? '<div class="small muted" style="margin-top:6px">Đổi từ công khai sang hạn chế không thu hồi được nội dung đã đăng công khai trước đó (bản cũ của hồ sơ và ảnh cũ vẫn còn ở kho công khai).</div>' : "");
     const sync = () => { const v = readVis(p); $(p + "VisRoles").classList.toggle("hidden", ![v.info, v.candidates, v.results].includes("restricted")); if (p === "c") updateFileWarn(v); };
     for (const id of ["VisInfo", "VisCands", "VisRes"]) $(p + id).onchange = sync;
@@ -8536,7 +8800,6 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     let t = Date.now();
     const parts = [["Duyệt đến ", mins[0]], ["Nộp phiếu đến ", mins[1]], ["Mở phiếu đến ", mins[2]]].map(([l, m]) => { t += m * 60000; return l + fmtShort(t); });
     box.textContent = parts.join(" · ") + " · Kết quả công bố sau " + fmtShort(t) + ".";
-    if (mins[0] < 10) box.textContent += " Lưu ý: pha duyệt dưới 10 phút, nếu giao dịch xác nhận chậm hoặc người duyệt chưa kịp ký thì cuộc bầu sẽ hết hạn.";
   }
 
   function readCreateForm() {
@@ -8823,6 +9086,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     });
     window.addEventListener("hashchange", () => showRoute(currentRoute()));
     $("menuBtn").onclick = () => document.body.classList.toggle("nav-open");
+    $("homeNavHow").onclick = () => { const s = $("homeSteps"); if (s) s.scrollIntoView({ behavior: "smooth", block: "center" }); };
     $("scrim").onclick = () => document.body.classList.remove("nav-open");
 
     $("btnConnect").onclick = () => run("btnConnect", "Đang kết nối…", connect);
@@ -8907,7 +9171,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     if (ethers.isAddress(addr)) { setAddress(ethers.getAddress(addr), false); buildReadOnly(); }
     else {
       banner("info", "Nhập địa chỉ hợp đồng ProjectCore (đã triển khai trên " + chainName(CHAIN_ID) + ") ở mục Kết nối hợp đồng để bắt đầu.");
-      ["kpiTotal", "kpiActive", "kpiVoters", "kpiVotes"].forEach((id) => { $(id).textContent = "—"; });
+      ["kpiTotal", "kpiActive", "kpiVoters", "kpiVotes", "hKpiTotal", "hKpiActive", "hKpiVoters", "hKpiVotes"].forEach((id) => { $(id).textContent = "—"; });
     }
     loadMetaFile().then(() => { if (S.all) { renderFeaturedGrid(); renderElectionsList(); } if (S.election) { renderDetailPage(); } });
     if (fromUrl && ethers.isAddress(fromUrl)) banner("warn", "Địa chỉ hợp đồng đang lấy từ đường dẫn. Chỉ tiếp tục nếu bạn tin cậy người gửi liên kết.");

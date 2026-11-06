@@ -160,9 +160,9 @@ async function sbHandler(route) {
   await p.fill("#cCommitAt", loc(base + 1 * 3600000));
   check("moc sai thu tu -> canh bao", /ít nhất 1 phút/.test(await p.textContent("#cTimePlan")), await p.textContent("#cTimePlan"));
 
-  // 5) pha duyet ngan -> luu y
+  // 5) pha duyet ngan -> khong hien luu y nua
   await p.fill("#cReg", "5");
-  check("pha duyet < 10 phut -> co luu y", /dưới 10 phút/.test(await p.textContent("#cTimePlan")) || /ít nhất 1 phút/.test(await p.textContent("#cTimePlan")));
+  check("pha duyet < 10 phut: khong con dong luu y het han (da bo khoi giao dien)", !/dưới 10 phút/.test(await p.textContent("#cTimePlan")));
   await shot(p, "time_ui");
 
   await browser.close();
