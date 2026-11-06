@@ -53,9 +53,54 @@ Mỗi mục ghi: công cụ, prompt, AI trả về, đánh giá, chỗ sai, các
 ## Lab 15–17 — Đối chiếu sổ tay, đồng bộ mã–tài liệu–giao diện, kiểm thử và đo gas
 
 - **Công cụ:** Claude (Claude Code, mô hình Sonnet 5.5), chạy trên bản sao repo của nhóm; không có quyền ghi lên GitHub.
-- **Prompt 1 (nguyên văn):** "tôi mới tải lên nguồn sổ tay sinh viên, đây là học phần tiền điện tử và hợp đồng thông minh, nhóm chúng tôi đã chọn đề tài là bẩu cử và làm trên repo github với hce trace hue, bạn có thể đã đọc qua, bây giờ bạn đối chiếu xem thử là tiến độ đồ án hiện tại tôi ổn chưa, cần bổ sung gì để điểm cao không, vì tôi cảm thấy chưa ổn lắm. như phần spec hay nhiều phần khác trong repo nhóm"
+- **Prompt 1 (nguyên văn):** Tôi đã tải lên tài liệu **Sổ tay sinh viên** và muốn sử dụng tài liệu này làm căn cứ để đánh giá đồ án học phần **Tiền điện tử và Hợp đồng thông minh**.
+
+Nhóm thực hiện đã lựa chọn đề tài **Xây dựng nền tảng bầu cử ứng dụng công nghệ Blockchain**, với mã nguồn được quản lý tại repository GitHub:  
+https://github.com/kimchi000-hash/hce-trace-hue
+
+Hãy tiến hành rà soát và đánh giá toàn diện tiến độ hiện tại của đồ án theo các yêu cầu sau:
+
+**1. Đối chiếu yêu cầu học phần**
+- Phân tích các yêu cầu, tiêu chí đánh giá và sản phẩm đầu ra được quy định trong Sổ tay sinh viên.
+- Đối chiếu từng yêu cầu với những nội dung nhóm đã triển khai.
+- Xác định các tiêu chí đã đáp ứng, đáp ứng một phần hoặc chưa đáp ứng.
+
+**2. Đánh giá repository và cấu trúc dự án**
+- Rà soát toàn bộ cấu trúc thư mục, mã nguồn và tài liệu hiện có trong repository.
+- Đánh giá vai trò, mức độ hoàn thiện và tính nhất quán giữa các thành phần: Smart Contract, Frontend, Backend, cơ sở dữ liệu, tích hợp Blockchain và các thành phần liên quan.
+- Kiểm tra các tệp tài liệu như README, SPEC, kiến trúc hệ thống, đặc tả chức năng, hướng dẫn cài đặt, kiểm thử và triển khai.
+- Phát hiện những nội dung còn thiếu, chưa rõ ràng, trùng lặp hoặc chưa đồng bộ với mã nguồn thực tế.
+
+**3. Đánh giá chuyên môn và kỹ thuật**
+- Đánh giá mức độ ứng dụng thực chất của Blockchain và Smart Contract trong quy trình bầu cử.
+- Kiểm tra tính hợp lý của kiến trúc hệ thống, luồng nghiệp vụ, cơ chế bảo mật, phân quyền, tính toàn vẹn dữ liệu và khả năng kiểm chứng.
+- Đánh giá mức độ hoàn thiện của các chức năng so với một sản phẩm có khả năng triển khai thực tế, không chỉ dừng ở giao diện minh họa hoặc bản demo.
+- Chỉ ra các rủi ro kỹ thuật, hạn chế và những vấn đề có thể bị giảng viên đặt câu hỏi khi bảo vệ.
+
+**4. Đề xuất cải thiện để đạt kết quả cao**
+- Xác định những hạng mục cần ưu tiên hoàn thiện trước.
+- Đề xuất các chức năng, tài liệu kỹ thuật và nội dung chuyên môn cần bổ sung.
+- Đưa ra những cải tiến có giá trị thực tiễn, phù hợp với phạm vi học phần và nguồn lực của nhóm.
+- Đánh giá tính cần thiết của từng đề xuất, tránh bổ sung chức năng phức tạp nhưng không tạo ra giá trị rõ ràng.
+
+**5. Xây dựng kế hoạch hoàn thiện**
+Lập bảng tổng hợp gồm:
+- Hạng mục cần thực hiện.
+- Tình trạng hiện tại.
+- Vấn đề còn tồn tại.
+- Giải pháp đề xuất.
+- Mức độ ưu tiên (Cao / Trung bình / Thấp).
+- Kết quả đầu ra cần đạt.
+
+**Yêu cầu khi đánh giá:**
+- Nhận xét khách quan, có căn cứ từ Sổ tay sinh viên và mã nguồn thực tế.
+- Không mặc định rằng những chức năng được mô tả trong tài liệu đã được triển khai thành công.
+- Phân biệt rõ chức năng đã hoàn thiện, đang phát triển, mới có thiết kế và chưa triển khai.
+- Không tự suy đoán nội dung của repository nếu không truy cập hoặc kiểm tra được.
+- Không tự ý chỉnh sửa mã nguồn, commit, push hoặc triển khai dự án trong quá trình đánh giá.
+
+**Mục tiêu cuối cùng:** Xác định chính xác mức độ hoàn thiện của đồ án so với yêu cầu học phần, tìm ra những thiếu sót quan trọng và xây dựng lộ trình nâng cấp để sản phẩm vừa có giá trị ứng dụng thực tế, vừa thể hiện được chiều sâu kiến thức về Blockchain và Smart Contract khi nghiệm thu, báo cáo và bảo vệ trước giảng viên.
 - **AI trả về:** bản đối chiếu repo với sổ tay, nêu các lệch pha lớn giữa mã và tài liệu; đưa hai hướng (A: quay về hợp đồng ~125 dòng khớp tài liệu; B: giữ hợp đồng 287 dòng và sửa mọi thứ cho khớp).
-- **Prompt 2 (nguyên văn):** "có thể quá 150 dòng như phải hoàn hảo. tôi cần đồ án điểm cao"
 - **AI trả về:** thực hiện hướng B: kiểm thử, đo gas, tối ưu nhỏ, viết lại giao diện, viết lại tài liệu.
 - **Đánh giá:** Dùng được sau khi chạy lại và đối chiếu; sinh viên phải tự đọc và giải thích được từng thay đổi trước buổi vấn đáp.
 
