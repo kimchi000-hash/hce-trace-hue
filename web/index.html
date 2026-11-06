@@ -7,6 +7,12 @@
 <meta name="theme-color" content="#ffffff">
 <title>VoteChain — Nền tảng bầu cử kín trên blockchain</title>
 <meta name="description" content="VoteChain: nền tảng bầu cử điện tử Commit–Reveal trên Ethereum Sepolia cho lớp học và câu lạc bộ.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="VoteChain">
+<meta property="og:locale" content="vi_VN">
+<meta property="og:title" content="VoteChain — Bầu cử kín, minh bạch trên blockchain">
+<meta property="og:description" content="Bầu cử điện tử Commit–Reveal cho lớp học và câu lạc bộ: phiếu kín khi nộp, ai cũng kiểm chứng được kết quả.">
+<meta name="twitter:card" content="summary">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%231f5eea'/%3E%3Cpath d='M18 33l9 9 19-20' fill='none' stroke='white' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
 
@@ -2791,6 +2797,13 @@ pre.code {
 /* ---------------------------------------------------------------------
    20. TRANG CHI TIẾT CUỘC BẦU CỬ
    --------------------------------------------------------------------- */
+.share-prev { display: flex; gap: 12px; border: 1px solid var(--border, #e5e7eb); border-radius: 12px; overflow: hidden; margin: 12px 0; background: #fff; }
+.share-prev .sp-cover { width: 120px; flex: none; background: #eef2ff; }
+.share-prev .sp-cover svg, .share-prev .sp-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.share-prev .sp-body { padding: 10px 12px 10px 0; min-width: 0; }
+.share-prev .sp-body b { display: block; overflow-wrap: anywhere; }
+.share-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+.share-link { width: 100%; font-family: var(--mono, monospace); font-size: .82rem; }
 .detail-hero {
   display: grid;
   grid-template-columns: 300px minmax(0, 1fr);
@@ -3928,6 +3941,7 @@ pre.code {
           <div><div class="small muted">Pha hiện tại</div><div id="elPhase" style="font-weight:800;font-size:1.05rem;color:var(--brand-700)">—</div></div>
           <div id="elCountdown" class="small muted"></div>
           <span class="grow"></span>
+          <button id="btnShare" class="btn outline sm hidden" type="button"><svg class="ic sm"><use href="#i-link"/></svg>Chia sẻ</button>
           <button class="btn primary sm" data-route="vote"><svg class="ic sm"><use href="#i-vote"/></svg>Bỏ phiếu</button>
           <button class="btn outline sm" data-route="result"><svg class="ic sm"><use href="#i-trophy"/></svg>Kết quả</button>
         </div>
@@ -5818,11 +5832,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   /* ----- Tải / chia sẻ ảnh thẻ: vẽ thẻ ra PNG ngay trong trình duyệt (không có ví, lựa chọn phiếu hay salt) ----- */
   const siteIsPublic = () => !/^(localhost|127\.|\[::1\]|0\.0\.0\.0)/.test(location.hostname) && /^https:$/.test(location.protocol);
   const cardFileName = (d) => "votechain-the-cu-tri-" + padSerial(d.serial || 0) + "-cuoc-" + d.electionId + ".png";
-  function cardShareLink(d) {
-    const u = new URL(location.href); u.hash = "#/election";
-    u.search = "?contract=" + S.address + "&election=" + d.electionId;
-    return u.toString();
-  }
+  function cardShareLink(d) { return electionShareLink(d.electionId); }
   function downloadBlob(blob, name) {
     const a = document.createElement("a"); const url = URL.createObjectURL(blob);
     a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
@@ -6274,6 +6284,65 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     if (d < 86400) return Math.floor(d / 3600) + " giờ trước";
     return Math.floor(d / 86400) + " ngày trước";
   }
+  /* ----- chia sẻ liên kết cuộc bầu cử (chỉ là đường dẫn tới trang chi tiết, không cấp quyền) ----- */
+  const canShareElection = (e) => !!e && e.isActivated && !e.closed;   // đã đủ chữ ký duyệt và chưa bị từ chối/rút
+  function electionShareLink(id) {
+    const u = new URL(location.href);
+    const p = new URLSearchParams();
+    p.set("election", String(id));
+    if (!S.address || lc(S.address) !== lc(CONFIG.CONTRACT_ADDRESS)) p.set("contract", S.address || "");   // hợp đồng mặc định thì bỏ ra để liên kết ngắn, không kích hoạt cảnh báo "địa chỉ lấy từ đường dẫn"
+    if (CHAIN_ID !== Number(CONFIG.CHAIN_ID)) p.set("chain", String(CHAIN_ID));
+    u.search = "?" + p.toString();
+    u.hash = "#/election";
+    return u.toString();
+  }
+  async function openShareModal() {
+    const e = S.election;
+    if (!canShareElection(e)) return;
+    const link = electionShareLink(e.id);
+    const host = $("modalContent");
+    clear(host);
+    const h = el("h2", "", "Chia sẻ cuộc bầu cử"); h.id = "modalTitle"; host.appendChild(h);
+    const body = el("div", "modal-body");
+    // bản xem trước trong ứng dụng: chỉ dữ liệu công khai trên chuỗi (+ ảnh bìa nếu bạn đang xem được)
+    const prev = el("div", "share-prev");
+    const cov = el("div", "sp-cover"); cov.appendChild(coverNode(e.id)); prev.appendChild(cov);
+    const sb = el("div", "sp-body");
+    sb.appendChild(el("b", "", e.title));
+    const orgLine = el("div", "small muted", "Tổ chức #" + e.orgId);
+    sb.appendChild(orgLine);
+    sb.appendChild(el("div", "small muted", "Nộp phiếu từ " + fmtDate(e.regEnd) + " · kết thúc " + fmtDate(e.revealEnd)));
+    sb.appendChild(el("div", "small", statusInfo({ closed: e.closed, reqStatus: e.reqStatus, phase: e.phase, isActivated: e.isActivated }).label));
+    prev.appendChild(sb);
+    body.appendChild(prev);
+    regRead().then((reg) => reg.getOrganization(e.orgId)).then((v) => { if (v && v.name) orgLine.textContent = String(v.name).slice(0, 120); }).catch(() => {});
+
+    const input = document.createElement("input"); input.type = "text"; input.readOnly = true; input.value = link; input.className = "share-link"; input.setAttribute("aria-label", "Liên kết cuộc bầu cử");
+    input.onfocus = () => input.select();
+    body.appendChild(input);
+    const row = el("div", "share-row");
+    const bCopy = el("button", "btn primary sm", "Sao chép liên kết"); bCopy.type = "button"; bCopy.onclick = () => copyText(link); row.appendChild(bCopy);
+    const text = "Cuộc bầu cử “" + e.title + "” trên VoteChain";
+    if (navigator.share) { const b = el("button", "btn outline sm", "Chia sẻ qua ứng dụng khác"); b.type = "button"; b.onclick = () => { navigator.share({ title: e.title, text, url: link }).catch(() => {}); }; row.appendChild(b); }
+    const fb = el("a", "btn outline sm", "Facebook"); fb.href = "https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(link); fb.target = "_blank"; fb.rel = "noopener noreferrer"; row.appendChild(fb);
+    const mail = el("a", "btn outline sm", "Email"); mail.href = "mailto:?subject=" + encodeURIComponent(text) + "&body=" + encodeURIComponent(text + "\n" + link); row.appendChild(mail);
+    body.appendChild(row);
+
+    const notes = el("ul", "small muted");
+    const add = (t) => notes.appendChild(el("li", "", t));
+    add("Liên kết chỉ mở trang cuộc bầu cử. Nó không cấp quyền xem nội dung hạn chế và không cho bỏ phiếu: người nhận vẫn phải đăng nhập bằng ví đúng quyền, và chỉ ví trong danh sách cử tri mới nộp được phiếu.");
+    const v = visOf(e.id);
+    if (v && [v.info, v.candidates, v.results].some((x) => x !== "public")) add("Cuộc này có phạm vi xem không công khai: người nhận chỉ thấy phần họ được phép xem.");
+    if (!siteIsPublic()) add("Trang đang chạy trên máy cục bộ hoặc không dùng HTTPS nên người khác không mở được liên kết này. Hãy dùng địa chỉ công khai của trang.");
+    add("Khi dán vào Zalo hoặc Facebook, khung xem trước hiện thông tin chung của VoteChain; xem trước riêng từng cuộc cần máy chủ (dự kiến khi đưa lên Vercel).");
+    body.appendChild(notes);
+    host.appendChild(body);
+    lastFocus = document.activeElement;
+    $("modal").classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+    $("modalClose").focus();
+  }
+
   async function copyText(text) {
     try { await navigator.clipboard.writeText(text); }
     catch (_) {
@@ -7369,6 +7438,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     }
     const m = elMeta(e.id);
     const s = { phase: e.phase, isActivated: e.isActivated };
+    $("btnShare").classList.toggle("hidden", !canShareElection(e));
 
     document.querySelectorAll('#dash .detail-hero button[data-route="vote"]').forEach((b) => b.classList.toggle("hidden", e.phase === 3));
     const cv = $("detCover"); clear(cv); cv.appendChild(coverNode(e.id));
@@ -8716,6 +8786,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     $("btnReject").onclick = () => run("btnReject", "Đang xử lý…", () => doReject(S.election.id));
     $("btnWithdraw").onclick = () => run("btnWithdraw", "Đang xử lý…", () => doWithdraw(S.election.id));
     $("btnRelease").onclick = () => run("btnRelease", "Đang xử lý…", () => doRelease(S.election.id));
+    $("btnShare").onclick = openShareModal;
     $("btnVerifyMeta").onclick = () => run("btnVerifyMeta", "Đang đối chiếu…", refreshMetaVerify);
     $("cOrg").onchange = () => run("btnBuild", "Đang tải…", loadCreateCtx);
     $("cNames").oninput = () => { clearTimeout(S._candT); S._candT = setTimeout(renderCandEditors, 400); };
@@ -8819,6 +8890,11 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     setInterval(() => { if (S.all && !S.busy && !document.hidden) scanAll(true); }, 60000);
   }
 
+  /** Liên kết chia sẻ (?election=N, không có #/route): vào thẳng trang chi tiết cuộc đó. */
+  function openSharedElection() {
+    if (qs.has("election") && S.election && !/^#\//.test(location.hash || "")) goto("election");
+  }
+
   async function init() {
     wire();
     renderTxs();
@@ -8846,11 +8922,14 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       if (window.ethereum) {
         const accts = await window.ethereum.request({ method: "eth_accounts" });
         const chain = Number(await window.ethereum.request({ method: "eth_chainId" }));
-        if (accts && accts.length && chain === CHAIN_ID) { await connect(); return; }
+        if (accts && accts.length && chain === CHAIN_ID) { await connect(); openSharedElection(); return; }
       }
     } catch (_) { /* người dùng bấm kết nối thủ công */ }
     if (S.readContract) {
-      try { await loadElection(true); } catch (_) { /* chưa có cuộc bầu cử hoặc RPC lỗi */ }
+      try {
+        await loadElection(true);
+        openSharedElection();
+      } catch (_) { /* chưa có cuộc bầu cử hoặc RPC lỗi */ }
       scanAll(true);
     }
   }

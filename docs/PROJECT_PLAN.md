@@ -62,7 +62,7 @@
 | :-: | :--- | :-: | :-: | :-: |
 | 1 | Chạy trọn một cuộc bầu V2 trên Sepolia (tổ chức → duyệt → commit → reveal → result → SBT) và ghi mã giao dịch vào `evidence/v2/README.md` | Kim Chi | trước Lab 20 | ☐ |
 | 2 | Chạy migration `20261106000001_organization_profile.sql` **và `20261106000002_visibility.sql`** (phạm vi xem) trên Supabase thật, triển khai lại `chain-sync`; thử lưu/đọc hồ sơ tổ chức và ảnh ứng viên với Supabase thật (các test giao diện hiện dùng Supabase giả lập) | Kim Chi | trước Lab 20 | ☐ |
-| 3 | Triển khai web lên Vercel (URL công khai, sống ≥ 6 tháng), thử trên điện thoại | Kim Chi | trước Lab 19 | ☐ |
+| 3 | Triển khai web lên Vercel (URL công khai, sống ≥ 6 tháng), thử trên điện thoại. Sau đó, nếu muốn khung xem trước riêng từng cuộc khi dán liên kết vào Zalo/Facebook: thêm hàm Vercel `/e/<id>` trả thẻ `og:*` (chỉ dữ liệu công khai trên chuỗi) rồi chuyển hướng về `?election=<id>#/election`; hiện chỉ có thẻ `og:*` chung | Kim Chi | trước Lab 19 | ☐ |
 | 4 | Gộp nhánh `phase4-supabase` vào `main` sau khi bước 2–3 đạt | Cả hai | sau bước 3 | ☐ |
 | 5 | Xử lý báo cáo rà soát chéo nhận từ nhóm bạn (điền `docs/SELF_AUDIT.md` mục chờ) | Cả hai | trước Lab 20 | ☐ |
 | 6 | Hỏi giảng viên xác nhận việc `ProjectCore.sol` vượt mốc 150 dòng | Kim Chi | sớm | ☐ |
