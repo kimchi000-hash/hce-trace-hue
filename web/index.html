@@ -4425,11 +4425,13 @@ Trần Thị B</textarea><div class="help">2–20 ứng viên, mỗi tên 1–64
       <div class="card">
         <div class="card-head"><div><h3><svg class="ic"><use href="#i-clock"/></svg>4 · Thời gian các giai đoạn</h3><div class="sub">Hợp đồng tự chuyển pha theo thời gian khối, không ai bấm công tắc.</div></div></div>
         <div class="grid g3">
-          <div class="field" style="margin:0"><label class="f" for="cReg">Duyệt (phút)</label><input id="cReg" type="number" min="1" max="10080" value="5"></div>
-          <div class="field" style="margin:0"><label class="f" for="cCommit">Nộp phiếu (phút)</label><input id="cCommit" type="number" min="1" max="43200" value="10"></div>
-          <div class="field" style="margin:0"><label class="f" for="cReveal">Mở phiếu (phút)</label><input id="cReveal" type="number" min="1" max="43200" value="10"></div>
+          <div class="field" style="margin:0"><label class="f" for="cRegAt">Duyệt kết thúc lúc</label><input id="cRegAt" type="datetime-local"><label class="f" for="cReg" style="margin-top:8px">hoặc số phút</label><input id="cReg" type="number" min="1" max="10080" value="5"></div>
+          <div class="field" style="margin:0"><label class="f" for="cCommitAt">Nộp phiếu kết thúc lúc</label><input id="cCommitAt" type="datetime-local"><label class="f" for="cCommit" style="margin-top:8px">hoặc số phút</label><input id="cCommit" type="number" min="1" max="43200" value="10"></div>
+          <div class="field" style="margin:0"><label class="f" for="cRevealAt">Mở phiếu kết thúc lúc</label><input id="cRevealAt" type="datetime-local"><label class="f" for="cReveal" style="margin-top:8px">hoặc số phút</label><input id="cReveal" type="number" min="1" max="43200" value="10"></div>
         </div>
-        <div class="help" id="cTimeHelp">Tổng: 25 phút. Thời gian duyệt tối đa 7 ngày (10.080 phút).</div>
+        <div class="help" id="cTimeHelp">Tổng: 25 phút.</div>
+        <div id="cTimePlan" class="small" style="margin-top:8px"></div>
+        <div class="help">Mốc tính từ lúc giao dịch được xác nhận trên chuỗi nên có thể lệch vài giây đến vài phút so với giờ bạn chọn. Thời gian duyệt tối đa 7 ngày (10.080 phút).</div>
       </div>
 
       <div class="card">
@@ -6328,6 +6330,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     if (route === "vote" && S.election && readReady() && !(S.metaVerify && String(S.metaVerify.id) === String(S.election.id))) refreshMetaVerify().catch(() => {});
     if (route === "card") queueCardRefresh();
     if (route === "create" && S.account && !S.orgs && readReady()) loadOrgs().catch(() => {});
+    if (route === "create" && !S.timeAbs) { try { syncTimeFields(); } catch (_) { /* bỏ qua */ } }
   }
 
   function renderCtx() {
@@ -8272,12 +8275,47 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     renderCreateCtx();
   }
 
+  /* ----- thời gian giai đoạn: ngày giờ <-> số phút ----- */
+  const pad2 = (n) => String(n).padStart(2, "0");
+  const toLocalInput = (ms) => { const d = new Date(ms); return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) + "T" + pad2(d.getHours()) + ":" + pad2(d.getMinutes()); };
+  const fromLocalInput = (v) => { const t = new Date(v).getTime(); return Number.isFinite(t) ? t : NaN; };
+  const fmtShort = (ms) => { const d = new Date(ms); return pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + " " + pad2(d.getDate()) + "/" + pad2(d.getMonth() + 1) + "/" + d.getFullYear(); };
+  /** Nếu người dùng đang chọn theo ngày giờ: tính lại số phút theo giờ hiện tại (để lúc gửi không bị lệch). */
+  function minutesFromAbs() {
+    const at = ["cRegAt", "cCommitAt", "cRevealAt"].map((id) => fromLocalInput($(id).value));
+    if (at.some((x) => !Number.isFinite(x))) return null;
+    const now = Date.now();
+    const out = [Math.ceil((at[0] - now) / 60000), Math.round((at[1] - at[0]) / 60000), Math.round((at[2] - at[1]) / 60000)];
+    return out;
+  }
+  function syncTimeFields(fromAt) {
+    const ids = ["cReg", "cCommit", "cReveal"], atIds = ["cRegAt", "cCommitAt", "cRevealAt"];
+    if (fromAt || S.timeAbs) {
+      const m = minutesFromAbs();
+      if (m) ids.forEach((id, i) => { $(id).value = String(m[i]); });
+    } else {
+      let t = Date.now();
+      ids.forEach((id, i) => { t += Math.max(0, Number($(id).value) || 0) * 60000; $(atIds[i]).value = toLocalInput(t); });
+    }
+    const mins = ids.map((id) => Number($(id).value));
+    const sum = mins.reduce((a, b) => a + b, 0);
+    $("cTimeHelp").textContent = Number.isFinite(sum) ? "Tổng: " + sum + " phút (~" + (sum / 60).toFixed(1).replace(".", ",") + " giờ)." : "";
+    const box = $("cTimePlan");
+    if (!box) return;
+    if (mins.some((x) => !Number.isFinite(x) || x < 1)) { box.textContent = "Mỗi giai đoạn phải dài ít nhất 1 phút và giờ kết thúc phải sau giờ bắt đầu."; return; }
+    let t = Date.now();
+    const parts = [["Duyệt đến ", mins[0]], ["Nộp phiếu đến ", mins[1]], ["Mở phiếu đến ", mins[2]]].map(([l, m]) => { t += m * 60000; return l + fmtShort(t); });
+    box.textContent = parts.join(" · ") + " · Kết quả công bố sau " + fmtShort(t) + ".";
+    if (mins[0] < 10) box.textContent += " Lưu ý: pha duyệt dưới 10 phút, nếu giao dịch xác nhận chậm hoặc người duyệt chưa kịp ký thì cuộc bầu sẽ hết hạn.";
+  }
+
   function readCreateForm() {
     const checks = [];
     const add = (ok, text) => checks.push([ok, text]);
     const ctx = S.createCtx;
     const title = $("cTitle").value.trim();
     const names = candNamesList();
+    if (S.timeAbs) syncTimeFields(true);
     const reg = Number($("cReg").value), com = Number($("cCommit").value), rev = Number($("cReveal").value);
     const quorum = Number($("cQuorum").value);
     const vt = parseAddresses($("cVoters").value);
@@ -8574,8 +8612,10 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     // form tạo cuộc bầu cử: gợi ý trực tiếp
     $("cQuorum").oninput = () => { const v = Number($("cQuorum").value); $("cQuorumHelp").textContent = Number.isFinite(v) ? "= " + bpsStr(v) + " (100 bps = 1%)" : ""; };
     $("cVoters").oninput = () => { const p = parseAddresses($("cVoters").value); $("cVotersHelp").textContent = p.list.length + " ví hợp lệ" + (p.errors.length ? " · " + p.errors.length + " dòng lỗi" : "") + (p.dups.length ? " · " + p.dups.length + " trùng" : ""); };
-    const timeHelp = () => { const t = Number($("cReg").value) + Number($("cCommit").value) + Number($("cReveal").value); $("cTimeHelp").textContent = Number.isFinite(t) ? "Tổng: " + t + " phút (~" + (t / 60).toFixed(1).replace(".", ",") + " giờ)." : ""; };
-    ["cReg", "cCommit", "cReveal"].forEach((id) => { $(id).oninput = timeHelp; });
+    // thời gian: chọn ngày giờ HOẶC nhập phút, hai cách đồng bộ với nhau; hợp đồng vẫn nhận số phút
+    ["cReg", "cCommit", "cReveal"].forEach((id) => { $(id).oninput = () => { S.timeAbs = false; syncTimeFields(); }; });
+    ["cRegAt", "cCommitAt", "cRevealAt"].forEach((id) => { $(id).oninput = () => { S.timeAbs = true; syncTimeFields(true); }; });
+    syncTimeFields();
 
     // danh sách cuộc bầu cử: lọc + tìm kiếm
     document.querySelectorAll("#elFilter button").forEach((b) => { b.onclick = () => { S.filter = b.dataset.f; renderElectionsList(); }; });
