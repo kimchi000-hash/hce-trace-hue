@@ -10,7 +10,7 @@
   - [`OrganizationRegistry.sol`](contracts/project/OrganizationRegistry.sol) (278 dòng): tổ chức, xác minh, thành viên và vai trò, đại diện duyệt, ngưỡng 2/3.
   - [`VoterCardSBT.sol`](contracts/project/VoterCardSBT.sol) (314 dòng): thẻ cử tri soulbound (không chuyển nhượng), 12 linh vật.
 - **DApp:** [`web/`](web/) (**một file duy nhất** [`web/index.html`](web/index.html): HTML + CSS + JS + ABI nội tuyến, chỉ nạp ethers.js v6 từ CDN).
-- **Địa chỉ web công khai:** _sẽ điền sau khi đưa lên Vercel_
+- **Địa chỉ web công khai:** https://hce-trace-hue-web.vercel.app/ (Vercel, Root Directory `web`; chạy trên Sepolia)
 - **Dữ liệu ngoài chuỗi:** Supabase (hồ sơ tổ chức, cuộc bầu cử, ứng viên; đăng nhập bằng ví). Chuỗi chỉ giữ hash, trình duyệt băm lại nội dung để đối chiếu.
 
 ---

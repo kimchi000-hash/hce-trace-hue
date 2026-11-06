@@ -46,14 +46,14 @@ Dùng CLI thay Dashboard (tùy chọn): `npm i -g supabase && supabase login && 
 1. **Authentication → Sign In / Providers → User Signups** → tắt **Allow new users to sign up**. Tài khoản chỉ do hàm `wallet-auth` tạo (admin API vẫn tạo được khi tắt).
 2. Cùng trang, tắt **Allow anonymous sign-ins**.
 3. **Providers → Email**: không cần bật gì thêm (không ai đăng nhập bằng email/mật khẩu; email `0x…@wallet.votechain.local` chỉ là định danh nội bộ, không bao giờ gửi thư).
-4. **Authentication → URL Configuration → Site URL**: địa chỉ web của bạn (chạy thử: `http://localhost:8080`).
+4. **Authentication → URL Configuration → Site URL**: địa chỉ web của bạn (bản đang chạy: `https://hce-trace-hue-web.vercel.app`; chạy thử cục bộ: `http://localhost:8080`).
 
 ## Phần C. Secrets và Edge Function
 
 1. Tạo file `supabase/.env.functions` (đã nằm trong `.gitignore`, **không commit**):
    ```
-   SITE_DOMAIN=localhost:8080
-   ALLOWED_ORIGINS=http://localhost:8080
+   SITE_DOMAIN=hce-trace-hue-web.vercel.app
+   ALLOWED_ORIGINS=https://hce-trace-hue-web.vercel.app,http://localhost:8080
    CHAIN_ID=11155111
    SYNC_SECRET=<chạy: openssl rand -hex 32>
    RATE_LIMIT_SALT=<chạy: openssl rand -hex 16>      # muối để băm IP khi giới hạn tần suất (tùy chọn; mặc định dùng SYNC_SECRET)
@@ -150,7 +150,7 @@ Test đồng thời chạy mỗi tình huống 3 bản (hàm thật; hàm thật
    ```powershell
    python -m http.server 8080 --directory web
    ```
-   rồi mở `http://localhost:8080`. Địa chỉ này phải **trùng** `SITE_DOMAIN` (`localhost:8080`) và nằm trong `ALLOWED_ORIGINS` ở bước secrets (Phần C). Khi đưa lên tên miền thật, đổi cả hai secret rồi deploy lại `wallet-auth`.
+   rồi mở `http://localhost:8080`. Địa chỉ này phải **trùng** `SITE_DOMAIN` (`localhost:8080`) và nằm trong `ALLOWED_ORIGINS` ở bước secrets (Phần C). Khi đưa lên tên miền thật, đổi cả hai secret (`SITE_DOMAIN` chỉ có tên miền, `ALLOWED_ORIGINS` có `https://` và liệt kê từng origin) rồi deploy lại `wallet-auth`. **Không** chạy `supabase secrets set --env-file` với một `.env.functions` cũ (chứa giá trị `localhost`): nó ghi đè secret đúng đã đặt trên Dashboard.
 2. Mở `web/index.html?contract=<địa chỉ ProjectCore>&chain=11155111` (hoặc dán địa chỉ vào ô trên trang). Giao diện tự đọc địa chỉ `OrganizationRegistry` từ `ProjectCore.registry()`, **chỉ cần một địa chỉ**.
 3. Trong `index.html` chỉ có URL dự án và khóa **publishable** (công khai). Không bao giờ dán `service_role` hay secret key vào file này.
 4. Nút **Đăng nhập dữ liệu** (trên cùng) yêu cầu ký một thông điệp, không tốn gas. Giao diện kiểm tra thông điệp đúng ví, nonce và chainId rồi mới cho ký. Phiên đăng nhập chỉ lưu trong tab (sessionStorage) và gắn với đúng ví đang kết nối.
