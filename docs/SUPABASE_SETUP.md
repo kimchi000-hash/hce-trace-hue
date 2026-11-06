@@ -9,8 +9,10 @@ Khóa `sb_publishable_…` là khóa **công khai** (được đặt ở fronten
 | :--- | :--- | :--- |
 | SQL 1 | `supabase/migrations/20261105000001_core_schema.sql` | 9 bảng, ràng buộc, trigger. **Chạy đầu tiên** |
 | SQL 2 | `supabase/migrations/20261105000002_rls_and_functions.sql` | Thu hồi quyền rồi cấp tối thiểu, RLS, hàm nonce. **Chạy thứ hai** |
-| SQL 3 | `supabase/migrations/20261105000003_storage.sql` | 3 bucket + policy Storage. **Chạy thứ ba** |
-| SQL kiểm tra | `supabase/sql/verify_deployment.sql` | Chỉ **đọc** (một câu SELECT). Chạy sau 3 file trên: 41 kiểm tra + dòng tổng kết `ZZ`, tất cả phải `ok = true` |
+| SQL 3 | `supabase/migrations/20261105000003_storage.sql` | 3 bucket công khai + policy Storage. **Chạy thứ ba** |
+| SQL 4 | `supabase/migrations/20261106000001_organization_profile.sql` | Hồ sơ tổ chức đầy đủ (`organizations.profile`, hàm `save_organization_profile`). **Chạy thứ tư** |
+| SQL 5 | `supabase/migrations/20261106000002_visibility.sql` | **Phạm vi xem** (thông tin / hồ sơ ứng viên / kết quả): cột phạm vi, hàm `can_view_election`, 2 bucket riêng tư, policy đọc ảnh riêng tư. **Chạy thứ năm, rồi triển khai lại `chain-sync`** |
+| SQL kiểm tra | `supabase/sql/verify_deployment.sql` | Chỉ **đọc** (một câu SELECT). Chạy sau 5 file trên: 48 kiểm tra + dòng tổng kết `ZZ`, tất cả phải `ok = true` |
 | SQL reset | `supabase/sql/reset_votechain_DANGEROUS.sql` | Chỉ để làm lại từ đầu, **xóa dữ liệu** |
 | Hàm | `supabase/functions/wallet-auth/`, `chain-sync/`, `_shared/` | Mỗi hàm có `deno.json` riêng |
 | Cấu hình | `supabase/config.toml`, `.env.example` | Chỉ giá trị công khai |
@@ -20,14 +22,14 @@ Khóa `sb_publishable_…` là khóa **công khai** (được đặt ở fronten
 1. Mở `https://supabase.com/dashboard/project/vfzuniykinaivchhuiul` (kiểm tra thanh địa chỉ đúng ref này).
 2. Menu trái → **SQL Editor** → **New query**.
 3. Mở `…000001_core_schema.sql`, chép **toàn bộ**, dán, nhấn **Run**. Phải thấy `Success. No rows returned`.
-4. Làm y hệt với `…000002_rls_and_functions.sql`, rồi `…000003_storage.sql`. **Đúng thứ tự 1 → 2 → 3.** Nếu một file báo lỗi, dừng lại, chụp lỗi gửi tôi, **không** chạy file kế tiếp.
-5. Dán `supabase/sql/verify_deployment.sql` vào SQL Editor → Run. File **chỉ đọc** (một câu SELECT duy nhất, không sửa dữ liệu hay cấu trúc). Kết quả gồm 41 dòng kiểm tra và dòng tổng kết `ZZ`; **cột `ok` của mọi dòng phải là `true`**. Dòng `false`: đọc cột `chi_tiet` (nó nêu đối tượng thiếu/thừa hoặc giá trị thực tế), chụp màn hình gửi tôi, **không** chạy tiếp. Các nhóm kiểm tra:
-   - **A, Đối tượng**: đúng 9 bảng và 11 hàm *theo tên và chữ ký*, RLS bật, trigger, ràng buộc `candidate_id`, không còn hàm cũ trùng tên. Bảng/hàm khác trong `public` không làm sai kết quả.
-   - **B, Hàm**: `search_path` rỗng, đúng 6 hàm SECURITY DEFINER, client chỉ gọi được 5 hàm tiện ích, hàm nonce bị khóa với `anon`/`authenticated`/PUBLIC.
+4. Làm y hệt với `…000002_rls_and_functions.sql`, `…000003_storage.sql`, `20261106000001_organization_profile.sql`, rồi `20261106000002_visibility.sql`. **Đúng thứ tự 1 → 2 → 3 → 4 → 5.** Nếu một file báo lỗi, dừng lại, chụp lỗi gửi tôi, **không** chạy file kế tiếp.
+5. Dán `supabase/sql/verify_deployment.sql` vào SQL Editor → Run. File **chỉ đọc** (một câu SELECT duy nhất, không sửa dữ liệu hay cấu trúc). Kết quả gồm 48 dòng kiểm tra và dòng tổng kết `ZZ`; **cột `ok` của mọi dòng phải là `true`**. Dòng `false`: đọc cột `chi_tiet` (nó nêu đối tượng thiếu/thừa hoặc giá trị thực tế), chụp màn hình gửi tôi, **không** chạy tiếp. Các nhóm kiểm tra:
+   - **A, Đối tượng**: đúng 9 bảng và 13 hàm *theo tên và chữ ký*, RLS bật, trigger, ràng buộc `candidate_id`, không còn hàm cũ trùng tên. Bảng/hàm khác trong `public` không làm sai kết quả.
+   - **B, Hàm**: `search_path` rỗng, đúng 8 hàm SECURITY DEFINER, client chỉ gọi được 7 hàm tiện ích (gồm `can_view_election`, `can_read_private_asset`), hàm nonce bị khóa với `anon`/`authenticated`/PUBLIC.
    - **C, Quyền bảng**: client không ghi được bảng mirror; `organizations` chỉ UPDATE 3 cột mô tả; `metadata_history` chỉ INSERT đúng 6 cột; không TRUNCATE/TRIGGER/REFERENCES.
    - **D, Policy**: đúng 3 policy ghi trên 9 bảng, đúng điều kiện; `auth_nonces`/`sync_state` không có policy.
-   - **E, Bucket**: từng bucket đúng Public, dung lượng (2 MB / 10 MB) và đúng danh sách MIME.
-   - **F, Policy Storage**: `assets_read_public` (SELECT), `assets_insert_org_roles` (INSERT, `can_write_asset`), `assets_delete_own` (DELETE, `owner_id` + `can_write_asset`); không có policy UPDATE hay policy ghi nào khác. Dòng F09 chỉ kiểm tra *cấu trúc* cột `owner_id`; **file này không xác minh được giá trị `owner_id` thật** mà Storage API điền, việc đó cần tải file thật (Phần G).
+   - **E, Bucket**: đúng 5 bucket (3 công khai, `election-private` và `candidate-private` không công khai), mỗi bucket đúng Public, dung lượng (2 MB / 10 MB) và đúng danh sách MIME.
+   - **F, Policy Storage**: `assets_read_public` (SELECT, chỉ bucket công khai), `assets_read_private` (SELECT ảnh riêng tư qua `can_read_private_asset`), `assets_insert_org_roles` (INSERT, `can_write_asset`), `assets_delete_own` (DELETE, `owner_id` + `can_write_asset`); không có policy UPDATE hay policy ghi nào khác. Dòng F09 chỉ kiểm tra *cấu trúc* cột `owner_id`; **file này không xác minh được giá trị `owner_id` thật** mà Storage API điền, việc đó cần tải file thật (Phần G).
    - Nếu F06 báo một policy ghi lạ trên `storage.objects` (ví dụ do bạn tạo trước đó cho bucket khác), đó là cảnh báo cần xem tay chứ không nhất thiết là lỗi; xem `chi_tiet` rồi quyết định.
 6. Kiểm tra bằng mắt:
    - **Table Editor**: thấy 9 bảng (`organizations`, `organization_members`, `organization_approvers`, `elections_chain`, `elections_metadata`, `candidates_metadata`, `metadata_history`, `auth_nonces`, `sync_state`). Mỗi bảng phải có nhãn **RLS enabled**.
@@ -65,6 +67,7 @@ Dùng CLI thay Dashboard (tùy chọn): `npm i -g supabase && supabase login && 
    ```
    Cả hai hàm có `verify_jwt = false` (trong `config.toml`) vì tự kiểm tra danh tính; điều này cũng cần thiết vì khóa `sb_publishable_…` không phải JWT nên cổng kiểm JWT mặc định sẽ từ chối.
 3. `chain-sync` trả `503` cho đến khi có `RPC_URL` và địa chỉ hợp đồng. Đó là đúng thiết kế.
+4. **Sau khi chạy SQL 5, phải triển khai lại `chain-sync`** (bản mới đọc phạm vi xem từ nội dung đã khớp hash và ghi vào `elections_chain`). Nếu chưa triển khai lại, các cuộc mới có cột phạm vi mặc định là công khai.
 
 ## Phần D. Thử `wallet-auth` bằng curl
 
@@ -127,11 +130,12 @@ Với phiên đăng nhập của một Manager đã `Verified`:
 3. `move(...)` sang tên/thư mục khác → phải bị từ chối. `copy(...)` sang thư mục tổ chức khác → bị từ chối.
 4. Xem hàng vừa tải trong **Storage → file → Details** hoặc SQL Editor: `select name, owner_id from storage.objects order by created_at desc limit 5;` → `owner_id` phải đúng bằng `id` người dùng (Authentication → Users). Nếu `owner_id` rỗng hoặc khác, báo tôi ngay (khi đó xóa file sẽ bị từ chối, an toàn nhưng không dùng được).
 5. Đăng nhập bằng Manager của tổ chức khác, thử `remove` file đó → phải bị từ chối.
+6. **Phạm vi xem (SQL 5)**: tạo một cuộc bầu cử với ảnh bìa, chọn "Thông tin: Nội bộ". Ảnh phải nằm ở bucket `election-private` (URL trong hồ sơ dạng `…/storage/v1/object/authenticated/election-private/…`). Ví không thuộc tổ chức: mở trang cuộc bầu cử không thấy mô tả và ảnh, mở thẳng liên kết `authenticated` bị từ chối. Ví là thành viên đang hoạt động: sau khi bấm "Đăng nhập dữ liệu" thấy mô tả và ảnh (ảnh qua URL ký sống 10 phút). Chọn "Kết quả: Hạn chế": ví không có quyền thấy thông báo khóa ở trang Kết quả, nhưng sự kiện `Revealed` trên Etherscan vẫn công khai (đó là giới hạn của chuỗi khối, không phải lỗi).
 
 ## Kiểm thử
 
 ```bash
-npm run test:supabase                  # 79 test: migration, RLS, ma trận quyền, Storage, nonce, và verify_deployment.sql (PGlite)
+npm run test:supabase                  # 82 test: migration, RLS, ma trận quyền, Storage, nonce, và verify_deployment.sql (PGlite)
 npx hardhat test test/SupabaseFunctions.test.js test/SupabaseSync.test.js   # logic dùng chung + đồng bộ chuỗi -> Supabase (CSDL giả)
 npm i --no-save embedded-postgres pg   # chỉ một lần; KHÔNG chạy bằng quyền root
 npm run test:supabase:pg               # 7 test truy cập ĐỒNG THỜI trên PostgreSQL thật (nhiều kết nối)

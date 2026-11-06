@@ -4076,6 +4076,7 @@ pre.code {
           <div class="field"><label class="f" for="moPurpose">Mục đích, nội dung</label><textarea id="moPurpose" style="font-family:var(--sans);min-height:92px" maxlength="1200"></textarea></div>
           <div class="field"><label class="f" for="moElig">Điều kiện tham gia</label><textarea id="moElig" style="font-family:var(--sans);min-height:56px" maxlength="600"></textarea></div>
           <div class="field"><label class="f" for="moCover">Ảnh bìa mới (tùy chọn, để trống giữ ảnh cũ)</label><input id="moCover" type="file" accept="image/png,image/jpeg,image/webp"></div>
+          <div class="field"><label class="f">Phạm vi xem</label><div id="moVisBox"></div></div>
           <div id="moCands"></div>
           <label class="small" style="display:flex;gap:8px;align-items:flex-start;margin-top:12px"><input id="moAck" type="checkbox" style="margin-top:3px"><span>Tôi hiểu: ghi hash mới lên chuỗi sẽ xóa các chữ ký duyệt đã có của cuộc này.</span></label>
           <div class="row" style="margin-top:14px">
@@ -4423,7 +4424,12 @@ Trần Thị B</textarea><div class="help">2–20 ứng viên, mỗi tên 1–64
       </div>
 
       <div class="card">
-        <div class="card-head"><div><h3><svg class="ic"><use href="#i-clock"/></svg>4 · Thời gian các giai đoạn</h3><div class="sub">Hợp đồng tự chuyển pha theo thời gian khối, không ai bấm công tắc.</div></div></div>
+        <div class="card-head"><div><h3><svg class="ic"><use href="#i-lock"/></svg>4 · Phạm vi xem</h3><div class="sub">Chọn ai được xem thông tin, hồ sơ ứng viên và kết quả. Sửa được đến hết pha Đăng ký.</div></div></div>
+        <div id="cVisBox"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div><h3><svg class="ic"><use href="#i-clock"/></svg>5 · Thời gian các giai đoạn</h3><div class="sub">Hợp đồng tự chuyển pha theo thời gian khối, không ai bấm công tắc.</div></div></div>
         <div class="grid g3">
           <div class="field" style="margin:0"><label class="f" for="cRegAt">Duyệt kết thúc lúc</label><input id="cRegAt" type="datetime-local"><label class="f" for="cReg" style="margin-top:8px">hoặc số phút</label><input id="cReg" type="number" min="1" max="10080" value="5"></div>
           <div class="field" style="margin:0"><label class="f" for="cCommitAt">Nộp phiếu kết thúc lúc</label><input id="cCommitAt" type="datetime-local"><label class="f" for="cCommit" style="margin-top:8px">hoặc số phút</label><input id="cCommit" type="number" min="1" max="43200" value="10"></div>
@@ -4435,13 +4441,13 @@ Trần Thị B</textarea><div class="help">2–20 ứng viên, mỗi tên 1–64
       </div>
 
       <div class="card">
-        <div class="card-head"><div><h3><svg class="ic"><use href="#i-users"/></svg>5 · Cử tri và Merkle root</h3><div class="sub">Dán danh sách ví; trình duyệt dựng cây Merkle và số lượng cử tri.</div></div></div>
+        <div class="card-head"><div><h3><svg class="ic"><use href="#i-users"/></svg>6 · Cử tri và Merkle root</h3><div class="sub">Dán danh sách ví; trình duyệt dựng cây Merkle và số lượng cử tri.</div></div></div>
         <div class="field"><label class="f" for="cVoters">Danh sách cử tri (mỗi dòng một địa chỉ)</label><textarea id="cVoters" spellcheck="false" placeholder="0x…&#10;0x…"></textarea><div class="help" id="cVotersHelp">Tối đa 1.000.000 ví.</div></div>
         <div class="field" style="margin-bottom:0"><label class="f" for="cQuorum">Quorum (basis points)</label><input id="cQuorum" type="number" min="0" max="10000" value="5000"><div class="help" id="cQuorumHelp">= 50,00% (100 bps = 1%)</div></div>
       </div>
 
       <div class="card">
-        <div class="card-head"><div><h3><svg class="ic"><use href="#i-badge-check"/></svg>6 · Người duyệt (lấy từ tổ chức)</h3><div class="sub">Chụp lại lúc tạo. Ví của bạn và ví ứng viên bị loại để tránh xung đột lợi ích.</div></div></div>
+        <div class="card-head"><div><h3><svg class="ic"><use href="#i-badge-check"/></svg>7 · Người duyệt (lấy từ tổ chức)</h3><div class="sub">Chụp lại lúc tạo. Ví của bạn và ví ứng viên bị loại để tránh xung đột lợi ích.</div></div></div>
         <div id="cApprovers" class="small muted">Chọn tổ chức để xem.</div>
       </div>
     </div>
@@ -4451,7 +4457,7 @@ Trần Thị B</textarea><div class="help">2–20 ứng viên, mỗi tên 1–64
         <div class="card-head"><div><h3><svg class="ic"><use href="#i-shield"/></svg>Kiểm tra &amp; xem trước</h3><div class="sub">Mỗi mục tương ứng một giới hạn của hợp đồng.</div></div></div>
         <ul id="cChecks" class="checklist"></ul>
         <div id="cPreview" class="hidden" style="margin-top:14px"></div>
-        <div class="alert warn" style="margin-top:14px"><span>⚠️</span><span><b>Tệp tải lên là công khai.</b> Ảnh bìa, ảnh đại diện lưu ở kho công khai: ai có đường dẫn đều xem được, và không thể thu hồi. Chỉ tải nội dung bạn sẵn sàng công bố.</span></div>
+        <div class="alert warn" style="margin-top:14px"><span>⚠️</span><span id="cFileWarn"><b>Tệp tải lên là công khai.</b> Ảnh bìa, ảnh đại diện lưu ở kho công khai: ai có đường dẫn đều xem được, và không thể thu hồi. Chỉ tải nội dung bạn sẵn sàng công bố.</span></div>
         <label class="small" style="display:flex;gap:8px;align-items:flex-start;margin-top:12px"><input id="cSave" type="checkbox" checked style="margin-top:3px"><span>Lưu nội dung (bản nháp, ảnh) lên Supabase để mọi người xem và xác thực với hash trên chuỗi. Cần đăng nhập bằng ví.</span></label>
         <div class="stack" style="margin-top:16px;gap:8px">
           <button id="btnBuild" class="btn soft block">Xem trước &amp; kiểm tra</button>
@@ -5397,7 +5403,9 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       e.hasRejected = !!(await c.hasRejected(id, S.account));
     }
     e.closed = e.reqStatus === 2 || e.reqStatus === 3;
-    if (e.phase === 3 || e.revealedCount > 0n) e.votes = Array.from(await c.getVotes(id)).map(Number);
+    await loadVis([Number(raw)]);
+    e.resultsLocked = isLocked(Number(raw), "results");   // chỉ ẩn trên giao diện: dữ liệu trên chuỗi vẫn công khai
+    if (!e.resultsLocked && (e.phase === 3 || e.revealedCount > 0n)) e.votes = Array.from(await c.getVotes(id)).map(Number);
 
     const blk = await chainProvider().getBlock("latest");
     S.clock = { chain: Number(blk.timestamp), local: Date.now(), block: Number(blk.number) };
@@ -5505,6 +5513,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       if (cm.verified) { const v = el("span", "cvt", "✓ Đã xác thực hash"); v.title = "Nội dung hồ sơ khớp hash ghi trên chuỗi"; nm.appendChild(v); }
       main.appendChild(nm);
       if (cm.bio) main.appendChild(el("span", "cbio", cm.bio));
+      else if (cm.locked) main.appendChild(el("span", "cbio", "Hồ sơ ứng viên không công khai."));
       lab.appendChild(main);
       if (e.votes && e.phase >= 2) lab.appendChild(el("span", "vt", e.votes[i] + " phiếu"));
       const pb = el("button", "cprof", "Xem hồ sơ"); pb.type = "button";
@@ -6086,6 +6095,10 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     if (e.phase !== 3) { renderResultPreview(); return; }
 
     clear(box);
+    if (e.resultsLocked) {
+      box.appendChild(el("div", "alert warn", "Kết quả của cuộc này không công khai. " + lockMsg(e.id, "results") + " Lưu ý: số phiếu vẫn nằm trên chuỗi công khai (sự kiện Revealed); giao diện chỉ ẩn để giữ phạm vi bạn chọn."));
+      return;
+    }
     const r = await reader().result(e.id);
     const valid = r.valid, winner = Number(r.winnerId), top = Number(r.topVotes);
     fillResultKpis(e, { valid, winner });
@@ -6384,6 +6397,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       };
       await Promise.all([worker(), worker(), worker(), worker()]);
       out.sort((a, b) => b.id - a.id);
+      await loadVis(out.filter((x) => x.phase === 3).map((x) => x.id));
       S.all = out;
       renderDashboard();
       renderElectionsList();
@@ -6983,8 +6997,9 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     const url = safeImg(m.cover);
     if (url) {
       const im = document.createElement("img");
-      im.src = url; im.alt = ""; im.loading = "lazy"; im.referrerPolicy = "no-referrer";
+      im.alt = ""; im.loading = "lazy"; im.referrerPolicy = "no-referrer";
       im.onerror = () => { im.replaceWith(coverSvg(id)); };
+      setImgSrc(im, url, () => im.replaceWith(coverSvg(id)));
       return im;
     }
     return coverSvg(id);
@@ -6996,8 +7011,10 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     const url = safeImg(photo);
     if (url) {
       const im = document.createElement("img");
-      im.src = url; im.alt = "Ảnh " + name; im.referrerPolicy = "no-referrer";
-      im.onerror = () => { im.remove(); a.style.background = PALETTE[index % PALETTE.length]; a.textContent = initials(name); };
+      im.alt = "Ảnh " + name; im.referrerPolicy = "no-referrer";
+      const fb = () => { im.remove(); a.style.background = PALETTE[index % PALETTE.length]; a.textContent = initials(name); };
+      im.onerror = fb;
+      setImgSrc(im, url, fb);
       a.appendChild(im);
     } else {
       a.style.background = PALETTE[index % PALETTE.length];
@@ -7083,9 +7100,12 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
         };
       });
     }
+    out.infoLocked = isLocked(id, "info");
+    const candLocked = isLocked(id, "candidates");
+    out.candidates.forEach((c) => { c.locked = candLocked; });
     return out;
   }
-  const candMeta = (id, i) => (elMeta(id).candidates[i] || { title: "", bio: "", history: "", program: "", photo: "" });
+  const candMeta = (id, i) => (elMeta(id).candidates[i] || { title: "", bio: "", history: "", program: "", photo: "", locked: isLocked(id, "candidates") });
 
   /** meta.json cạnh trang hoặc ?meta=https://… (chỉ https). Lỗi mạng bị bỏ qua. */
   async function loadMetaFile() {
@@ -7145,6 +7165,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     const ec = mv && mv.election.state === "ok" && mv.election.content ? mv.election.content : {};
     $("moDesc").value = ec.description || ""; $("moPurpose").value = ec.purpose || ""; $("moElig").value = ec.eligibility || "";
     $("moCover").value = ""; $("moAck").checked = false;
+    setVis("mo", ec.visibility || (!ec.schema && mv && mv.vis ? { info: mv.vis.info, candidates: mv.vis.candidates, results: mv.vis.results, roles: mv.vis.roles } : null));
     if (S.moId !== String(e.id)) { S.moId = String(e.id); $("moStatus").textContent = ""; }
     const box = $("moCands"); clear(box);
     e.candidates.forEach((name, i) => {
@@ -7178,22 +7199,27 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     const files = [];
     const bEl = mv.election.state === "ok" && mv.election.content ? mv.election.content : null;
     const coverFile = $("moCover").files && $("moCover").files[0];
-    const cover = await prepareImage(coverFile, "election-assets", e.orgId, "cover"); if (cover) files.push(cover);
+    const vis = readVis("mo"), infoP = vis.info !== "public", candP = vis.candidates !== "public";
+    const cover = await prepareImage(coverFile, bucketFor("cover", infoP), e.orgId, "cover"); if (cover) files.push(cover);
+    const keepCover = cover ? fileEntry("cover", cover) : await relocateEntry(bEl ? bEl.cover : null, infoP, e.orgId, "cover", files);
     const election = mkElectionMeta({
       organizationId: bEl ? bEl.organizationId : e.orgId, title: bEl ? bEl.title : e.title,
       description: $("moDesc").value.trim(), purpose: $("moPurpose").value.trim(), eligibility: $("moElig").value.trim(),
-      schedule: bEl ? bEl.schedule : null, extra: bEl ? bEl.extra : null, cover: cover ? fileEntry("cover", cover) : (bEl ? bEl.cover : null),
+      schedule: bEl ? bEl.schedule : null, extra: bEl ? bEl.extra : null, cover: keepCover,
+      visibility: vis, salt: infoP ? ((bEl && bEl.salt) || newSalt()) : null,
     });
     const wraps = [...document.querySelectorAll("#moCands .meta-cand")];
     const cands = [];
     for (let i = 0; i < e.candidates.length; i++) {
       const w = wraps[i], bc = mv.candidates[i] && mv.candidates[i].state === "ok" && mv.candidates[i].content ? mv.candidates[i].content : null;
       const af = w.querySelector(".mo-av").files && w.querySelector(".mo-av").files[0];
-      const av = await prepareImage(af, "candidate-assets", e.orgId, "avatar"); if (av) files.push(av);
+      const av = await prepareImage(af, bucketFor("avatar", candP), e.orgId, "avatar"); if (av) files.push(av);
+      const keepAv = av ? fileEntry("avatar", av) : await relocateEntry(bc ? bc.avatar : null, candP, e.orgId, "avatar", files);
       cands.push(mkCandidateMeta({
+        salt: candP ? ((bc && bc.salt) || newSalt()) : null,
         index: i, fullName: e.candidates[i], bio: w.querySelector(".mo-bio").value.trim(), experience: w.querySelector(".mo-exp").value.trim(),
         achievements: w.querySelector(".mo-ach").value.trim(), manifesto: w.querySelector(".mo-man").value.trim(),
-        avatar: av ? fileEntry("avatar", av) : (bc ? bc.avatar : null), documents: bc && bc.documents ? bc.documents : [],
+        avatar: keepAv, documents: bc && bc.documents ? bc.documents : [],
       }));
     }
     const eh = metadataHash(election), ch = cands.map(metadataHash);
@@ -7236,7 +7262,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     const body = el("div", "body");
     body.appendChild(el("h3", "", s.title));
     if (info.sub) body.appendChild(el("div", "tiny faint", info.sub));
-    const desc = el("p", "desc" + (m.description ? "" : " none"), m.description || "Chưa có mô tả giới thiệu (thông tin off-chain).");
+    const desc = el("p", "desc" + (m.description ? "" : " none"), m.description || (m.infoLocked ? "Nội dung giới thiệu không công khai. " + lockMsg(s.id, "info") : "Chưa có mô tả giới thiệu (thông tin off-chain)."));
     body.appendChild(desc);
     if (m.description) { const t = srcTag("off", "Off-chain"); t.style.alignSelf = "flex-start"; body.appendChild(t); }
 
@@ -7296,6 +7322,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   /* ----- Dashboard: lịch sử cuộc bầu cử đã kết thúc ----- */
   function resultBadge(s) {
     if (!s.isActivated) return el("span", "badge gray", "Không được duyệt");
+    if (isLocked(s.id, "results")) return el("span", "badge gray", "Kết quả hạn chế");
     const r = s.res;
     if (!r) return el("span", "badge gray", "Chưa đọc kết quả");
     if (r.valid) return el("span", "badge teal", "Hợp lệ · " + (s.names[r.winner] || "#" + r.winner));
@@ -7350,11 +7377,11 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
 
     const d = $("elDescription");
     d.className = "desc" + (m.description ? "" : " none");
-    d.textContent = m.description || "Chưa có mô tả giới thiệu đã xác thực. Ban tổ chức cập nhật được trong pha Đăng ký.";
+    d.textContent = m.description || (m.infoLocked ? "Nội dung giới thiệu không công khai. " + lockMsg(e.id, "info") : "Chưa có mô tả giới thiệu đã xác thực. Ban tổ chức cập nhật được trong pha Đăng ký.");
     const tp = $("tagPurpose"); if (tp) { tp.className = "src " + (m.verified ? "on" : "off"); tp.textContent = m.verified ? "Đã khớp hash" : "Off-chain"; }
     const p = $("elPurpose");
     p.className = "v prose" + (m.purpose ? "" : " none");
-    p.textContent = m.purpose || "Chưa có thông tin mục đích và nội dung.";
+    p.textContent = m.purpose || (m.infoLocked ? "Không công khai với ví hiện tại." : "Chưa có thông tin mục đích và nội dung.");
 
     $("tlRange").textContent = fmtDate(e.regEnd) + " → " + fmtDate(e.revealEnd);
     const mins = Math.round((e.revealEnd - e.regEnd) / 60);
@@ -7481,7 +7508,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       t.appendChild(el("h4", "", name));
       t.appendChild(el("div", "role", c.title || "Ứng viên #" + i));
       top.appendChild(t); b.appendChild(top);
-      b.appendChild(el("div", "bio" + (c.bio ? "" : " none"), c.bio || "Chưa có tiểu sử giới thiệu."));
+      b.appendChild(el("div", "bio" + (c.bio ? "" : " none"), c.bio || (c.locked ? "Hồ sơ ứng viên không công khai." : "Chưa có tiểu sử giới thiệu.")));
       const foot = el("div", "foot");
       foot.appendChild(el("span", "", showVotes ? e.votes[i] + " phiếu" : "Xem hồ sơ"));
       foot.appendChild(icon("chevron", "sm"));
@@ -7515,7 +7542,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       const s = el("section");
       const h4 = el("h4"); h4.appendChild(document.createTextNode(title)); if (!(c.verified && !text)) h4.appendChild(c.verified ? srcTag("on", "Đã xác thực hash") : srcTag("off"));   // mục trống thì không gắn nhãn xác thực
       s.appendChild(h4);
-      s.appendChild(el("div", "prose" + (text ? "" : " none"), text || "Ban tổ chức chưa cung cấp thông tin này."));
+      s.appendChild(el("div", "prose" + (text ? "" : " none"), text || (c.locked ? lockMsg(e.id, "candidates") : "Ban tổ chức chưa cung cấp thông tin này.")));
       body.appendChild(s);
     };
     sec("Tiểu sử", c.bio);
@@ -7529,7 +7556,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     const row = (k, v) => { dl.appendChild(el("dt", "", k)); dl.appendChild(el("dd", "", v)); };
     row("Số thứ tự", "#" + i);
     row("Tên lưu trên hợp đồng", name);
-    row("Số phiếu", e.votes && e.phase >= 2 ? e.votes[i] + " phiếu (hiện dần theo pha Mở phiếu)" : "Chưa công bố. Số phiếu chỉ hiện sau khi cử tri mở phiếu.");
+    row("Số phiếu", e.resultsLocked ? "Không công khai trên giao diện (" + SCOPE_VI[(visOf(e.id) || {}).results || "restricted"] + "). Dữ liệu trên chuỗi vẫn công khai." : e.votes && e.phase >= 2 ? e.votes[i] + " phiếu (hiện dần theo pha Mở phiếu)" : "Chưa công bố. Số phiếu chỉ hiện sau khi cử tri mở phiếu.");
     chain.appendChild(dl);
     body.appendChild(chain);
 
@@ -7714,16 +7741,33 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     }
   }
   const metadataHash = (obj) => ethers.keccak256(ethers.toUtf8Bytes(canonicalize(obj)));
-  const mkElectionMeta = (o) => ({
-    schema: "votechain.election.v1",
-    organizationId: o.organizationId, title: o.title, description: o.description || "", purpose: o.purpose || "",
-    eligibility: o.eligibility || "", schedule: o.schedule || null, extra: o.extra || null, cover: o.cover || null,
-  });
-  const mkCandidateMeta = (o) => ({
-    schema: "votechain.candidate.v1",
-    index: o.index, fullName: o.fullName, bio: o.bio || "", experience: o.experience || "", achievements: o.achievements || "",
-    manifesto: o.manifesto || "", avatar: o.avatar || null, documents: o.documents || [],
-  });
+  const SCOPES = ["public", "internal", "restricted"], EXTRA_ROLES = ["Manager", "Proposer"];
+  const mkVisibility = (v) => {
+    if (!v || typeof v !== "object") throw new Error("visibility phải là object");
+    for (const k of ["info", "candidates", "results"]) if (!SCOPES.includes(v[k])) throw new Error("visibility." + k + " không hợp lệ: " + v[k]);
+    const roles = Array.isArray(v.roles) ? v.roles : [];
+    for (const r of roles) if (!EXTRA_ROLES.includes(r)) throw new Error("visibility.roles chỉ nhận Manager/Proposer, nhận: " + r);
+    return { info: v.info, candidates: v.candidates, results: v.results, roles: [...new Set(roles)].sort() };
+  };
+  const mkElectionMeta = (o) => {
+    const m = {
+      schema: "votechain.election.v1",
+      organizationId: o.organizationId, title: o.title, description: o.description || "", purpose: o.purpose || "",
+      eligibility: o.eligibility || "", schedule: o.schedule || null, extra: o.extra || null, cover: o.cover || null,
+    };
+    if (o.visibility) m.visibility = mkVisibility(o.visibility);
+    if (o.salt) m.salt = String(o.salt);
+    return m;
+  };
+  const mkCandidateMeta = (o) => {
+    const m = {
+      schema: "votechain.candidate.v1",
+      index: o.index, fullName: o.fullName, bio: o.bio || "", experience: o.experience || "", achievements: o.achievements || "",
+      manifesto: o.manifesto || "", avatar: o.avatar || null, documents: o.documents || [],
+    };
+    if (o.salt) m.salt = String(o.salt);
+    return m;
+  };
   const mkOrgProfile = (o) => ({
     schema: "votechain.organization.v1",
     name: o.name, organizationType: o.organizationType, description: o.description || "", affiliation: o.affiliation || "",
@@ -7737,7 +7781,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   const REQ_VI = ["Chờ duyệt", "Đã duyệt", "Bị từ chối", "Đã rút", "Hết hạn"];
   const REQ_CLS = ["amber", "teal", "red", "gray", "gray"];
   const IMG_EXT = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
-  const MAX_IMG = { "organization-assets": 2 * 1024 * 1024, "election-assets": 10 * 1024 * 1024, "candidate-assets": 10 * 1024 * 1024 };
+  const MAX_IMG = { "organization-assets": 2 * 1024 * 1024, "election-assets": 10 * 1024 * 1024, "candidate-assets": 10 * 1024 * 1024, "election-private": 10 * 1024 * 1024, "candidate-private": 10 * 1024 * 1024 };
   const lc = (a) => String(a || "").toLowerCase();
   const sameAddr = (a, b) => !!a && !!b && lc(a) === lc(b);
 
@@ -7833,6 +7877,122 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   }
 
   const publicUrl = (bucket, path) => CONFIG.SUPABASE_URL + "/storage/v1/object/public/" + bucket + "/" + path;
+  /* ----- phạm vi xem (info / candidates / results) ----- */
+  const PRIVATE_BUCKETS = ["election-private", "candidate-private"];
+  const isPrivateBucket = (b) => PRIVATE_BUCKETS.includes(b);
+  /** Ảnh ở bucket riêng tư lưu URL dạng .../object/authenticated/<bucket>/<path>; trình duyệt đổi sang URL ký khi hiển thị. */
+  const assetUrl = (bucket, path) => isPrivateBucket(bucket) ? CONFIG.SUPABASE_URL + "/storage/v1/object/authenticated/" + bucket + "/" + path : publicUrl(bucket, path);
+  function privateRef(url) {
+    const m = /^https:\/\/[^/]+\/storage\/v1\/object\/authenticated\/(election-private|candidate-private)\/([A-Za-z0-9/_.-]+)$/.exec(String(url || ""));
+    return m && url.indexOf(CONFIG.SUPABASE_URL) === 0 ? { bucket: m[1], path: m[2] } : null;
+  }
+  const SIGNED = new Map();
+  async function signedUrl(url) {
+    const ref = privateRef(url);
+    if (!ref) return url;
+    const hit = SIGNED.get(url);
+    if (hit && hit.exp > Date.now() + 60000) return hit.u;
+    if (!sbActive()) return "";                           // chưa đăng nhập dữ liệu thì không có quyền xem ảnh riêng tư
+    const r = await sbRaw(CONFIG.SUPABASE_URL + "/storage/v1/object/sign/" + ref.bucket + "/" + ref.path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ expiresIn: 600 }) });
+    const sp = r.ok && r.json && r.json.signedURL;
+    if (!sp || typeof sp !== "string") return "";
+    const u = CONFIG.SUPABASE_URL + "/storage/v1" + (sp.charAt(0) === "/" ? "" : "/") + sp;
+    SIGNED.set(url, { u, exp: Date.now() + 540000 });
+    return u;
+  }
+  /** Gán src cho <img>; ảnh riêng tư cần URL ký (không nhận thì gọi onFail). */
+  function setImgSrc(im, url, onFail) {
+    if (!privateRef(url)) { im.src = url; return; }
+    signedUrl(url).then((u) => { if (u) im.src = u; else if (onFail) onFail(); }).catch(() => { if (onFail) onFail(); });
+  }
+  async function sbRpc(name, args) {
+    const r = await sbRaw(CONFIG.SUPABASE_URL + "/rest/v1/rpc/" + name, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(args) });
+    if (!r.ok) throw new UserError("Gọi " + name + " thất bại (" + r.status + ")" + (sbMsg(r) ? ": " + sbMsg(r) : "."));
+    return r.json;
+  }
+  const VIS = new Map();                                  // id -> {info,candidates,results,roles,can:{...}}; không có = công khai/chưa biết
+  const SCOPE_VI = { public: "Công khai", internal: "Nội bộ tổ chức", restricted: "Hạn chế" };
+  async function loadVis(ids) {
+    if (!sbConfigured()) return;
+    ids = [...new Set(ids.map(Number))].filter((n) => Number.isSafeInteger(n) && n >= 0);
+    if (!ids.length) return;
+    let rows;
+    try { rows = await sbGet("elections_chain?election_id_onchain=in.(" + ids.join(",") + ")&select=election_id_onchain,info_visibility,candidate_visibility,results_visibility,restricted_roles"); }
+    catch (_) { return; }                                 // chưa chạy migration phạm vi xem: coi như công khai
+    for (const r of rows || []) {
+      const v = { info: r.info_visibility || "public", candidates: r.candidate_visibility || "public", results: r.results_visibility || "public", roles: Array.isArray(r.restricted_roles) ? r.restricted_roles : [], can: {} };
+      for (const k of ["info", "candidates", "results"]) {
+        v.can[k] = v[k] === "public";
+        if (v[k] !== "public" && sbActive()) {
+          try { v.can[k] = (await sbRpc("can_view_election", { p_election: Number(r.election_id_onchain), p_scope: k })) === true; } catch (_) { v.can[k] = false; }
+        }
+      }
+      VIS.set(String(r.election_id_onchain), v);
+    }
+  }
+  const visOf = (id) => VIS.get(String(id)) || null;
+  const isLocked = (id, scope) => { const v = visOf(id); return !!v && v[scope] !== "public" && !v.can[scope]; };
+  const lockMsg = (id, scope) => { const v = visOf(id); const sc = v ? v[scope] : "restricted"; return "Phạm vi xem \u201c" + SCOPE_VI[sc] + "\u201d: " + (sc === "internal" ? "chỉ thành viên đang hoạt động của tổ chức xem được." : "chỉ người tạo, nhóm duyệt và vai trò được ban tổ chức cho phép xem được.") + (sbActive() ? "" : " Hãy kết nối ví và bấm \u201cĐăng nhập dữ liệu\u201d."); };
+
+  /* ----- form phạm vi xem (dùng cho form tạo "c" và form sửa "mo") ----- */
+  const SCOPE_OPTS = [["public", "Công khai (ai cũng xem được)"], ["internal", "Nội bộ (thành viên đang hoạt động của tổ chức)"], ["restricted", "Hạn chế (người tạo, nhóm duyệt và vai trò chọn thêm)"]];
+  function mountVisFields(hostId, p, editing) {
+    const host = $(hostId);
+    if (!host || host.dataset.ready) return;
+    host.dataset.ready = "1";
+    const sel = (id, label) => '<div class="field" style="margin:0 0 12px"><label class="f" for="' + p + id + '">' + label + '</label><select id="' + p + id + '">' + SCOPE_OPTS.map((o) => '<option value="' + o[0] + '">' + o[1] + '</option>').join("") + "</select></div>";
+    host.innerHTML = sel("VisInfo", "Thông tin cuộc bầu cử (mô tả, mục đích, điều kiện, ảnh bìa)") + sel("VisCands", "Hồ sơ ứng viên (tiểu sử, quá trình, cam kết, ảnh)") + sel("VisRes", "Kết quả và số phiếu")
+      + '<div id="' + p + 'VisRoles" class="hidden" style="margin:0 0 12px"><div class="small">Với phạm vi “Hạn chế”, ngoài người tạo và nhóm duyệt, cho thêm vai trò:</div>'
+      + '<label class="small" style="display:inline-flex;gap:6px;margin-right:16px"><input id="' + p + 'VisMgr" type="checkbox"> Manager</label><label class="small" style="display:inline-flex;gap:6px"><input id="' + p + 'VisPro" type="checkbox"> Proposer</label></div>'
+      + '<div class="small muted">Người tạo và nhóm duyệt của tổ chức luôn xem được toàn bộ nội dung của cuộc này. Ảnh thuộc phạm vi không công khai được lưu ở kho riêng và chỉ xem qua liên kết ký có thời hạn 10 phút.</div>'
+      + '<div class="small muted" style="margin-top:6px"><b>Giới hạn thật:</b> kết quả chỉ được ẩn trên giao diện. Tên cuộc, tên ứng viên, mốc thời gian và số phiếu đã mở nằm trên chuỗi công khai (Sepolia), ai đọc sự kiện hợp đồng đều thấy. Mô tả và hồ sơ chỉ được giữ riêng ở Supabase; trên chuỗi chỉ có hash (có thêm giá trị ngẫu nhiên để không đoán ngược được).</div>'
+      + (editing ? '<div class="small muted" style="margin-top:6px">Đổi từ công khai sang hạn chế không thu hồi được nội dung đã đăng công khai trước đó (bản cũ của hồ sơ và ảnh cũ vẫn còn ở kho công khai).</div>' : "");
+    const sync = () => { const v = readVis(p); $(p + "VisRoles").classList.toggle("hidden", ![v.info, v.candidates, v.results].includes("restricted")); if (p === "c") updateFileWarn(v); };
+    for (const id of ["VisInfo", "VisCands", "VisRes"]) $(p + id).onchange = sync;
+  }
+  function updateFileWarn(v) {
+    const fw = $("cFileWarn");
+    if (!fw) return;
+    v = v || readVis("c");
+    const parts = [v.info === "public" ? "ảnh bìa lưu ở kho công khai" : "ảnh bìa lưu ở kho riêng tư (chỉ xem qua liên kết ký 10 phút)", v.candidates === "public" ? "ảnh đại diện ứng viên lưu ở kho công khai" : "ảnh đại diện ứng viên lưu ở kho riêng tư"];
+    fw.textContent = "Nơi lưu tệp theo phạm vi xem: " + parts.join("; ") + ". Với kho công khai, ai có đường dẫn đều xem được và không thể thu hồi: chỉ tải nội dung bạn sẵn sàng công bố.";
+  }
+  function readVis(p) {
+    const g = (id) => ($(p + id) && $(p + id).value) || "public";
+    const v = { info: g("VisInfo"), candidates: g("VisCands"), results: g("VisRes"), roles: [] };
+    if ([v.info, v.candidates, v.results].includes("restricted")) {
+      if ($(p + "VisMgr") && $(p + "VisMgr").checked) v.roles.push("Manager");
+      if ($(p + "VisPro") && $(p + "VisPro").checked) v.roles.push("Proposer");
+    }
+    return v;
+  }
+  function setVis(p, v) {
+    v = v || { info: "public", candidates: "public", results: "public", roles: [] };
+    $(p + "VisInfo").value = v.info; $(p + "VisCands").value = v.candidates; $(p + "VisRes").value = v.results;
+    $(p + "VisMgr").checked = (v.roles || []).includes("Manager"); $(p + "VisPro").checked = (v.roles || []).includes("Proposer");
+    $(p + "VisRoles").classList.toggle("hidden", ![v.info, v.candidates, v.results].includes("restricted"));
+  }
+  const newSalt = () => ethers.hexlify(ethers.randomBytes(16));
+  const saltFor = (key) => { S.salts = S.salts || {}; return S.salts[key] || (S.salts[key] = newSalt()); };
+  const bucketFor = (kind, priv) => kind === "cover" ? (priv ? "election-private" : "election-assets") : (priv ? "candidate-private" : "candidate-assets");
+  /** Chuyển ảnh đã có sang kho đúng loại (công khai <-> riêng tư): tải byte cũ, kiểm checksum, đưa vào danh sách tải lên. */
+  async function relocateEntry(entry, priv, orgId, kind, files) {
+    if (!entry || !entry.url || !entry.checksum) return entry || null;
+    if (!!privateRef(entry.url) === priv) return entry;
+    const src = privateRef(entry.url) ? await signedUrl(entry.url) : entry.url;
+    if (!src) throw new UserError("Không lấy được ảnh cũ để chuyển kho. Hãy đăng nhập dữ liệu rồi thử lại.");
+    let r;
+    try { r = await fetch(src, { cache: "no-store" }); } catch (_) { throw new UserError("Không tải được ảnh cũ để chuyển kho."); }
+    if (!r.ok) throw new UserError("Không tải được ảnh cũ để chuyển kho (" + r.status + ").");
+    const bytes = new Uint8Array(await r.arrayBuffer());
+    if (lc(ethers.keccak256(bytes)) !== lc(entry.checksum)) throw new UserError("Ảnh cũ không khớp checksum đã ghi, đã hủy để an toàn.");
+    const ext = IMG_EXT[entry.mime];
+    if (!ext) throw new UserError("Ảnh cũ có định dạng không hỗ trợ.");
+    const bucket = bucketFor(kind, priv), path = orgId + "/" + kind + "/" + entry.checksum + "." + ext;
+    const f = { bucket, path, bytes, mime: entry.mime, name: entry.name, size: entry.size, checksum: entry.checksum, url: assetUrl(bucket, path) };
+    files.push(f);
+    return { role: entry.role, name: entry.name, mime: entry.mime, size: entry.size, checksum: entry.checksum, url: f.url };
+  }
 
   /** Đọc ảnh người dùng chọn, kiểm tra loại và dung lượng, tính checksum nội dung (keccak256 của byte tệp). */
   async function prepareImage(file, bucket, orgId, kind) {
@@ -7843,7 +8003,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     const bytes = new Uint8Array(await file.arrayBuffer());
     const checksum = ethers.keccak256(bytes);
     const path = orgId + "/" + kind + "/" + checksum + "." + ext;
-    return { bucket, path, bytes, mime: file.type, name: file.name.slice(0, 120), size: bytes.length, checksum, url: publicUrl(bucket, path) };
+    return { bucket, path, bytes, mime: file.type, name: file.name.slice(0, 120), size: bytes.length, checksum, url: assetUrl(bucket, path) };
   }
   const fileEntry = (role, f) => ({ role, name: f.name, mime: f.mime, size: f.size, checksum: f.checksum, url: f.url });
   async function sbUpload(f) {
@@ -8344,25 +8504,30 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     add(vt.errors.length === 0, "Địa chỉ cử tri hợp lệ" + (vt.errors.length ? " (sai: " + vt.errors.slice(0, 2).join(", ") + ")." : "."));
     add(vt.list.length >= 1 && vt.list.length <= LIMITS.MAX_VOTERS, "Số cử tri: 1–" + LIMITS.MAX_VOTERS.toLocaleString("vi-VN") + " (hiện " + vt.list.length + ").");
     if (vt.dups.length) add(true, "Đã loại " + vt.dups.length + " địa chỉ cử tri trùng.");
-    return { checks, title, names, reg, com, rev, quorum, voters: vt.list, candidateWallets: wallets.filter((w) => ethers.isAddress(w)).map(ethers.getAddress), orgId: ctx ? ctx.orgId : 0, ok: checks.every((c) => c[0]) };
+    const visibility = readVis("c");
+    updateFileWarn(visibility);
+    add(true, "Phạm vi xem: thông tin " + SCOPE_VI[visibility.info].toLowerCase() + ", hồ sơ ứng viên " + SCOPE_VI[visibility.candidates].toLowerCase() + ", kết quả " + SCOPE_VI[visibility.results].toLowerCase() + (visibility.roles.length ? " (thêm " + visibility.roles.join(", ") + ")" : "") + ".");
+    return { checks, visibility, title, names, reg, com, rev, quorum, voters: vt.list, candidateWallets: wallets.filter((w) => ethers.isAddress(w)).map(ethers.getAddress), orgId: ctx ? ctx.orgId : 0, ok: checks.every((c) => c[0]) };
   }
 
   /** Dựng toàn bộ metadata (kể cả checksum và đường dẫn ảnh) để hash xem trước == hash gửi lên chuỗi. */
   async function buildMeta(form) {
     const files = [];
     const coverFile = $("cCover").files && $("cCover").files[0];
-    const cover = await prepareImage(coverFile, "election-assets", form.orgId, "cover");
+    const vis = form.visibility, infoP = vis.info !== "public", candP = vis.candidates !== "public";
+    const cover = await prepareImage(coverFile, bucketFor("cover", infoP), form.orgId, "cover");
     if (cover) files.push(cover);
     const election = mkElectionMeta({
       organizationId: form.orgId, title: form.title, description: $("cDesc").value.trim(), purpose: $("cPurpose").value.trim(),
       eligibility: $("cEligibility").value.trim(), cover: cover ? fileEntry("cover", cover) : null,
+      visibility: vis, salt: infoP ? saltFor("e") : null,
     });
     const candidates = [];
     for (let i = 0; i < form.names.length; i++) {
       const f = S.candForm[i] || {};
-      const av = await prepareImage(f.avatar, "candidate-assets", form.orgId, "avatar");
+      const av = await prepareImage(f.avatar, bucketFor("avatar", candP), form.orgId, "avatar");
       if (av) files.push(av);
-      candidates.push(mkCandidateMeta({ index: i, fullName: form.names[i], bio: (f.bio || "").trim(), experience: (f.experience || "").trim(), achievements: (f.achievements || "").trim(), manifesto: (f.manifesto || "").trim(), avatar: av ? fileEntry("avatar", av) : null }));
+      candidates.push(mkCandidateMeta({ salt: candP ? saltFor("c" + i) : null, index: i, fullName: form.names[i], bio: (f.bio || "").trim(), experience: (f.experience || "").trim(), achievements: (f.achievements || "").trim(), manifesto: (f.manifesto || "").trim(), avatar: av ? fileEntry("avatar", av) : null }));
     }
     return { election, candidates, electionHash: metadataHash(election), candidateHashes: candidates.map(metadataHash), files };
   }
@@ -8383,7 +8548,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     box.classList.remove("hidden");
     const dl = el("dl", "kv");
     const rows = [["Merkle root", tree.root], ["Số cử tri (voterCount)", String(tree.voterCount)], ["Độ sâu cây", String(tree.depth) + " tầng (mỗi proof " + tree.depth + " phần tử)"], ["Tổng thời gian", form.reg + form.com + form.rev + " phút"]];
-    if (meta) { rows.push(["Hash cuộc bầu cử", meta.electionHash]); rows.push(["Hash ứng viên", meta.candidateHashes.length + " hồ sơ (" + shortHash(meta.candidateHashes[0]) + "…)"]); if (meta.files.length) rows.push(["Ảnh sẽ tải lên (công khai)", String(meta.files.length)]); }
+    if (meta) { rows.push(["Hash cuộc bầu cử", meta.electionHash]); rows.push(["Hash ứng viên", meta.candidateHashes.length + " hồ sơ (" + shortHash(meta.candidateHashes[0]) + "…)"]); if (meta.files.length) rows.push(["Ảnh sẽ tải lên", meta.files.length + " (" + meta.files.filter((f) => isPrivateBucket(f.bucket)).length + " vào kho riêng tư)"]); }
     for (const [k, v] of rows) { dl.appendChild(el("dt", "", k)); dl.appendChild(el("dd", /root|Hash/.test(k) ? "mono" : "", v)); }
     box.appendChild(dl);
     $("btnDownloadProofs").disabled = false;
@@ -8416,6 +8581,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     };
     await S.contract.createElection.estimateGas(p);
     const { rc } = await sendTx("Gửi yêu cầu tạo cuộc bầu cử", () => S.contract.createElection(p));
+    S.salts = null;
     let newId = null;
     for (const lg of rc.logs) { try { const ev = IFACE.parseLog(lg); if (ev && ev.name === "ElectionCreated") newId = ev.args.id; } catch (_) { /* log khác */ } }
     const box = $("cResult");
@@ -8440,6 +8606,8 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     const n = e.candidates.length;
     const chainCands = await pool(Array.from({ length: n }, (_, i) => i), 4, async (i) => { const r = await c.getCandidateMetadata(e.id, i); return { hash: lc(r.metadataHash), version: Number(r.version) }; });
     const res = { election: { chainHash: lc(e.metaHash), version: e.metaVersion, state: "none" }, candidates: chainCands.map((x, i) => ({ index: i, name: e.candidates[i], chainHash: x.hash, version: x.version, state: "none" })), error: "" };
+    await loadVis([Number(e.id)]);
+    res.vis = visOf(e.id);
     if (!sbConfigured()) { res.error = "Chưa cấu hình Supabase nên chưa lấy được nội dung."; return res; }
     try {
       const rows = await sbGet("metadata_history?election_id_onchain=eq." + Number(e.id) + "&select=metadata_type,candidate_id_onchain,metadata_hash,content&content=not.is.null&limit=500");
@@ -8447,7 +8615,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       const pickRow = (type, idx, hash) => (rows || []).concat(drafts || []).find((r) => r.metadata_type === type && (type === "election" || Number(r.candidate_id_onchain) === idx) && lc(r.metadata_hash) === hash && r.content);
       const judge = (type, idx, hash) => {
         const r = pickRow(type, idx, hash);
-        if (!r) return { state: "none", content: null };
+        if (!r) return { state: isLocked(e.id, type === "election" ? "info" : "candidates") ? "locked" : "none", content: null };
         let got = null;
         try { got = metadataHash(r.content); } catch (_) { got = null; }
         const ok = got === hash && (type === "election" ? true : r.content && Number(r.content.index) === idx);
@@ -8466,7 +8634,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     if (!res) { box.appendChild(el("div", "small muted", "Chưa tải.")); return; }
     const mk = (label, r) => {
       const li = el("li", r.state === "ok" ? "good" : r.state === "bad" ? "bad" : "", "");
-      const tag = r.state === "ok" ? "Khớp hash trên chuỗi" : r.state === "bad" ? "KHÔNG khớp hash trên chuỗi, đừng tin nội dung này" : "Chưa có nội dung để đối chiếu";
+      const tag = r.state === "ok" ? "Khớp hash trên chuỗi" : r.state === "bad" ? "KHÔNG khớp hash trên chuỗi, đừng tin nội dung này" : r.state === "locked" ? "Nội dung không công khai với ví hiện tại, chưa thể đối chiếu" : "Chưa có nội dung để đối chiếu";
       li.appendChild(el("b", "", label + ": "));
       li.appendChild(document.createTextNode(tag + " · v" + r.version + " · "));
       li.appendChild(el("span", "mono tiny", shortHash(r.chainHash)));
@@ -8476,6 +8644,10 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     ul.appendChild(mk("Cuộc bầu cử", res.election));
     res.candidates.forEach((x) => ul.appendChild(mk("Ứng viên " + (x.index + 1) + " (" + x.name + ")", x)));
     box.appendChild(ul);
+    if (res.vis) {
+      const v = res.vis;
+      box.appendChild(el("div", "small muted", "Phạm vi xem: thông tin " + SCOPE_VI[v.info].toLowerCase() + " · hồ sơ ứng viên " + SCOPE_VI[v.candidates].toLowerCase() + " · kết quả " + SCOPE_VI[v.results].toLowerCase() + (v.roles.length ? " (vai trò thêm: " + v.roles.join(", ") + ")" : "") + "."));
+    }
     if (res.error) box.appendChild(el("div", "alert warn", res.error));
     const el0 = res.election;
     if (el0.state === "ok" && el0.content) {
@@ -8524,7 +8696,14 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   }
 
   function wirePlatform2() {
-    $("btnSbLogin").onclick = async () => { await run("btnSbLogin", "Đang đăng nhập…", async () => { if (sbActive()) sbLogout(); else await sbLogin(); }); renderLoginState(); };
+    $("btnSbLogin").onclick = async () => {
+      await run("btnSbLogin", "Đang đăng nhập…", async () => {
+        if (sbActive()) sbLogout(); else await sbLogin();
+        VIS.clear(); SIGNED.clear(); S.metaVerify = null;           // quyền xem đổi theo phiên đăng nhập
+        if (S.election && readReady()) { await loadElection(true); if (!S.mvPending) await refreshMetaVerify(); if (S.route === "result") await doResult(); }
+      });
+      renderLoginState();
+    };
     $("btnOrgReload").onclick = () => run("btnOrgReload", "Đang tải…", async () => { await loadOrgs(); if (S.orgPick) await pickOrg(S.orgPick.id); });
     $("oType").onchange = () => syncOrgFormFields("o"); syncOrgFormFields("o");
     $("eType").onchange = () => syncOrgFormFields("e");
@@ -8549,6 +8728,8 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   async function initPlatform() {
     sbRestore();
     renderLoginState();
+    mountVisFields("cVisBox", "c", false);
+    mountVisFields("moVisBox", "mo", true);
     renderCandEditors();
     if (reader()) {
       try { await loadOrgs(); } catch (e) { console.warn("loadOrgs", e); }

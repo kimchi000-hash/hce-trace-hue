@@ -32,7 +32,7 @@
 | **Lab 10** | Rà soát mã nguồn do AI sinh ra (Audit `VaultBuggy.sol` và `ProjectCore.sol`), vá lỗi CEI và Custom Errors | [`docs/AI_JOURNAL.md`](AI_JOURNAL.md), [`evidence/lab-10/`](../evidence/lab-10/) | ✅ **HOÀN THÀNH** |
 | **Lab 11** | Nâng cấp Bầu cử kín Commit - Reveal có Quorum, triển khai Sepolia, thực nghiệm 1 ca hợp lệ và 1 ca gian lận | [`evidence/lab-11/README.md`](../evidence/lab-11/README.md), Hợp đồng trên Sepolia | ✅ **HOÀN THÀNH** |
 | **Lab 12** | **Gate Review 1:** Duyệt Codebase, bảo vệ kịch bản 3 phút, kiểm tra 5/5 tiêu chuẩn sức khỏe repo và khóa phạm vi | [`docs/GATE_REVIEW_1.md`](GATE_REVIEW_1.md), [`evidence/lab-12/README.md`](../evidence/lab-12/README.md) | ✅ **HOÀN THÀNH (ĐẠT)** |
-| **Lab 13** | Kiểm thử chuyên sâu: bộ test nhóm A–H (gồm nhóm E chuyên gian lận) và hardening; sau nâng cấp V2 bộ test mở rộng thành 194 ca Hardhat + 80 ca SQL | [`test/`](../test/), [`evidence/lab-13/`](../evidence/lab-13/), [`docs/GAS_REPORT.md`](GAS_REPORT.md) | ✅ **HOÀN THÀNH** |
+| **Lab 13** | Kiểm thử chuyên sâu: bộ test nhóm A–H (gồm nhóm E chuyên gian lận) và hardening; sau nâng cấp V2 bộ test mở rộng thành 201 ca Hardhat + 82 ca SQL | [`test/`](../test/), [`evidence/lab-13/`](../evidence/lab-13/), [`docs/GAS_REPORT.md`](GAS_REPORT.md) | ✅ **HOÀN THÀNH** |
 | **Lab 14** | Rà soát chéo: có sẵn báo cáo về hợp đồng của nhóm VotaChain (`AUDIT_REPORT.md`); tự rà soát theo 10 hạng mục; chờ báo cáo nhận | [`docs/AUDIT_REPORT.md`](AUDIT_REPORT.md), [`docs/SELF_AUDIT.md`](SELF_AUDIT.md) | 🔄 *Chờ báo cáo từ nhóm bạn* |
 | **Lab 15** | Giao diện Web DApp dùng `ethers.js v6`; triển khai lại Sepolia và GitHub Pages | [`web/`](../web/), [`docs/SEPOLIA_DEPLOY_V2.md`](SEPOLIA_DEPLOY_V2.md), [`docs/PRESENTATION_PLAN.md`](PRESENTATION_PLAN.md) | 🔄 *V2 đã triển khai Sepolia (`deployments/sepolia.json`); chờ URL công khai (Vercel) và bằng chứng giao dịch V2* |
 
@@ -61,7 +61,7 @@
 | # | Việc | Người phụ trách | Hạn | Trạng thái |
 | :-: | :--- | :-: | :-: | :-: |
 | 1 | Chạy trọn một cuộc bầu V2 trên Sepolia (tổ chức → duyệt → commit → reveal → result → SBT) và ghi mã giao dịch vào `evidence/v2/README.md` | Kim Chi | trước Lab 20 | ☐ |
-| 2 | Chạy migration `20261106000001_organization_profile.sql` trên Supabase thật; thử lưu/đọc hồ sơ tổ chức và ảnh ứng viên với Supabase thật (các test giao diện hiện dùng Supabase giả lập) | Kim Chi | trước Lab 20 | ☐ |
+| 2 | Chạy migration `20261106000001_organization_profile.sql` **và `20261106000002_visibility.sql`** (phạm vi xem) trên Supabase thật, triển khai lại `chain-sync`; thử lưu/đọc hồ sơ tổ chức và ảnh ứng viên với Supabase thật (các test giao diện hiện dùng Supabase giả lập) | Kim Chi | trước Lab 20 | ☐ |
 | 3 | Triển khai web lên Vercel (URL công khai, sống ≥ 6 tháng), thử trên điện thoại | Kim Chi | trước Lab 19 | ☐ |
 | 4 | Gộp nhánh `phase4-supabase` vào `main` sau khi bước 2–3 đạt | Cả hai | sau bước 3 | ☐ |
 | 5 | Xử lý báo cáo rà soát chéo nhận từ nhóm bạn (điền `docs/SELF_AUDIT.md` mục chờ) | Cả hai | trước Lab 20 | ☐ |

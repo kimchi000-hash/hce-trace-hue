@@ -52,6 +52,8 @@ Các pha: `Registration` (chờ duyệt) → `Commit` → `Reveal` → `Ended`. 
 | `_resetApprovals` (519–534) | Xóa chữ ký đã có khi metadata đổi | Đại diện phải duyệt lại nội dung mới — không "duyệt bản A rồi đổi thành bản B" |
 | `getCandidateMetadata` (495) | Trả `(hash, version)` | Giao diện băm lại nội dung Supabase trong trình duyệt và so với hash này; khớp mới hiện "Đã xác thực hash" |
 
+> **Phạm vi xem không nằm trong hợp đồng.** `visibility` (info / candidates / results) là một trường trong JSON metadata; hợp đồng chỉ thấy hash. Người nào xem được nội dung là việc của RLS Supabase (`can_view_election`), không phải của các hàm trên.
+
 ### 2.3 Bỏ phiếu commit–reveal
 
 | Hàm (dòng) | Ai gọi | Làm gì | Kiểm tra theo thứ tự |

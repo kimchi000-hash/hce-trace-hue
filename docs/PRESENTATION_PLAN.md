@@ -27,7 +27,7 @@ Sổ tay yêu cầu demo trực tiếp, không dùng video quay sẵn thay thế
 1. **Tiêu đề + một câu** (trên cùng), tên nhóm và mã SV (Kim Chi 23K4300025, Võ Thị Thư 23K4300038).
 2. **Sơ đồ kiến trúc:** `OrganizationRegistry` (tổ chức, thành viên, đại diện) → `ProjectCore` (vòng đời cuộc bầu, commit–reveal) → `VoterCardSBT` (thẻ không chuyển nhượng); Supabase chỉ giữ nội dung, hash nằm trên chuỗi.
 3. **Quy tắc then chốt:** băm gắn ví và ID; ngưỡng duyệt ⌈2n/3⌉; đại diện là ứng viên bị loại khỏi nhóm duyệt; quorum theo bps; hòa → không hợp lệ.
-4. **Số liệu thật** (`docs/GAS_REPORT.md`, đo bằng `npm run gas`): `commit` ≈ 68,6 nghìn gas, `reveal` 55,7–89,9 nghìn, `createElection` ≈ 1,01 triệu (người tạo trả, một lần); 194 test Hardhat + 80 test SQL; tối ưu `REVEALED` −19,5 nghìn gas mỗi lần mở phiếu (bản đầu).
+4. **Số liệu thật** (`docs/GAS_REPORT.md`, đo bằng `npm run gas`): `commit` ≈ 68,6 nghìn gas, `reveal` 55,7–89,9 nghìn, `createElection` ≈ 1,01 triệu (người tạo trả, một lần); 201 test Hardhat + 82 test SQL; tối ưu `REVEALED` −19,5 nghìn gas mỗi lần mở phiếu (bản đầu).
 5. **Giới hạn trung thực:** mục "điểm yếu ghi nhận" trong `SELF_AUDIT.md`.
 6. **Mã QR** tới URL DApp công khai (phải sống ≥ 6 tháng) và repo GitHub. Chỉ in sau khi đã triển khai thật và thử quét bằng điện thoại.
 

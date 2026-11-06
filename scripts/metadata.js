@@ -37,16 +37,38 @@ const verifyMetadata = (obj, expectedHash) => {
 /** Phan tu manifest cua mot file: checksum la hash NOI DUNG file, khong phai hash URL. */
 const fileEntry = (role, name, mime, bytes) => ({ role, name, mime, size: bytes.length, checksum: fileChecksum(bytes) });
 
-const electionMetadata = (o) => ({
-  schema: "votechain.election.v1",
-  organizationId: o.organizationId, title: o.title, description: o.description || "", purpose: o.purpose || "",
-  eligibility: o.eligibility || "", schedule: o.schedule || null, extra: o.extra || null, cover: o.cover || null,
-});
-const candidateMetadata = (o) => ({
-  schema: "votechain.candidate.v1",
-  index: o.index, fullName: o.fullName, bio: o.bio || "", experience: o.experience || "", achievements: o.achievements || "",
-  manifesto: o.manifesto || "", avatar: o.avatar || null, documents: o.documents || [],
-});
+/** Pham vi xem: moi truong thuoc {public, internal, restricted}; `roles` (chi co nghia o muc restricted) chi gom Manager/Proposer.
+ *  Nguoi tao va dai dien duyet cua to chuc LUON xem duoc, nen khong can liet ke. Sai gia tri => nem loi (khong am tham doi thanh cong khai). */
+const SCOPES = ["public", "internal", "restricted"], EXTRA_ROLES = ["Manager", "Proposer"];
+const visibilityMetadata = (v) => {
+  if (!v || typeof v !== "object") throw new Error("visibility phai la object");
+  for (const k of ["info", "candidates", "results"]) if (!SCOPES.includes(v[k])) throw new Error("visibility." + k + " khong hop le: " + v[k]);
+  const roles = Array.isArray(v.roles) ? v.roles : [];
+  for (const r of roles) if (!EXTRA_ROLES.includes(r)) throw new Error("visibility.roles chi nhan Manager/Proposer, nhan: " + r);
+  return { info: v.info, candidates: v.candidates, results: v.results, roles: [...new Set(roles)].sort() };
+};
+
+// `visibility` va `salt` chi xuat hien khi duoc truyen vao: cuoc bau cu / ho so cu (khong co hai truong nay) giu nguyen hash, hieu la cong khai.
+// `salt`: chuoi ngau nhien them vao noi dung KHONG cong khai, de nguoi khac khong do nguoc noi dung tu hash cong khai tren chuoi.
+const electionMetadata = (o) => {
+  const m = {
+    schema: "votechain.election.v1",
+    organizationId: o.organizationId, title: o.title, description: o.description || "", purpose: o.purpose || "",
+    eligibility: o.eligibility || "", schedule: o.schedule || null, extra: o.extra || null, cover: o.cover || null,
+  };
+  if (o.visibility) m.visibility = visibilityMetadata(o.visibility);
+  if (o.salt) m.salt = String(o.salt);
+  return m;
+};
+const candidateMetadata = (o) => {
+  const m = {
+    schema: "votechain.candidate.v1",
+    index: o.index, fullName: o.fullName, bio: o.bio || "", experience: o.experience || "", achievements: o.achievements || "",
+    manifesto: o.manifesto || "", avatar: o.avatar || null, documents: o.documents || [],
+  };
+  if (o.salt) m.salt = String(o.salt);
+  return m;
+};
 
 /** Ho so to chuc: hash cua doi tuong nay duoc ghi len chuoi lam infoHash luc registerOrganization(name, infoHash). Logo KHONG nam trong ho so. */
 const organizationMetadata = (o) => ({
@@ -55,4 +77,4 @@ const organizationMetadata = (o) => ({
   contactEmail: o.contactEmail || "", website: o.website || "", foundedYear: o.foundedYear === undefined ? null : o.foundedYear,
 });
 
-module.exports = { canonicalize, metadataHash, fileChecksum, verifyMetadata, fileEntry, electionMetadata, candidateMetadata, organizationMetadata };
+module.exports = { canonicalize, metadataHash, fileChecksum, verifyMetadata, fileEntry, electionMetadata, candidateMetadata, organizationMetadata, visibilityMetadata };

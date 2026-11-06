@@ -1,6 +1,6 @@
 # VoteChain v2: kiến trúc tổ chức, chống spam và metadata hash
 
-Tài liệu thiết kế cho nâng cấp "nền tảng bầu cử nội bộ nhiều tổ chức". **Trạng thái hiện tại:** ba hợp đồng (`OrganizationRegistry`, `ProjectCore`, `VoterCardSBT`) đã **triển khai trên Sepolia** (địa chỉ ở `deployments/sepolia.json` và README); Supabase (migration, RLS, Storage, hàm SQL, Edge Function `wallet-auth` và `chain-sync`) đã viết và kiểm thử cục bộ (80 ca); giao diện `web/index.html` đã có tổ chức, tạo/duyệt cuộc bầu cử, đăng nhập ví, xác thực hash, biểu đồ, thẻ cử tri; bộ test hợp đồng hiện 194 ca. **Chưa làm:** kiểm thử với Supabase thật và MetaMask thật trong một lượt đầy đủ, và đưa trang lên địa chỉ web công khai. Hướng dẫn: `docs/SEPOLIA_DEPLOY_V2.md`, `docs/SUPABASE_SETUP.md`.
+Tài liệu thiết kế cho nâng cấp "nền tảng bầu cử nội bộ nhiều tổ chức". **Trạng thái hiện tại:** ba hợp đồng (`OrganizationRegistry`, `ProjectCore`, `VoterCardSBT`) đã **triển khai trên Sepolia** (địa chỉ ở `deployments/sepolia.json` và README); Supabase (migration, RLS, Storage, hàm SQL, Edge Function `wallet-auth` và `chain-sync`) đã viết và kiểm thử cục bộ (82 ca); giao diện `web/index.html` đã có tổ chức, tạo/duyệt cuộc bầu cử, đăng nhập ví, xác thực hash, biểu đồ, thẻ cử tri; bộ test hợp đồng hiện 201 ca. **Chưa làm:** kiểm thử với Supabase thật và MetaMask thật trong một lượt đầy đủ, và đưa trang lên địa chỉ web công khai. Hướng dẫn: `docs/SEPOLIA_DEPLOY_V2.md`, `docs/SUPABASE_SETUP.md`.
 
 ## 1. Hai hợp đồng, một ranh giới rõ
 

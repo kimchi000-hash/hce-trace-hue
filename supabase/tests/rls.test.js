@@ -233,8 +233,9 @@ const put = (ctx, bucket, name, n = 1) => run(ctx, "insert into storage.objects 
 
 test("L. Storage: buckets cau hinh dung (cong khai, gioi han dung luong, MIME)", async () => {
   const b = await rows(admin, "select id, public, file_size_limit, allowed_mime_types from storage.buckets order by id");
-  assert.deepEqual(b.map((x) => x.id), ["candidate-assets", "election-assets", "organization-assets"]);
-  assert.ok(b.every((x) => x.public === true));
+  assert.deepEqual(b.map((x) => x.id), ["candidate-assets", "candidate-private", "election-assets", "election-private", "organization-assets"]);
+  assert.ok(b.filter((x) => !/-private$/.test(x.id)).every((x) => x.public === true));
+  assert.ok(b.filter((x) => /-private$/.test(x.id)).every((x) => x.public === false), "kho rieng tu phai khong cong khai");
   assert.equal(Number(b.find((x) => x.id === "organization-assets").file_size_limit), 2 * 1024 * 1024);
   assert.ok(!b.find((x) => x.id === "organization-assets").allowed_mime_types.includes("application/pdf"));
   assert.ok(b.find((x) => x.id === "candidate-assets").allowed_mime_types.includes("application/pdf"));
@@ -426,9 +427,9 @@ test("V. Kiem toan quyen: ma tran GRANT, RLS bat, ham SECURITY DEFINER co search
   const fns = await rows(admin, `select p.proname n, p.prosecdef def, p.proconfig cfg,
        has_function_privilege('anon', p.oid, 'EXECUTE') a, has_function_privilege('authenticated', p.oid, 'EXECUTE') u, has_function_privilege('service_role', p.oid, 'EXECUTE') s
        from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.prokind='f' order by 1`);
-  const CLIENT_OK = ["auth_wallet", "has_org_role", "has_org_role_onchain", "org_is_verified", "can_write_asset"];
+  const CLIENT_OK = ["auth_wallet", "has_org_role", "has_org_role_onchain", "org_is_verified", "can_write_asset", "can_view_election", "can_read_private_asset"];
   const AUTH_ONLY = ["save_organization_profile"];   // chi nguoi dang nhap (khong anon)
-  assert.equal(fns.length, 12);
+  assert.equal(fns.length, 14);
   for (const f of fns) {
     assert.ok((f.cfg || []).some((c) => /^search_path=("")?$|^search_path=""$|^search_path=$/.test(c) || c.replace(/\s/g, "") === 'search_path=""'), `${f.n} thieu search_path rong: ${JSON.stringify(f.cfg)}`);
     assert.equal(f.a, CLIENT_OK.includes(f.n), `anon EXECUTE ${f.n}`);
@@ -436,7 +437,7 @@ test("V. Kiem toan quyen: ma tran GRANT, RLS bat, ham SECURITY DEFINER co search
     assert.equal(f.s, true, `service_role EXECUTE ${f.n}`);
   }
   const defs = fns.filter((f) => f.def).map((f) => f.n).sort();
-  assert.deepEqual(defs, ["consume_wallet_nonce", "has_org_role", "has_org_role_onchain", "issue_wallet_nonce", "org_is_verified", "purge_expired_nonces", "save_organization_profile"]);
+  assert.deepEqual(defs, ["can_read_private_asset", "can_view_election", "consume_wallet_nonce", "has_org_role", "has_org_role_onchain", "issue_wallet_nonce", "org_is_verified", "purge_expired_nonces", "save_organization_profile"]);
   // PUBLIC khong con quyen EXECUTE tren cac ham nhay cam
   const pub = await rows(admin, `select p.proname n from pg_proc p join pg_namespace n on n.oid=p.pronamespace
        where n.nspname='public' and p.prokind='f' and p.proname = any($1) and has_function_privilege('public', p.oid, 'EXECUTE')`, [["issue_wallet_nonce", "consume_wallet_nonce", "purge_expired_nonces", "limit_metadata_drafts"]]);
@@ -468,8 +469,8 @@ test("W. Storage: khong ghi de (upsert), khong doi ten / chuyen thu muc / chuyen
 
 test("X. Storage: bucket cong khai chi nhan dung loai file; moi duong dan hop le deu nam trong thu muc to chuc cua nguoi tai", async () => {
   const names = (await rows(admin, "select b.id, b.public, b.allowed_mime_types m, b.file_size_limit l from storage.buckets b where b.id <> 'other-bucket' order by 1"));
-  assert.deepEqual(names.map((b) => b.id), ["candidate-assets", "election-assets", "organization-assets"]);
-  for (const b of names) { assert.equal(b.public, true); assert.ok(b.l > 0 && b.l <= 10 * 1024 * 1024); assert.ok(!b.m.some((t) => /html|svg|javascript|octet|zip/i.test(t)), "MIME nguy hiem trong " + b.id); }
+  assert.deepEqual(names.map((b) => b.id), ["candidate-assets", "candidate-private", "election-assets", "election-private", "organization-assets"]);
+  for (const b of names) { assert.equal(b.public, !/-private$/.test(b.id)); assert.ok(b.l > 0 && b.l <= 10 * 1024 * 1024); assert.ok(!b.m.some((t) => /html|svg|javascript|octet|zip/i.test(t)), "MIME nguy hiem trong " + b.id); }
   // mọi duong dan ghi duoc deu ep dung quy tac: kiem tra truc tiep ham voi du lieu bien
   const ok = async (b, n) => (await rows(who(MGR, 1), "select public.can_write_asset($1,$2) ok", [b, n]))[0].ok;
   assert.equal(await ok("organization-assets", `1/logo/${sha(8001)}.webp`), true);
@@ -479,6 +480,100 @@ test("X. Storage: bucket cong khai chi nhan dung loai file; moi duong dan hop le
   assert.equal(await ok("election-assets", `1/cover/${sha(8003)}.png%00.html`), false);
   assert.equal(await ok("election-assets", `999999999999999999999/cover/${sha(8004)}.png`), false);   // id qua dai (chong tran so ::bigint)
   assert.equal(await ok("election-assets", `0/cover/${sha(8005)}.png`), false);          // id = 0 khong ton tai
+});
+
+// ---------------------------------------------------------------- Pham vi xem (cong khai / noi bo / han che)
+test("Y. Pham vi xem: RLS ep quyen doc noi dung theo vai tro, khong chi an giao dien", async () => {
+  const MEM2 = w(6), V = (ctx, e, sc) => rows(ctx, "select public.can_view_election($1,$2) ok", [e, sc]).then((r) => r[0].ok);
+  await db.query("insert into public.organization_members (organization_id, wallet_address, role) values ($1,$2,'Member')", [orgA, MEM2]);   // thanh vien thuong, khong phai dai dien
+  const chain = (id, info, cand, res, roles) => db.query(`insert into public.elections_chain (election_id_onchain, organization_id, proposer_wallet, created_at_chain, reg_end, commit_end, reveal_end,
+     request_status, candidate_count, metadata_hash, metadata_version, info_visibility, candidate_visibility, results_visibility, restricted_roles)
+     values ($1,$2,$3,now(),now(),now(),now(),'Approved',2,$4,1,$5,$6,$7,$8)`, [id, orgA, PROP, H(100 + id), info, cand, res, roles]);
+  await chain(1, "public", "internal", "restricted", []);        // cong khai / noi bo / han che (khong tich them vai tro)
+  await chain(2, "restricted", "restricted", "restricted", ["Manager"]);
+  for (const id of [1, 2]) {
+    await db.query("insert into public.elections_metadata (election_id_onchain, organization_id, metadata_hash, metadata_version, status, title) values ($1,$2,$3,1,'verified','T')", [id, orgA, H(100 + id)]);
+    await db.query("insert into public.candidates_metadata (election_id_onchain, candidate_id_onchain, onchain_name, metadata_hash, metadata_version, status, full_name) values ($1,0,'A',$2,1,'verified','Ho ten')", [id, H(200 + id)]);
+    await db.query(`insert into public.metadata_history (organization_id, election_id_onchain, candidate_id_onchain, metadata_type, metadata_hash, metadata_version, content, transaction_hash, onchain_seen)
+       values ($1,$2,0,'candidate',$3,1,$4::jsonb,$5,true)`, [orgA, id, H(200 + id), JSON.stringify({ bio: "x", avatar: { url: `https://x.supabase.co/storage/v1/object/authenticated/candidate-private/1/avatar/${sha(300 + id)}.png` } }), H(400 + id)]);
+  }
+  const A = anon, outsider = who(OUT, 4), otherMgr = who(MGR_B, 5), member = who(MEM2, 6), approver = who(MEM, 3), manager = who(MGR, 1), creator = who(PROP, 2);
+  // cuoc 1: thong tin cong khai, ho so noi bo, ket qua han che (khong tich vai tro)
+  for (const [n, ctx, info, cand, res] of [
+    ["anon", A, true, false, false], ["nguoi ngoai", outsider, true, false, false], ["Manager to chuc khac", otherMgr, true, false, false],
+    ["thanh vien thuong", member, true, true, false], ["dai dien duyet", approver, true, true, true], ["nguoi tao", creator, true, true, true],
+    ["Manager (khong tich)", manager, true, true, false],
+  ]) {
+    assert.equal(await V(ctx, 1, "info"), info, `cuoc 1 info ${n}`);
+    assert.equal(await V(ctx, 1, "candidates"), cand, `cuoc 1 ho so ${n}`);
+    assert.equal(await V(ctx, 1, "results"), res, `cuoc 1 ket qua ${n}`);
+  }
+  // cuoc 2: tat ca han che, tich them Manager
+  for (const [n, ctx, ok] of [["anon", A, false], ["nguoi ngoai", outsider, false], ["Manager to chuc khac", otherMgr, false], ["thanh vien thuong", member, false],
+                              ["dai dien duyet", approver, true], ["nguoi tao", creator, true], ["Manager (duoc tich)", manager, true]]) {
+    for (const sc of ["info", "candidates", "results"]) assert.equal(await V(ctx, 2, sc), ok, `cuoc 2 ${sc} ${n}`);
+  }
+  assert.equal(await V(creator, 999, "info"), false);                      // khong ton tai => khong cho xem
+  assert.equal(await V(creator, 1, "bogus"), false);                       // pham vi la => tu choi
+  // noi dung that su bi chan o tang du lieu (goi thang bang SQL, khong qua giao dien)
+  const cnt = async (ctx, t, id) => Number((await rows(ctx, `select count(*) c from public.${t} where ${t === "metadata_history" ? "election_id_onchain" : "election_id_onchain"} = $1`, [id]))[0].c);
+  for (const t of ["elections_metadata", "candidates_metadata", "metadata_history"]) {
+    assert.equal(await cnt(A, t, 2), 0, `anon doc ${t} cuoc 2`);
+    assert.equal(await cnt(outsider, t, 2), 0, `nguoi ngoai doc ${t} cuoc 2`);
+    assert.equal(await cnt(member, t, 2), 0, `thanh vien thuong doc ${t} cuoc 2`);
+    assert.equal(await cnt(manager, t, 2), 1, `Manager duoc tich doc ${t} cuoc 2`);
+    assert.equal(await cnt(approver, t, 2), 1, `dai dien duyet doc ${t} cuoc 2`);
+  }
+  assert.equal(await cnt(A, "elections_metadata", 1), 1);                  // thong tin cuoc 1 cong khai
+  assert.equal(await cnt(A, "candidates_metadata", 1), 0);                 // ho so cuoc 1 noi bo: anon khong thay
+  assert.equal(await cnt(member, "candidates_metadata", 1), 1);            // thanh vien thay
+  assert.equal(await cnt(A, "metadata_history", 1), 0);
+  assert.equal(await cnt(member, "metadata_history", 1), 1);
+  // hang ban nhap: nguoi tao va Proposer/Manager cua to chuc doc duoc, thanh vien thuong thi khong
+  await db.query("insert into public.metadata_history (organization_id, metadata_type, metadata_hash, content, created_by) values ($1,'election',$2,'{\"a\":1}'::jsonb,$3)", [orgA, H(500), PROP]);
+  const drafts = async (ctx) => Number((await rows(ctx, "select count(*) c from public.metadata_history where not onchain_seen and metadata_hash = $1", [H(500)]))[0].c);
+  assert.equal(await drafts(creator), 1); assert.equal(await drafts(manager), 1); assert.equal(await drafts(member), 0); assert.equal(await drafts(outsider), 0); assert.equal(await drafts(A), 0);
+  await db.query("delete from public.metadata_history where metadata_hash = $1", [H(500)]);
+
+  // ---- Kho rieng tu: chi doc duoc khi co hang noi dung tham chieu va nguoi doc duoc xem hang do
+  const obj = (n) => `1/avatar/${sha(n)}.png`;
+  const mk = async (n) => db.query("insert into storage.objects (bucket_id, name) values ('candidate-private', $1)", [obj(n)]);
+  await mk(301); await mk(302); await mk(399);                              // 301: cuoc 1 (noi bo), 302: cuoc 2 (han che), 399: khong ai tham chieu
+  const can = (ctx, n) => rows(ctx, "select public.can_read_private_asset('candidate-private', $1) ok", [obj(n)]).then((r) => r[0].ok);
+  const sel = (ctx, n) => rows(ctx, "select count(*) c from storage.objects where bucket_id='candidate-private' and name=$1", [obj(n)]).then((r) => Number(r[0].c));
+  assert.equal(await can(A, 301), false); assert.equal(await can(outsider, 301), false); assert.equal(await can(otherMgr, 301), false);
+  assert.equal(await can(member, 301), true);  assert.equal(await sel(member, 301), 1);
+  assert.equal(await sel(A, 301), 0);          assert.equal(await sel(outsider, 301), 0);
+  assert.equal(await sel(member, 302), 0);     assert.equal(await sel(manager, 302), 1); assert.equal(await sel(approver, 302), 1);
+  assert.equal(await sel(manager, 399), 0);    // khong co hang noi dung nao tham chieu
+  assert.equal(await can(creator, 301), true);
+  // ban nhap chua len chuoi tham chieu mot tep: chi nguoi tao / Proposer-Manager xem truoc duoc
+  await mk(303);
+  await db.query("insert into public.metadata_history (organization_id, metadata_type, candidate_id_onchain, metadata_hash, content, created_by) values ($1,'candidate',0,$2,$3::jsonb,$4)",
+    [orgA, H(501), JSON.stringify({ avatar: { url: `https://x.supabase.co/storage/v1/object/authenticated/candidate-private/${obj(303)}` } }), PROP]);
+  assert.equal(await can(creator, 303), true); assert.equal(await can(manager, 303), true);
+  assert.equal(await can(member, 303), false); assert.equal(await can(A, 303), false);
+  // khong ai (ke ca nguoi tao) tai len bucket rieng tu bang duong dan sai quy tac, va bucket cong khai khong doc duoc ho so rieng tu
+  assert.equal((await rows(creator, "select public.can_read_private_asset('candidate-assets', $1) ok", [obj(301)]))[0].ok, false);
+  assert.equal((await rows(creator, "select public.can_read_private_asset('candidate-private', $1) ok", ["1/avatar/../../x"]))[0].ok, false);
+  // don dep du lieu thu nghiem
+  await db.query("delete from storage.objects where bucket_id='candidate-private'");
+  await db.query("delete from public.metadata_history where metadata_hash in ($1,$2,$3)", [H(501), H(201), H(202)]);
+  await db.query("delete from public.candidates_metadata where election_id_onchain in (1,2)");
+  await db.query("delete from public.elections_metadata where election_id_onchain in (1,2)");
+  await db.query("delete from public.elections_chain where election_id_onchain in (1,2)");
+  await db.query("delete from public.organization_members where wallet_address = $1", [MEM2]);
+});
+
+test("Z. Ghi len bucket rieng tu: cung quy tac vai tro nhu bucket cong khai", async () => {
+  const ok = async (ctx, b, n) => (await rows(ctx, "select public.can_write_asset($1,$2) ok", [b, n]))[0].ok;
+  assert.equal(await ok(who(PROP, 2), "candidate-private", `1/avatar/${sha(9001)}.png`), true);      // Proposer cua to chuc
+  assert.equal(await ok(who(PROP, 2), "election-private", `1/cover/${sha(9002)}.jpg`), true);
+  assert.equal(await ok(who(MEM, 3), "candidate-private", `1/avatar/${sha(9003)}.png`), false);       // Member thuong
+  assert.equal(await ok(who(OUT, 4), "candidate-private", `1/avatar/${sha(9004)}.png`), false);       // nguoi ngoai
+  assert.equal(await ok(who(PROP, 2), "candidate-private", `2/avatar/${sha(9005)}.png`), false);       // to chuc khac (chua xac minh)
+  assert.equal(await ok(who(PROP, 2), "candidate-private", `1/avatar/${sha(9006)}.svg`), false);       // svg bi chan
+  assert.equal(await ok(who(PROP, 2), "organization-private", `1/logo/${sha(9007)}.png`), false);      // bucket la
 });
 
 test.after(async () => { await db.close(); });

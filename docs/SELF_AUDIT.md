@@ -68,6 +68,11 @@ Phát hiện **1 lỗi thật đã sửa** (TB4), **9 điểm yếu thiết kế
 ### TB10 — Phụ thuộc Supabase cho nội dung hồ sơ · **Thấp · CHẤP NHẬN**
 - Hash nằm trên chuỗi nên Supabase **không thể làm giả** nội dung mà không bị phát hiện, nhưng có thể **ngừng phục vụ** hoặc xóa nội dung. Khi đó giao diện báo "chưa có nội dung để đối chiếu"; tên ứng viên, số phiếu và kết quả vẫn đọc từ chuỗi. Xem mục 4.
 
+### TB11 — Phạm vi xem: kết quả chỉ ẩn trên giao diện, ảnh đã công khai không thu hồi được · **Thấp · CHẤP NHẬN CÓ GHI RÕ**
+- Ba phạm vi xem (thông tin, hồ sơ ứng viên, kết quả) nằm trong metadata có hash; RLS ép việc đọc nội dung ngoài chuỗi và ảnh riêng tư chỉ xem qua URL ký 10 phút. **Kết quả không ẩn được trên chuỗi:** `getVotes` không có điều kiện pha và sự kiện `Revealed` công khai, nên chọn kết quả hạn chế chỉ ẩn trang kết quả trong giao diện. Tên cuộc, tên ứng viên, mốc thời gian, ví ứng viên (calldata) cũng công khai.
+- Đổi từ công khai sang hạn chế không thu hồi được nội dung đã công khai (bản cũ của hồ sơ và ảnh cũ ở kho công khai vẫn còn); hash hồ sơ không phải mã hóa nên hồ sơ không công khai có thêm `salt` ngẫu nhiên.
+- Chưa chạy trên Supabase thật (migration `20261106000002_visibility.sql`, triển khai lại `chain-sync`); test RLS chạy trên PGlite, test giao diện dùng Supabase giả lập.
+
 ## 3. Cái không phải lỗi nhưng cần hiểu (câu hỏi vấn đáp thường gặp)
 
 - **Vì sao băm có `msg.sender` và `id`?** Chặn chép cam kết của người khác và phát lại giữa các cuộc bầu cử (test nhóm E).
@@ -84,7 +89,7 @@ Phát hiện **1 lỗi thật đã sửa** (TB4), **9 điểm yếu thiết kế
 
 Phạm vi và giới hạn của phần này:
 
-- **Đã kiểm thử cục bộ:** lược đồ, chính sách RLS, hàm SQL `SECURITY DEFINER` với `search_path` rỗng, quyền thực thi (anon bị thu hồi), cột `profile` không nằm trong quyền `UPDATE` trực tiếp, hàm `save_organization_profile` chỉ cho Manager ghi hồ sơ (`npm run test:supabase`, 80 ca, chạy trên PGlite), cùng logic Edge Function (đăng nhập bằng ví, nonce dùng một lần, băm TypeScript trùng băm JavaScript) trong `npx hardhat test`.
+- **Đã kiểm thử cục bộ:** lược đồ, chính sách RLS, hàm SQL `SECURITY DEFINER` với `search_path` rỗng, quyền thực thi (anon bị thu hồi), cột `profile` không nằm trong quyền `UPDATE` trực tiếp, hàm `save_organization_profile` chỉ cho Manager ghi hồ sơ (`npm run test:supabase`, 82 ca, chạy trên PGlite), cùng logic Edge Function (đăng nhập bằng ví, nonce dùng một lần, băm TypeScript trùng băm JavaScript) trong `npx hardhat test`.
 - **Quyết định thiết kế:** khóa `service_role` và `SYNC_SECRET` chỉ nằm ở môi trường Edge Function, không có trong mã giao diện hay Git. Giao diện chỉ dùng khóa công khai (`publishable`).
 - **Chưa kiểm chứng:** chưa chạy trên dự án Supabase thật với ví MetaMask thật; các bài e2e giao diện dùng Supabase giả lập. Đây là bước kiểm thử còn lại trước khi nộp.
 
@@ -100,6 +105,6 @@ Phạm vi và giới hạn của phần này:
 
 ```bash
 npm install
-npx hardhat test       # 194 ca: hợp đồng, Merkle, tổ chức, chống spam, hash hồ sơ, thẻ cử tri, khớp ABI, Edge Function
-npm run test:supabase  # 80 ca: lược đồ, RLS, hàm SQL, quyền
+npx hardhat test       # 201 ca: hợp đồng, Merkle, tổ chức, chống spam, hash hồ sơ, thẻ cử tri, khớp ABI, Edge Function
+npm run test:supabase  # 82 ca: lược đồ, RLS, hàm SQL, quyền
 ```

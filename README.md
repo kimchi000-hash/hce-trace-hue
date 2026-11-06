@@ -61,7 +61,7 @@ Thương hiệu VoteChain, nền sáng, sidebar trái + topbar + chân trang có
 | **Tổ chức** | Đăng ký tổ chức (loại, giới thiệu, đơn vị chủ quản, năm thành lập, email, website), thẻ "Hồ sơ tổ chức" đối chiếu hash, chỉnh sửa hồ sơ (Manager), thành viên, đại diện duyệt, logo |
 | **Bỏ phiếu** | Stepper 4 bước (xác thực điều kiện, chọn ứng viên có ảnh và tiểu sử, Commit, Reveal), salt và sao lưu/khôi phục |
 | **Thẻ cử tri** | Nhận thẻ soulbound sau khi mở phiếu, bộ sưu tập, tải ảnh thẻ (PNG), chia sẻ |
-| **Tạo cuộc bầu cử** | Chọn tổ chức, ứng viên (tên, ví tùy chọn, hồ sơ, ảnh), kiểm tra từng giới hạn của hợp đồng, dựng Merkle root và tải `proofs.json` |
+| **Tạo cuộc bầu cử** | Chọn tổ chức, ứng viên (tên, ví tùy chọn, hồ sơ, ảnh), **phạm vi xem** (thông tin / hồ sơ ứng viên / kết quả: công khai, nội bộ, hạn chế), chọn mốc giờ hoặc số phút, kiểm tra từng giới hạn của hợp đồng, dựng Merkle root và tải `proofs.json` |
 | **Phê duyệt** | Bảng cuộc chờ duyệt, thẻ ứng viên của cuộc đang chọn, đối chiếu hash nội dung, ký hoặc từ chối |
 | **Kết quả** | KPI, biểu đồ cột và donut, lý do hợp lệ / thiếu quorum / hòa |
 | **Nhật ký hoạt động** | Sự kiện theo loại, ví, mã giao dịch (liên kết Etherscan), bảng giao dịch phiên |
@@ -77,8 +77,8 @@ Lỗi hợp đồng được dịch sang tiếng Việt. ABI, công thức commi
 
 ```bash
 npm install
-npx hardhat test          # 194 ca: hợp đồng, Merkle, tổ chức, chống spam, hash hồ sơ, thẻ cử tri, khớp ABI, Edge Function
-npm run test:supabase     # 80 ca: lược đồ, RLS, hàm SQL, quyền (PGlite)
+npx hardhat test          # 201 ca: hợp đồng, Merkle, tổ chức, chống spam, hash hồ sơ, thẻ cử tri, khớp ABI, Edge Function
+npm run test:supabase     # 82 ca: lược đồ, RLS, hàm SQL, quyền (PGlite)
 npm run gas               # bảng gas (xem docs/GAS_REPORT.md)
 npm run merkle            # dựng cây Merkle từ scripts/voters.example.json -> web/proofs.json
 npm run web               # mở http://localhost:8080 (cần MetaMask)
@@ -90,9 +90,9 @@ Thiết lập Supabase: [`docs/SUPABASE_SETUP.md`](docs/SUPABASE_SETUP.md). Tri�
 
 | Hạng mục | Kết quả |
 | :--- | :--- |
-| Test hợp đồng (`npx hardhat test`) | **194 ca xanh**: cuộc bầu cử (nhóm A–H: tạo, duyệt, commit, reveal, gian lận, quorum, thời gian, Merkle), tổ chức, chống spam, hash hồ sơ, thẻ cử tri, khớp ABI, triển khai, Edge Function |
-| Test Supabase (`npm run test:supabase`) | **80 ca xanh**: lược đồ, chính sách RLS, hàm SQL `SECURITY DEFINER`, quyền thực thi, hồ sơ tổ chức |
-| Chạy thử đầu cuối giao diện (trình duyệt tự động, Hardhat cục bộ, Supabase giả lập) | `phase5_ui` 51 (tổ chức, xác minh, thành viên, tạo cuộc có hash hồ sơ, duyệt, từ chối, rút, hết hạn, commit, reveal, kết quả, đăng nhập ví) · `meta_update_ui` 19 (cập nhật hồ sơ, hiện ứng viên ở Bỏ phiếu và Phê duyệt) · `org_profile_ui` 29 (đăng ký và chỉnh sửa hồ sơ tổ chức) · `card_ui` 32 (thẻ cử tri, tải, chia sẻ) · `viz_ui` 8 (biểu đồ) |
+| Test hợp đồng (`npx hardhat test`) | **201 ca xanh**: cuộc bầu cử (nhóm A–H: tạo, duyệt, commit, reveal, gian lận, quorum, thời gian, Merkle), tổ chức, chống spam, hash hồ sơ, thẻ cử tri, khớp ABI, triển khai, Edge Function |
+| Test Supabase (`npm run test:supabase`) | **82 ca xanh**: lược đồ, chính sách RLS, hàm SQL `SECURITY DEFINER`, quyền thực thi, hồ sơ tổ chức |
+| Chạy thử đầu cuối giao diện (trình duyệt tự động, Hardhat cục bộ, Supabase giả lập) | `phase5_ui` 51 (tổ chức, xác minh, thành viên, tạo cuộc có hash hồ sơ, duyệt, từ chối, rút, hết hạn, commit, reveal, kết quả, đăng nhập ví) · `meta_update_ui` 19 (cập nhật hồ sơ, hiện ứng viên ở Bỏ phiếu và Phê duyệt) · `org_profile_ui` 29 (đăng ký và chỉnh sửa hồ sơ tổ chức) · `card_ui` 32 (thẻ cử tri, tải, chia sẻ) · `viz_ui` 8 (biểu đồ) · `approve_focus_ui` 5 · `time_ui` 12 (chọn mốc giờ) · `visibility_ui` 34 (phạm vi xem: tạo, ảnh riêng tư, quyền xem theo vai trò, khóa kết quả) |
 | Gas (500 cử tri) | `commit` ≈ 68 630 · `reveal` 89 862 / 55 662 · `createElection` 1 011 904 · `mint` thẻ 128 245 (xem [`docs/GAS_REPORT.md`](docs/GAS_REPORT.md)) |
 | Tối ưu | `reveal` giảm ≈ 18–26% nhờ bỏ một mapping (lịch sử ở `docs/GAS_REPORT.md`) |
 

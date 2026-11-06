@@ -5,7 +5,7 @@
 - **Phiên bản đặc tả:** v4.0 — khớp với mã nguồn hiện tại (nhiều tổ chức, nhóm duyệt theo tổ chức, hash hồ sơ, thẻ cử tri). Thay thế v3.0 (người tạo tự chọn người duyệt, chưa có tổ chức).
 - **Nhóm:** Nguyễn Thị Kim Chi (23K4300025), Võ Thị Thư (23K4300038)
 
-> Mọi tên hàm, lỗi, sự kiện trong tài liệu này được đối chiếu tự động với bản biên dịch (xem `test/web_abi.test.js`). Mỗi quy tắc có test tương ứng ở cột "Kiểm chứng" (`npx hardhat test`, hiện 194 ca).
+> Mọi tên hàm, lỗi, sự kiện trong tài liệu này được đối chiếu tự động với bản biên dịch (xem `test/web_abi.test.js`). Mỗi quy tắc có test tương ứng ở cột "Kiểm chứng" (`npx hardhat test`, hiện 201 ca).
 
 ---
 
@@ -84,6 +84,7 @@ Mỗi quy tắc là một khẳng định kiểm tra được. Cột cuối là 
 | **R11** | **Hồ sơ có hash, khóa sau pha Đăng ký.** Chuỗi chỉ lưu `keccak256` của hồ sơ (JSON chuẩn hóa) của cuộc bầu cử và từng ứng viên; nội dung nằm ngoài chuỗi. Người tạo chỉ được đổi hash **trong pha `Registration`** (sau đó `MetadataLocked`). Mỗi lần đổi **xóa toàn bộ chữ ký và phiếu từ chối** nên nhóm duyệt phải duyệt lại; mỗi hash có số phiên bản và sự kiện. | `Metadata` nhóm A, B, C, D |
 | **R12** | **Chống spam yêu cầu duyệt.** Mỗi ví tối đa 3 và mỗi tổ chức tối đa 10 yêu cầu đang chờ (`PendingLimit`); yêu cầu hết hạn sau `pendingTtl` (mặc định 7 ngày) và ai cũng gọi được `releaseExpired` để giải phóng hạn mức. Người tạo rút yêu cầu được khi chưa có chữ ký nào. Quản trị nền tảng chỉ chỉnh được hạn mức trong khoảng an toàn (`setLimits`). | `AntiSpam` |
 | **R13** | **Thẻ cử tri không chuyển nhượng và chỉ cấp cho người đã mở phiếu.** `mint` chỉ cho chính `msg.sender` (không có tham số "người nhận"), chỉ khi `hasRevealed`, mỗi ví một thẻ mỗi cuộc (`tokenId` xác định theo cuộc và ví). Mọi hàm chuyển nhượng/ủy quyền đều revert. Thẻ không lưu lựa chọn của cử tri, và ảnh thẻ không hiện ví hay lựa chọn của ai (ví chủ thẻ vốn công khai qua `ownerOf`, như mọi NFT). | `VoterCardSBT` |
+| **R14** | **Phạm vi xem do ngoài chuỗi thực thi, hợp đồng không đổi.** Mỗi cuộc bầu cử có ba thiết lập `info`, `candidates`, `results` ∈ {`public`, `internal`, `restricted`} nằm trong JSON metadata (nên có hash, chỉ sửa đến hết pha Đăng ký và sửa thì xóa chữ ký duyệt). `chain-sync` chỉ phản chiếu thiết lập từ nội dung **đã khớp hash**; nội dung chưa xác minh hoặc giá trị lạ → mức chặt nhất. RLS (`can_view_election`) ép việc đọc nội dung ngoài chuỗi; ảnh nằm ở bucket riêng tư và chỉ xem qua URL ký 10 phút. Người tạo và nhóm duyệt luôn xem được. **Kết quả chỉ bị ẩn trên giao diện**: `getVotes` và sự kiện `Revealed` vẫn công khai trên chuỗi. Xem `docs/PLAN_PHAN_LOAI_BAU_CU.md`. | `npm run test:supabase` (test Y, Z), `SupabaseFunctions.test.js`, `web_metadata.test.js`, `scripts/e2e/visibility_ui.js` |
 
 **Sự kiện (mọi thay đổi trạng thái đều phát sự kiện):**
 `ElectionCreated`, `ElectionProposed`, `ElectionApproved`, `ElectionActivated`, `ElectionRejectionVote`, `ElectionRejected`, `ElectionWithdrawn`, `RequestExpired`, `ApproverExcluded`, `ApprovalsReset`, `ElectionMetadataSet`, `CandidateMetadataSet`, `LimitsUpdated`, `Committed`, `Revealed`. Tổ chức: `OrganizationRegistered/Verified/Suspended/Updated`, `MemberAdded/Removed/RoleUpdated`, `ApproverAdded/Removed/Replaced`. Thẻ: `Transfer`, `Locked`, `CardMinted`.

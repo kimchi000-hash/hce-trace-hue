@@ -59,7 +59,7 @@ Số liệu thô của lần đo này lấy bằng `npm run gas`; mỗi lần ch
 - **Triển khai đắt hơn 2,23%** (thêm hằng số, thêm điều kiện kiểm tra, thêm hàm `hasRevealed`). Đây là chi phí một lần; mỗi cử tri tiết kiệm ≈ 20,6 nghìn gas ở hai giao dịch gộp lại, nên bù lại sau ≈ 3 cử tri.
 - Với 60 cử tri, tổng tiết kiệm ≈ 60 × 20,6 nghìn − 57 nghìn ≈ 1,18 triệu gas mỗi cuộc bầu cử.
 - Không dùng optimizer của trình biên dịch để số liệu khớp Remix; bật optimizer sẽ giảm thêm đáng kể nhưng không phải là thay đổi của nhóm nên không tính vào bảng.
-- Tất cả thay đổi giữ nguyên hành vi: bộ test lúc đó (77 ca) chạy xanh ở cả ba mốc; bộ test hiện tại có 194 ca.
+- Tất cả thay đổi giữ nguyên hành vi: bộ test lúc đó (77 ca) chạy xanh ở cả ba mốc; bộ test hiện tại có 201 ca.
 
 ## 3. Tái lập
 

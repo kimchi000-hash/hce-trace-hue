@@ -9,7 +9,7 @@ const ref = require("../scripts/metadata.js");
 const html = fs.readFileSync(path.join(__dirname, "..", "web", "index.html"), "utf8");
 const m = html.match(/\/\*META-START\*\/([\s\S]*?)\/\*META-END\*\//);
 if (!m) throw new Error("Khong tim thay khoi META trong web/index.html");
-const web = new Function("ethers", m[1] + "\nreturn { canonicalize, metadataHash, mkElectionMeta, mkCandidateMeta, mkOrgProfile };")(ethers);
+const web = new Function("ethers", m[1] + "\nreturn { canonicalize, metadataHash, mkElectionMeta, mkCandidateMeta, mkOrgProfile, mkVisibility };")(ethers);
 
 describe("web/index.html: chuan hoa metadata khop scripts/metadata.js", function () {
   const nfd = "Nguyễn Văn A";   // dau to hop (NFD)
@@ -30,6 +30,25 @@ describe("web/index.html: chuan hoa metadata khop scripts/metadata.js", function
     const c = web.mkCandidateMeta(fixtures.candidate), rc = ref.candidateMetadata(fixtures.candidate);
     expect(c).to.deep.equal(rc);
     expect(web.metadataHash(c)).to.equal(ref.metadataHash(rc));
+  });
+  it("pham vi xem + salt: ban web == scripts, thu tu vai tro khong doi hash, khong truyen thi hash cu giu nguyen", function () {
+    const base = fixtures.election, vis = { info: "public", candidates: "internal", results: "restricted", roles: ["Proposer", "Manager", "Manager"] };
+    const a = web.mkElectionMeta({ ...base, visibility: vis, salt: "s1" }), b = ref.electionMetadata({ ...base, visibility: { ...vis, roles: ["Manager", "Proposer"] }, salt: "s1" });
+    expect(a).to.deep.equal(b);
+    expect(a.visibility.roles).to.deep.equal(["Manager", "Proposer"]);
+    expect(web.metadataHash(a)).to.equal(ref.metadataHash(b));
+    expect(web.metadataHash(a)).to.not.equal(web.metadataHash(web.mkElectionMeta({ ...base, visibility: vis, salt: "s2" })));   // salt doi hash
+    expect(web.mkElectionMeta(base)).to.not.have.property("visibility");                                                      // cuoc bau cu cu: khong them khoa
+    expect(web.mkElectionMeta(base)).to.not.have.property("salt");
+    expect(web.metadataHash(web.mkElectionMeta(base))).to.equal(ref.metadataHash(ref.electionMetadata(base)));
+    const c = web.mkCandidateMeta({ ...fixtures.candidate, salt: "x" }), rc = ref.candidateMetadata({ ...fixtures.candidate, salt: "x" });
+    expect(c).to.deep.equal(rc); expect(c.salt).to.equal("x");
+    expect(web.mkCandidateMeta(fixtures.candidate)).to.not.have.property("salt");
+  });
+  it("pham vi xem sai bi tu choi (khong am tham thanh cong khai)", function () {
+    for (const bad of [{ info: "all", candidates: "public", results: "public" }, { info: "public", candidates: "public" }, { info: "public", candidates: "public", results: "public", roles: ["Member"] }, null]) {
+      expect(() => web.mkVisibility(bad)).to.throw(); expect(() => ref.visibilityMetadata(bad)).to.throw();
+    }
   });
   it("hash ho so to chuc giong scripts/metadata.js (co va khong co nam thanh lap)", function () {
     const f1 = { name: "CLB Công nghệ", organizationType: "club", description: "Mô tả \"dài\"\nnhiều dòng", affiliation: "Khoa Kinh tế", contactEmail: "a@b.vn", website: "https://example.vn", foundedYear: 2019 };

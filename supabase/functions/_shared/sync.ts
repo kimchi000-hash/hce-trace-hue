@@ -1,6 +1,6 @@
 // Dong bo chuoi -> Supabase. Tach khoi index.ts de kiem thu duoc (db la bat ky doi tuong tuong thich supabase-js).
 import type { Provider } from "ethers";
-import { buildContentRows, buildMirrorRows, type Draft, readChain } from "./chain.ts";
+import { buildContentRows, buildMirrorRows, type Draft, pickVerified, readChain, visibilityOf } from "./chain.ts";
 import { metadataHash } from "./metadata.ts";
 
 const REORG_OVERLAP = 20;
@@ -42,18 +42,27 @@ export async function runSync(db: any, provider: Provider, cfg: SyncConfig) {
     if (goneA.length) must(await db.from("organization_approvers").update({ status: "removed" }).eq("organization_id", oid).in("wallet_address", goneA), "approvers.remove");
   }
 
-  // 3. Cuoc bau cu (mirror)
-  const mirror = buildMirrorRows(snap, orgUuid);
-  if (mirror.elections.length) must(await db.from("elections_chain").upsert(mirror.elections.map((e) => ({ ...e, synced_at: now })), { onConflict: "election_id_onchain" }), "elections_chain");
-
-  // 4. Noi dung ngoai chuoi. Nguon: (a) ban nhap moi gui, (b) noi dung da luu trong hang su kien (ban nhap bi xoa sau khi dung,
+  // 3. Noi dung ngoai chuoi. Nguon: (a) ban nhap moi gui, (b) noi dung da luu trong hang su kien (ban nhap bi xoa sau khi dung,
   //    nen KHONG co (b) thi lan dong bo sau se ghi de noi dung da xac minh bang null). Moi ung vien deu duoc kiem lai hash.
+  //    Doc TRUOC buoc mirror cuoc bau cu: thiet lap hien thi (pham vi xem) phai duoc ghi cung luc voi hang cuoc bau cu, de RLS
+  //    khong bao gio thay mot cuoc bau cu co noi dung ma chua co thiet lap (khong co khoang "ho").
   const { data: draftRows } = must(await db.from("metadata_history").select("id, metadata_type, metadata_hash, candidate_id_onchain, content, created_at")
     .eq("onchain_seen", false).order("created_at", { ascending: true }).limit(5000), "drafts");
   const drafts = (draftRows ?? []) as (Draft & { id: string })[];
   const { data: storedRows } = must(await db.from("metadata_history").select("metadata_type, metadata_hash, candidate_id_onchain, content")
     .eq("onchain_seen", true).not("content", "is", null).limit(20000), "stored");
   const pool: Draft[] = [...drafts, ...((storedRows ?? []) as Draft[])];
+
+  // 4. Cuoc bau cu (mirror) kem pham vi xem lay tu noi dung da xac minh (khong xac minh duoc => nghiem ngat nhat)
+  const visByElection = new Map<number, ReturnType<typeof visibilityOf>>();
+  for (const e of snap.elections) {
+    const c = pickVerified(pool, "election", null, e.metadataHash, hashOf);
+    const ok = c && c.schema === "votechain.election.v1" && c.organizationId === e.orgId;
+    visByElection.set(e.id, visibilityOf(ok ? c : null));
+  }
+  const mirror = buildMirrorRows(snap, orgUuid, (id) => visByElection.get(id)!);
+  if (mirror.elections.length) must(await db.from("elections_chain").upsert(mirror.elections.map((e) => ({ ...e, synced_at: now })), { onConflict: "election_id_onchain" }), "elections_chain");
+
   const { electionsMeta, candidates } = buildContentRows(snap, pool, hashOf, orgUuid);
   if (electionsMeta.length) must(await db.from("elections_metadata").upsert(electionsMeta, { onConflict: "election_id_onchain" }), "elections_metadata");
   if (candidates.length) must(await db.from("candidates_metadata").upsert(candidates, { onConflict: "election_id_onchain,candidate_id_onchain" }), "candidates_metadata");

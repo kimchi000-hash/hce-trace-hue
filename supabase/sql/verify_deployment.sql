@@ -32,12 +32,16 @@ vc_fn(nm, sig, definer, client_ok, nonce) as (values
   ('issue_wallet_nonce',       'public.issue_wallet_nonce(text,text,integer,integer,text,integer)',                true,  false, true),
   ('consume_wallet_nonce',     'public.consume_wallet_nonce(text,text)',                                           true,  false, true),
   ('purge_expired_nonces',     'public.purge_expired_nonces()',                                                    true,  false, true),
-  ('can_write_asset',          'public.can_write_asset(text,text)',                                                false, true,  false)
+  ('can_write_asset',          'public.can_write_asset(text,text)',                                                false, true,  false),
+  ('can_view_election',        'public.can_view_election(bigint,text)',                                            true,  true,  false),
+  ('can_read_private_asset',   'public.can_read_private_asset(text,text)',                                         true,  true,  false)
 ),
 vc_buckets(id, size_limit, mimes) as (values
   ('organization-assets', 2097152::bigint,  array['image/jpeg','image/png','image/webp']),
   ('election-assets',     10485760::bigint, array['application/pdf','image/jpeg','image/png','image/webp']),
-  ('candidate-assets',    10485760::bigint, array['application/pdf','image/jpeg','image/png','image/webp'])
+  ('candidate-assets',    10485760::bigint, array['application/pdf','image/jpeg','image/png','image/webp']),
+  ('election-private',    10485760::bigint, array['application/pdf','image/jpeg','image/png','image/webp']),
+  ('candidate-private',   10485760::bigint, array['application/pdf','image/jpeg','image/png','image/webp'])
 ),
 roles(r) as (values ('anon'), ('authenticated')),
 
@@ -88,9 +92,9 @@ select 'A01' as stt, 'Doi tuong' as nhom, '9 bang VoteChain ton tai' as kiem_tra
 union all select 'A02', 'Doi tuong', 'RLS bat tren ca 9 bang',
        (select count(*) from tbl where rls) = 9 and (select count(*) from tbl) = 9,
        coalesce('RLS TAT o: ' || nullif((select string_agg(t, ', ' order by t) from tbl where not rls), ''), 'ca 9 bang bat RLS')
-union all select 'A03', 'Doi tuong', '11 ham VoteChain ton tai (dung chu ky)',
-       (select count(*) from fn) = 11,
-       coalesce('Thieu/sai chu ky: ' || nullif((select string_agg(f.sig, ', ' order by f.sig) from vc_fn f where f.nm not in (select nm from fn)), ''), 'du 11/11')
+union all select 'A03', 'Doi tuong', '13 ham VoteChain ton tai (dung chu ky)',
+       (select count(*) from fn) = 13,
+       coalesce('Thieu/sai chu ky: ' || nullif((select string_agg(f.sig, ', ' order by f.sig) from vc_fn f where f.nm not in (select nm from fn)), ''), 'du 13/13')
 union all select 'A04', 'Doi tuong', 'Khong con ham trung ten (ban cu / qua tai) trong schema public',
        not exists (select 1 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.proname in (select nm from vc_fn)
                    and p.oid not in (select fnoid from fn)),
@@ -113,15 +117,15 @@ union all select 'A08', 'Doi tuong', 'sync_state co dung 1 dong (id = 1)',
        (select count(*)::text || ' dong' from public.sync_state)
 
 -- ================================================================= B. Ham: SECURITY DEFINER, search_path, EXECUTE
-union all select 'B01', 'Ham', 'Ca 11 ham co search_path rong (search_path="")',
-       (select count(*) from fn where sp_empty) = 11,
-       coalesce('Thieu search_path rong: ' || nullif((select string_agg(nm, ', ' order by nm) from fn where not sp_empty), ''), 'ca 11 ham deu rong')
-union all select 'B02', 'Ham', 'SECURITY DEFINER dung 6 ham (3 ham nonce + has_org_role, has_org_role_onchain, org_is_verified)',
-       not exists (select 1 from fn where prosecdef <> want_definer) and (select count(*) from fn) = 11,
+union all select 'B01', 'Ham', 'Ca 13 ham co search_path rong (search_path="")',
+       (select count(*) from fn where sp_empty) = 13,
+       coalesce('Thieu search_path rong: ' || nullif((select string_agg(nm, ', ' order by nm) from fn where not sp_empty), ''), 'ca 13 ham deu rong')
+union all select 'B02', 'Ham', 'SECURITY DEFINER dung 8 ham (3 ham nonce + has_org_role, has_org_role_onchain, org_is_verified, can_view_election, can_read_private_asset)',
+       not exists (select 1 from fn where prosecdef <> want_definer) and (select count(*) from fn) = 13,
        'DEFINER thuc te: ' || coalesce((select string_agg(nm, ', ' order by nm) from fn where prosecdef), '(khong)')
         || coalesce(' | LECH ky vong: ' || nullif((select string_agg(nm, ', ' order by nm) from fn where prosecdef <> want_definer), ''), '')
-union all select 'B03', 'Ham', 'anon/authenticated chi goi duoc dung 5 ham tien ich (auth_wallet, has_org_role, has_org_role_onchain, org_is_verified, can_write_asset)',
-       not exists (select 1 from fn where (x_anon <> client_ok) or (x_auth <> client_ok)) and (select count(*) from fn) = 11,
+union all select 'B03', 'Ham', 'anon/authenticated chi goi duoc dung 7 ham tien ich (auth_wallet, has_org_role, has_org_role_onchain, org_is_verified, can_write_asset, can_view_election, can_read_private_asset)',
+       not exists (select 1 from fn where (x_anon <> client_ok) or (x_auth <> client_ok)) and (select count(*) from fn) = 13,
        'client goi duoc: ' || coalesce((select string_agg(nm, ', ' order by nm) from fn where x_anon or x_auth), '(khong)')
         || coalesce(' | LECH ky vong: ' || nullif((select string_agg(nm, ', ' order by nm) from fn where (x_anon <> client_ok) or (x_auth <> client_ok)), ''), '')
 union all select 'B04', 'Ham', 'Ham nonce (issue/consume/purge) KHONG goi duoc tu anon, authenticated, PUBLIC',
@@ -131,9 +135,9 @@ union all select 'B04', 'Ham', 'Ham nonce (issue/consume/purge) KHONG goi duoc t
 union all select 'B05', 'Ham', 'PUBLIC khong co quyen EXECUTE tren bat ky ham VoteChain nao',
        not exists (select 1 from fn where x_public),
        coalesce('PUBLIC goi duoc: ' || nullif((select string_agg(nm, ', ' order by nm) from fn where x_public), ''), 'khong ham nao')
-union all select 'B06', 'Ham', 'service_role (Edge Function) goi duoc ca 11 ham',
-       (select count(*) from fn where x_service) = 11,
-       coalesce('service_role KHONG goi duoc: ' || nullif((select string_agg(nm, ', ' order by nm) from fn where not x_service), ''), 'ca 11 ham')
+union all select 'B06', 'Ham', 'service_role (Edge Function) goi duoc ca 13 ham',
+       (select count(*) from fn where x_service) = 13,
+       coalesce('service_role KHONG goi duoc: ' || nullif((select string_agg(nm, ', ' order by nm) from fn where not x_service), ''), 'ca 13 ham')
 union all select 'B07', 'Ham', 'can_write_asset: dau van tay noi dung dung thiet ke (ham dung duong dan, vai tro theo bucket, khong svg/html)',
        coalesce((select pg_get_functiondef(fnoid) from fn where nm = 'can_write_asset') ~ 'organization-assets'
             and (select pg_get_functiondef(fnoid) from fn where nm = 'can_write_asset') ~ 'election-assets'
@@ -233,6 +237,13 @@ union all select 'E03', 'Storage bucket', 'candidate-assets: Public, 10 MB, chi 
        exists (select 1 from vc_buckets v join bucket b on b.id = v.id where v.id = 'candidate-assets' and b.public and b.file_size_limit = v.size_limit and b.mimes_sorted = v.mimes),
        coalesce((select format('public=%s, file_size_limit=%s, mime=%s', b.public, b.file_size_limit, b.mimes_sorted) from bucket b where b.id = 'candidate-assets'), 'bucket KHONG ton tai')
 
+union all select 'E04', 'Storage bucket', 'election-private: KHONG cong khai, 10 MB, chi image/png, image/jpeg, image/webp, application/pdf',
+       exists (select 1 from vc_buckets v join bucket b on b.id = v.id where v.id = 'election-private' and not b.public and b.file_size_limit = v.size_limit and b.mimes_sorted = v.mimes),
+       coalesce((select format('public=%s, file_size_limit=%s, mime=%s', b.public, b.file_size_limit, b.mimes_sorted) from bucket b where b.id = 'election-private'), 'bucket KHONG ton tai')
+union all select 'E05', 'Storage bucket', 'candidate-private: KHONG cong khai, 10 MB, chi image/png, image/jpeg, image/webp, application/pdf',
+       exists (select 1 from vc_buckets v join bucket b on b.id = v.id where v.id = 'candidate-private' and not b.public and b.file_size_limit = v.size_limit and b.mimes_sorted = v.mimes),
+       coalesce((select format('public=%s, file_size_limit=%s, mime=%s', b.public, b.file_size_limit, b.mimes_sorted) from bucket b where b.id = 'candidate-private'), 'bucket KHONG ton tai')
+
 -- ================================================================= F. Storage: policy tren storage.objects
 union all select 'F01', 'Storage policy', 'storage.objects bat RLS',
        coalesce((select c.relrowsecurity from pg_class c where c.oid = 'storage.objects'::regclass), false),
@@ -256,13 +267,30 @@ union all select 'F06', 'Storage policy', 'Khong co policy GHI (INSERT/DELETE/UP
        not exists (select 1 from pol where schemaname = 'storage' and tablename = 'objects' and cmd in ('INSERT','UPDATE','DELETE','ALL') and policyname not in ('assets_insert_org_roles','assets_delete_own')),
        'policy ghi tren storage.objects: ' || coalesce((select string_agg(policyname || '(' || cmd || ', roles=' || roles || ')', ', ' order by policyname) from pol where schemaname = 'storage' and tablename = 'objects' and cmd in ('INSERT','UPDATE','DELETE','ALL')), '(khong)')
 union all select 'F07', 'Storage policy', 'Khong co policy nao khac nhac toi 3 bucket cua VoteChain (tranh policy rong mo quyen ngoai y muon)',
-       not exists (select 1 from pol where schemaname = 'storage' and tablename = 'objects' and policyname not in ('assets_read_public','assets_insert_org_roles','assets_delete_own')
+       not exists (select 1 from pol where schemaname = 'storage' and tablename = 'objects' and policyname not in ('assets_read_public','assets_read_private','assets_insert_org_roles','assets_delete_own')
                    and (q ~ 'organization-assets|election-assets|candidate-assets' or wc ~ 'organization-assets|election-assets|candidate-assets')),
-       coalesce('Policy khac nhac toi bucket: ' || nullif((select string_agg(policyname, ', ') from pol where schemaname = 'storage' and tablename = 'objects' and policyname not in ('assets_read_public','assets_insert_org_roles','assets_delete_own')
+       coalesce('Policy khac nhac toi bucket: ' || nullif((select string_agg(policyname, ', ') from pol where schemaname = 'storage' and tablename = 'objects' and policyname not in ('assets_read_public','assets_read_private','assets_insert_org_roles','assets_delete_own')
                    and (q ~ 'organization-assets|election-assets|candidate-assets' or wc ~ 'organization-assets|election-assets|candidate-assets')), ''), 'khong co')
 union all select 'F08', 'Storage policy', 'Policy ghi chi ap dung cho authenticated (anon khong ghi duoc vao Storage)',
        not exists (select 1 from pol where schemaname = 'storage' and tablename = 'objects' and cmd in ('INSERT','UPDATE','DELETE','ALL') and (roles like '%anon%' or roles like '%public%')),
        'xem F06 de biet roles cua tung policy ghi'
+union all select 'F10', 'Storage policy', 'assets_read_private: SELECT, chi 2 bucket rieng tu, qua can_read_private_asset(bucket_id, name) (khong cho anon doc tu do)',
+       exists (select 1 from pol where schemaname = 'storage' and tablename = 'objects' and policyname = 'assets_read_private' and cmd = 'SELECT'
+               and q like '%election-private%' and q like '%candidate-private%' and q like '%can_read_private_asset(bucket_id,name)%' and q not like '%organization-assets%'),
+       coalesce((select 'cmd=' || cmd || ' roles=' || roles || ' qual=' || qual_raw from pol where schemaname = 'storage' and policyname = 'assets_read_private'), 'KHONG ton tai')
+union all select 'F11', 'Storage policy', 'Moi policy SELECT tren storage.objects nhac toi bucket rieng tu deu di qua can_read_private_asset (khong co policy rong mo kho rieng tu)',
+       not exists (select 1 from pol where schemaname = 'storage' and tablename = 'objects' and cmd in ('SELECT','ALL')
+                   and (q ~ 'election-private|candidate-private') and q not like '%can_read_private_asset(%'),
+       coalesce('Policy mo kho rieng tu khong qua ham: ' || nullif((select string_agg(policyname, ', ') from pol where schemaname = 'storage' and tablename = 'objects' and cmd in ('SELECT','ALL')
+                   and (q ~ 'election-private|candidate-private') and q not like '%can_read_private_asset(%'), ''), 'khong co')
+union all select 'D08', 'Policy', 'Pham vi xem: elections_metadata, candidates_metadata, metadata_history doc qua can_view_election (khong con "ai cung doc")',
+       exists (select 1 from pol where schemaname = 'public' and tablename = 'elections_metadata' and policyname = 'elections_metadata_read' and cmd = 'SELECT' and q like '%can_view_election(election_id_onchain,''info'')%')
+       and exists (select 1 from pol where schemaname = 'public' and tablename = 'candidates_metadata' and policyname = 'candidates_metadata_read' and cmd = 'SELECT' and q like '%can_view_election(election_id_onchain,''candidates'')%')
+       and exists (select 1 from pol where schemaname = 'public' and tablename = 'metadata_history' and policyname = 'history_read' and cmd = 'SELECT' and q like '%can_view_election(%'),
+       coalesce('elections_metadata: ' || (select left(q, 90) from pol where policyname = 'elections_metadata_read' and tablename = 'elections_metadata'), 'policy KHONG ton tai')
+union all select 'D09', 'Policy', 'elections_chain co cot pham vi xem (info/candidate/results visibility + restricted_roles) va khong cot nao null',
+       (select count(*) from pg_attribute a where a.attrelid = 'public.elections_chain'::regclass and a.attname in ('info_visibility','candidate_visibility','results_visibility','restricted_roles') and not a.attisdropped and a.attnotnull) = 4,
+       'cot pham vi xem tren elections_chain (them boi migration 20261106000002)'
 union all select 'F09', 'Storage cau hinh', 'storage.objects co cot owner_id kieu text (chi kiem tra CAU TRUC; KHONG xac minh gia tri owner_id do Storage API dien)',
        exists (select 1 from pg_attribute a where a.attrelid = 'storage.objects'::regclass and a.attname = 'owner_id' and a.atttypid = 'text'::regtype and not a.attisdropped),
        'chi la cau truc bang. owner_id thuc te can thu bang tai len that (docs/SUPABASE_SETUP.md Phan G)'

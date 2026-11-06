@@ -103,6 +103,30 @@ describe("Edge Function: logic dung chung", () => {
       expect(rows.elections[0]).to.not.have.property("title");
       expect(C.buildMirrorRows(snap, () => undefined).elections).to.have.length(0); // to chuc chua dong bo => bo qua, khong nem loi
     });
+    describe("pham vi xem lay tu noi dung da xac minh (fail-closed)", () => {
+      const strict = { info: "restricted", candidates: "restricted", results: "restricted", roles: [] };
+      it("noi dung cu khong co `visibility` => cong khai (giu hanh vi cu)", () => {
+        expect(C.visibilityOf({ schema: "votechain.election.v1" })).to.deep.equal({ info: "public", candidates: "public", results: "public", roles: [] });
+      });
+      it("chua co noi dung da xac minh (null/khong phai object) => nghiem ngat nhat", () => {
+        for (const x of [null, undefined, 5, "public"]) expect(C.visibilityOf(x)).to.deep.equal(strict);
+      });
+      it("gia tri hop le duoc giu nguyen; vai tro chi nhan Manager/Proposer, bo trung", () => {
+        const v = C.visibilityOf({ visibility: { info: "public", candidates: "internal", results: "restricted", roles: ["Manager", "Manager", "Proposer", "Member", "Approver", 5] } });
+        expect(v).to.deep.equal({ info: "public", candidates: "internal", results: "restricted", roles: ["Manager", "Proposer"] });
+      });
+      it("gia tri sai/la => 'restricted' cho dung truong do, khong bao gio thanh 'public'", () => {
+        expect(C.visibilityOf({ visibility: { info: "PUBLIC", candidates: "everyone", results: 1 } })).to.deep.equal(strict);
+        expect(C.visibilityOf({ visibility: [] })).to.deep.equal(strict);
+        expect(C.visibilityOf({ visibility: "public" })).to.deep.equal(strict);
+        expect(C.visibilityOf({ visibility: { info: "public" } }).candidates).to.equal("restricted");   // thieu truong => an
+      });
+      it("hang mirror co cot hien thi khi truyen visOf", () => {
+        const rows = C.buildMirrorRows(snap, () => "11111111-1111-4111-8111-111111111111", () => ({ info: "public", candidates: "internal", results: "restricted", roles: ["Manager"] }));
+        expect(rows.elections[0]).to.include({ info_visibility: "public", candidate_visibility: "internal", results_visibility: "restricted" });
+        expect(rows.elections[0].restricted_roles).to.deep.equal(["Manager"]);
+      });
+    });
     describe("xac minh noi dung theo hash", () => {
       let snap1;
       before(async () => {

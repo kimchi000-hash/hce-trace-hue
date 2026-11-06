@@ -87,8 +87,30 @@ export function pickVerified(drafts: Draft[], type: "election" | "candidate", ca
   return null;
 }
 
-/** Doi anh chup chuoi thanh hang mirror (khong chua noi dung ngoai chuoi). */
-export function buildMirrorRows(s: ChainSnapshot, orgUuid: (chainId: number) => string | undefined) {
+export type Scope = "public" | "internal" | "restricted";
+export interface Visibility { info: Scope; candidates: Scope; results: Scope; roles: string[] }
+const SCOPES: Scope[] = ["public", "internal", "restricted"];
+const EXTRA_ROLES = ["Manager", "Proposer"];   // vai tro co the tich them o muc "hach che"; nguoi tao va dai dien duyet luon duoc xem
+export const STRICT_VISIBILITY: Visibility = { info: "restricted", candidates: "restricted", results: "restricted", roles: [] };
+
+/**
+ * Thiet lap hien thi cua cuoc bau cu, lay tu noi dung DA XAC MINH hash.
+ * - Chua co noi dung da xac minh (null): nghiem ngat nhat (an), vi chua biet nguoi tao muon gi.
+ * - Noi dung khong co truong `visibility` (cuoc bau cu cu): cong khai, dung nhu truoc day.
+ * - Gia tri sai / la: nghiem ngat nhat cho tung truong, khong bao gio mac dinh thanh cong khai.
+ */
+export function visibilityOf(content: any): Visibility {
+  if (!content || typeof content !== "object") return { ...STRICT_VISIBILITY, roles: [] };
+  const v = content.visibility;
+  if (v === undefined || v === null) return { info: "public", candidates: "public", results: "public", roles: [] };
+  if (typeof v !== "object" || Array.isArray(v)) return { ...STRICT_VISIBILITY, roles: [] };
+  const pick = (x: unknown): Scope => (SCOPES.includes(x as Scope) ? (x as Scope) : "restricted");
+  const roles = Array.isArray(v.roles) ? [...new Set((v.roles as unknown[]).filter((r): r is string => typeof r === "string" && EXTRA_ROLES.includes(r)))] : [];
+  return { info: pick(v.info), candidates: pick(v.candidates), results: pick(v.results), roles };
+}
+
+/** Doi anh chup chuoi thanh hang mirror (khong chua noi dung ngoai chuoi). `visOf` (tuy chon) them thiet lap hien thi cho tung cuoc bau cu. */
+export function buildMirrorRows(s: ChainSnapshot, orgUuid: (chainId: number) => string | undefined, visOf?: (electionId: number) => Visibility) {
   const organizations = s.orgs.map((o) => ({ organization_id_onchain: o.id, name: o.name, verification_status: o.status, created_by: o.owner, info_hash: o.infoHash, chain_created_at: iso(o.createdAt) }));
   const members = s.orgs.flatMap((o) => o.members.map((m) => ({ orgChainId: o.id, wallet_address: m.wallet, role: m.role })));
   const approvers = s.orgs.flatMap((o) => o.approvers.map((a) => ({ orgChainId: o.id, wallet_address: a })));
@@ -96,7 +118,8 @@ export function buildMirrorRows(s: ChainSnapshot, orgUuid: (chainId: number) => 
     const organization_id = orgUuid(e.orgId);
     if (!organization_id) return [];
     return [{ election_id_onchain: e.id, organization_id, proposer_wallet: e.proposer, created_at_chain: iso(e.createdAt), reg_end: iso(e.regEnd), commit_end: iso(e.commitEnd), reveal_end: iso(e.revealEnd),
-      request_status: e.requestStatus, candidate_count: e.candidates.length, metadata_hash: e.metadataHash, metadata_version: e.metadataVersion }];
+      request_status: e.requestStatus, candidate_count: e.candidates.length, metadata_hash: e.metadataHash, metadata_version: e.metadataVersion,
+      ...(visOf ? (({ info, candidates, results, roles }) => ({ info_visibility: info, candidate_visibility: candidates, results_visibility: results, restricted_roles: roles }))(visOf(e.id)) : {}) }];
   });
   return { organizations, members, approvers, elections };
 }
