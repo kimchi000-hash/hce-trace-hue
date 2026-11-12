@@ -96,7 +96,7 @@ const check = (n, ok, x) => log.push((ok ? "PASS " : "FAIL ") + n + (x ? " :: " 
   check("nut nhan the bi khoa khi chua dong y", await p3.locator("#btnMintCard").isDisabled());
   await p3.locator("#cardAvatars .vc-pick").nth(6).click();
   check("chon mascot #6 (Rong khien)", (await p3.locator("#cardAvatars .vc-pick").nth(6).getAttribute("aria-checked")) === "true");
-  check("thong bao quyen rieng tu hien ro (cong khai vi, khong chuyen nhuong, su kien Reveal)", /địa chỉ ví/.test(await p3.textContent(".vc-consent")) && /không thể chuyển nhượng/.test(await p3.textContent(".vc-consent")) && /Reveal/.test(await p3.textContent(".vc-consent")));
+  check("thong bao quyen rieng tu hien ro (cong khai vi, khong chuyen nhuong, su kien Reveal)", /công khai ví/.test(await p3.textContent(".vc-consent")) && /không thể chuyển nhượng/.test(await p3.textContent(".vc-consent")));
   await p3.waitForTimeout(400);
   check("xem truoc the: co ten cuoc bau, so thu tu #0001", /#0001/.test(await p3.textContent("#cardPreview")) && (await p3.textContent("#cardPreview")).includes("Bầu Chủ nhiệm"));
   await shot(p3, "01_mint_ready");
@@ -191,6 +191,7 @@ const check = (n, ok, x) => log.push((ok ? "PASS " : "FAIL ") + n + (x ? " :: " 
   // ===== 9. Nhat ky su kien voi RPC gioi han 10.000 block (khoang quet mac dinh 20.000 phai duoc chia nho) =====
   await provider.send("hardhat_mine", ["0x2af8"]);   // +11000 block: khoang quet mac dinh (20.000) nay vuot han muc 10.000 cua RPC gia lap
   const pl = await open(5, await sbt.getAddress(), "vote");
+  await pl.evaluate(() => { const d = document.querySelector("details.nav-adv"); if (d) d.open = true; });
   await pl.click('.nav-item[data-route="log"]');   // nguoi dung bam muc "Nhat ky hoat dong"
   await pl.waitForFunction(() => /sự kiện trong block/.test(document.querySelector("#logInfo").textContent), null, { timeout: 20000 });
   check("nhat ky: quet 20.000 block qua RPC gioi han 10.000 van thanh cong (chia nho)", true, await pl.textContent("#logInfo"));

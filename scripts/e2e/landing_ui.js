@@ -31,7 +31,7 @@ const vis = (p, sel) => p.locator(sel).first().isVisible();
   await p.waitForTimeout(600);
   check("mo trang khong hash: la trang chu (body.landing)", await p.evaluate(() => document.body.classList.contains("landing")));
   check("trang chu: KHONG co thanh ben", !(await vis(p, "#sidebar")));
-  check("trang chu: co thanh tren (Khám phá, Cách hoạt động, Giới thiệu)", (await vis(p, ".landing-nav")) && /Khám phá/.test(await p.textContent(".landing-nav")) && /Cách hoạt động/.test(await p.textContent(".landing-nav")) && /Giới thiệu/.test(await p.textContent(".landing-nav")));
+  check("trang chu: co thanh tren (Khám phá, Cách hoạt động, Hướng dẫn)", (await vis(p, ".landing-nav")) && /Khám phá/.test(await p.textContent(".landing-nav")) && /Cách hoạt động/.test(await p.textContent(".landing-nav")) && /Hướng dẫn/.test(await p.textContent(".landing-nav")));
   check("trang chu: khong co breadcrumb Dashboard", !(await vis(p, ".crumbs")));
   check("trang chu: chua co vi -> khong co nut 'Vao ung dung' o goc", !(await vis(p, "#btnEnterApp")));
   check("trang chu: co nut Ket noi MetaMask", await vis(p, "#btnConnect"));
