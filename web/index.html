@@ -2458,6 +2458,7 @@ body.landing .landing-nav button { border: 0; background: transparent; color: va
 body.landing .landing-nav button:hover { background: var(--brand-100); color: var(--brand); }
 body.landing.has-wallet #btnEnterApp { display: inline-flex; }
 body.landing .content { max-width: none; padding: 0; }
+#ctxBar .ctx-pick { max-width: min(360px, 100%); padding: 6px 30px 6px 10px; font-size: 0.86rem; }
 body.landing .app-foot { max-width: none; margin-top: 0; border-top: 0; padding: 48px max(26px, calc((100% - 1188px) / 2)) 0; background: #0f2447; color: #b4c3e0; }
 body.landing .app-foot .brand-name { color: #fff; }
 body.landing .app-foot .brand-name b { color: #7fb0ff; }
@@ -3734,7 +3735,8 @@ body.landing #banner { max-width: 1240px; margin: 14px auto 0 !important; }
 <div id="ctxBar" class="row hidden" style="margin-bottom:14px">
   <span class="chip"><svg class="ic sm"><use href="#i-vote"/></svg><span>Đang chọn:</span> <b id="ctxTitle" style="margin-left:3px">—</b></span>
   <span id="ctxPhase" class="badge blue">—</span>
-  <button class="btn ghost sm" data-route="elections">Đổi cuộc bầu cử</button>
+  <select id="ctxPick" class="ctx-pick" aria-label="Đổi sang cuộc bầu cử khác" title="Đổi sang cuộc bầu cử khác"></select>
+  <button class="btn ghost sm" data-route="elections">Danh sách</button>
 </div>
 
 <!-- =====================================================================
@@ -4422,6 +4424,7 @@ body.landing #banner { max-width: 1240px; margin: 14px auto 0 !important; }
           <div class="proofbox" style="margin-top:14px">
             <div class="state"><span id="proofIcon" class="ic-box gray sm"><svg class="ic sm"><use href="#i-key"/></svg></span><span id="proofState">Chưa kiểm tra bằng chứng cử tri.</span></div>
             <div id="proofDetail" class="help"></div>
+            <button id="btnCopyVoters" class="btn outline sm hidden" type="button" style="margin:6px 0 4px">Sao chép danh sách cử tri</button>
             <details class="fold">
               <summary><svg class="ic sm"><use href="#i-file"/></svg>Nhập danh sách cử tri hoặc bằng chứng thủ công</summary>
               <div class="fold-body">
@@ -4732,6 +4735,7 @@ Trần Thị B</textarea><div class="help">2–20 ứng viên, mỗi tên 1–64
         <label class="small" style="display:flex;gap:8px;align-items:flex-start;margin-top:12px"><input id="cSave" type="checkbox" checked style="margin-top:3px"><span>Lưu nội dung (bản nháp, ảnh) lên Supabase để mọi người xem và xác thực với hash trên chuỗi. Cần đăng nhập bằng ví.</span></label>
         <div class="stack" style="margin-top:16px;gap:8px">
           <button id="btnBuild" class="btn soft block">Xem trước &amp; kiểm tra</button>
+          <button id="btnClearDraft" class="btn ghost sm block" type="button" title="Form tự lưu nháp trên trình duyệt này, không lưu file ảnh">Xóa bản nháp và nhập lại</button>
           <button id="btnCreate" class="btn primary block"><svg class="ic sm"><use href="#i-send"/></svg>Gửi yêu cầu tạo cuộc bầu cử</button>
           <button id="btnDownloadProofs" class="btn outline block" disabled><svg class="ic sm"><use href="#i-download"/></svg>Tải proofs.json</button>
           <button id="btnDownloadMeta" class="btn outline block" disabled><svg class="ic sm"><use href="#i-download"/></svg>Tải metadata (JSON)</button>
@@ -5153,6 +5157,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     "function replaceApprover(uint256 id, address oldApprover, address newApprover)",
     "event OrganizationRegistered(uint256 indexed id, address indexed owner, string name)",
     "event OrganizationVerified(uint256 indexed id, address indexed by)",
+    "event OrganizationUpdated(uint256 indexed id, string name, bytes32 infoHash)",
     "event OrganizationSuspended(uint256 indexed id, address indexed by)",
     "event MemberAdded(uint256 indexed id, address indexed member, uint8 role)",
     "event MemberRemoved(uint256 indexed id, address indexed member)",
@@ -5854,18 +5859,29 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
    *  1) JSON dán tay  2) danh sách cử tri dán vào (dựng cây tại chỗ)  3) proofs.json cạnh trang.
    * Trả về { proof, source, rootOk } — rootOk=false nghĩa là root dựng ra không khớp cuộc bầu cử.
    */
+  const votersKey = (id) => "votechain:voters:v1:" + CHAIN_ID + ":" + String(S.address || "").toLowerCase() + ":" + id;
+  function rememberVoters(id, list) {
+    if (!Array.isArray(list) || !list.length || list.length > 5000) return;   // danh sách quá lớn không nhớ (giới hạn localStorage)
+    LS.set(votersKey(id), JSON.stringify(list));
+  }
+  function recallVoters(id) {
+    let a = null;
+    try { a = JSON.parse(LS.get(votersKey(id)) || "null"); } catch (_) { a = null; }
+    return Array.isArray(a) && a.length && a.every((x) => typeof x === "string" && ethers.isAddress(x)) ? a.map((x) => ethers.getAddress(x)) : null;
+  }
   function findProof() {
     const e = S.election;
     const m = manualProof();
     if (m) return { proof: m, source: "manual", rootOk: e && S.account ? verifyProof(m, e.merkleRoot, S.account) : null };
-    const listText = $("voterListInput").value.trim();
+    let listText = $("voterListInput").value.trim(), remembered = false;
+    if (!listText && e) { const mem = recallVoters(e.id); if (mem) { listText = mem.join("\n"); remembered = true; } }   // danh sách đã nhớ trên trình duyệt này
     if (listText && S.account && e) {
       const { list, errors } = parseAddresses(listText);
       if (errors.length) throw new UserError("Danh sách cử tri có dòng không hợp lệ: " + errors.slice(0, 3).join(", ") + (errors.length > 3 ? "…" : ""));
       const tree = buildTree(list);
       const rootOk = tree.root.toLowerCase() === e.merkleRoot.toLowerCase();
       if (!list.includes(S.account)) return { proof: [], source: "none", rootOk, notInList: true };
-      return { proof: tree.proofs[S.account], source: "list", rootOk, depth: tree.depth, count: list.length };
+      return { proof: tree.proofs[S.account], source: "list", rootOk, depth: tree.depth, count: list.length, list, remembered };
     }
     if (S.proofsFile && S.account && e && S.proofsFile.merkleRoot.toLowerCase() === e.merkleRoot.toLowerCase()) {
       const p = S.proofsFile.proofs[S.account];
@@ -5878,6 +5894,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   function renderProofState() {
     const box = $("proofIcon"), st = $("proofState"), det = $("proofDetail");
     det.textContent = "";
+    $("btnCopyVoters").classList.add("hidden");
     const set = (name, tone, text) => { setIconBox(box, name, tone); st.textContent = text; };
     if (!S.account) { set("key", "gray", "Kết nối ví để tìm bằng chứng cử tri của bạn."); return; }
     if (!S.election) { set("key", "gray", "Hãy tải cuộc bầu cử trước."); return; }
@@ -5891,7 +5908,8 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     }
     if (f.rootOk === false) { set("alert", "amber", "Bằng chứng không khớp Merkle root của cuộc bầu cử này."); det.textContent = "Danh sách/bằng chứng thuộc cuộc bầu cử khác hoặc bị sai. Giao dịch nộp phiếu sẽ bị từ chối."; return; }
     set("check-circle", "teal", "Bằng chứng hợp lệ (" + f.proof.length + " mức).");
-    det.textContent = { manual: "Nguồn: JSON bạn dán.", list: "Nguồn: danh sách " + f.count + " ví bạn dán, root khớp cuộc bầu cử.", file: "Nguồn: proofs.json cạnh trang." }[f.source];
+    det.textContent = { manual: "Nguồn: JSON bạn dán.", list: "Nguồn: danh sách " + f.count + " ví " + (f.remembered ? "đã nhớ trên trình duyệt này" : "bạn dán") + ", root khớp cuộc bầu cử.", file: "Nguồn: proofs.json cạnh trang." }[f.source];
+    if (f.source === "list" && f.rootOk && f.list) $("btnCopyVoters").classList.remove("hidden");
   }
 
   /** Lý do một nút đang bị khóa (rỗng = bấm được). */
@@ -6676,9 +6694,20 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     if (route === "create" && !S.timeAbs) { try { syncTimeFields(); } catch (_) { /* bỏ qua */ } }
   }
 
+  /** Danh sách chọn cuộc trong thanh "Đang chọn": đổi cuộc ngay tại màn hình hiện tại, không cần quay về tab Bầu cử. */
+  function fillCtxPick() {
+    const sel = $("ctxPick");
+    if (!sel) return;
+    const list = S.all || [];
+    clear(sel);
+    list.forEach((x) => { const o = el("option", "", "#" + x.id + " · " + x.title); o.value = String(x.id); sel.appendChild(o); });
+    if (S.election && list.some((x) => x.id === Number(S.election.id))) sel.value = String(S.election.id);
+    sel.disabled = list.length < 2;
+  }
   function renderCtx() {
     const e = S.election;
     if (!e) return;
+    fillCtxPick();
     $("ctxTitle").textContent = "#" + e.id + " · " + e.title;
     const b = electionBadge(e);
     $("ctxPhase").className = b.className; $("ctxPhase").textContent = b.textContent;
@@ -6695,6 +6724,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       requiredApprovals: Number(st.requiredApprovals), approvalCount: Number(st.approvalCount),
       phase: Number(ph), candidateCount: names.length, names: Array.from(names), res: null, isApprover: false, hasApproved: false,
       orgId: Number(org.organizationId), reqStatus: Number(org.status), rejectCount: Number(org.rejectCount), hasRejected: false,
+      metaHash: lc(org.metadataHash || ""),
     };
     s.closed = s.reqStatus === 2 || s.reqStatus === 3;
     if (s.phase === 3 && s.isActivated) {
@@ -6732,11 +6762,37 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       renderDashboard();
       renderElectionsList();
       renderPending();
+      fillCtxPick();
       if (S.route === "approve") autoFocusPending();
       loadFeed().catch(() => {});
+      loadCardMetas(out).then((changed) => { if (changed) { renderFeaturedGrid(); renderElectionsList(); } }).catch(() => {});
     } catch (e) {
       if (!quiet) toast("err", "Không quét được dữ liệu hợp đồng: " + explain(e));
     } finally { S.scanning = false; }
+  }
+
+  /** Nạp mô tả/ảnh bìa đã khớp hash trên chuỗi cho MỌI cuộc (không chỉ cuộc đang chọn) để thẻ nào cũng có ảnh. */
+  S.cardMeta = {};
+  async function loadCardMetas(list) {
+    if (!sbConfigured() || !list || !list.length) return false;
+    const need = list.filter((x) => x.metaHash && !(S.cardMeta[x.id] && S.cardMeta[x.id].hash === x.metaHash));
+    if (!need.length) return false;
+    await loadVis(need.map((x) => x.id));
+    let rows;
+    try { rows = await sbGet("metadata_history?metadata_type=eq.election&metadata_hash=in.(" + [...new Set(need.map((x) => x.metaHash))].join(",") + ")&select=metadata_hash,content&content=not.is.null&limit=500"); }
+    catch (_) { return false; }
+    let changed = false;
+    for (const x of need) {
+      const r = (rows || []).find((q) => q.content && lc(q.metadata_hash) === x.metaHash);
+      if (!r) continue;
+      let got = null;
+      try { got = metadataHash(r.content); } catch (_) { got = null; }
+      if (got !== x.metaHash) continue;   // nội dung không khớp hash trên chuỗi: bỏ qua
+      const c = r.content;
+      S.cardMeta[x.id] = { hash: x.metaHash, description: cleanText(c.description, META_LIMITS.description), purpose: cleanText(c.purpose, META_LIMITS.purpose), cover: safeImg(c.cover && c.cover.url) };
+      changed = true;
+    }
+    return changed;
   }
 
   /* ----- Dashboard ----- */
@@ -7407,6 +7463,12 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     for (let i = 0; i < n; i++) {
       const a = l.candidates[i] || {}, b = f.candidates[i] || {};
       out.candidates.push({ title: a.title || b.title || "", bio: a.bio || b.bio || "", history: a.history || b.history || "", program: a.program || b.program || "", photo: a.photo || b.photo || "" });
+    }
+    const cm = S.cardMeta && S.cardMeta[Number(id)];
+    if (cm) {   // nội dung đã khớp hash, nạp sẵn cho mọi thẻ
+      out.description = cm.description || out.description;
+      out.purpose = cm.purpose || out.purpose;
+      out.cover = cm.cover || out.cover;
     }
     // Nội dung từ Supabase đã băm lại và khớp hash trên chuỗi: ưu tiên cao nhất
     const mv = S.metaVerify;
@@ -8428,6 +8490,30 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     $("orgManage").classList.remove("hidden");
     renderOrgManage();
     loadOrgMirror(o).catch(() => {});
+    checkOrgChanges(o).catch(() => {});
+  }
+
+  /** Cảnh báo nếu Manager đã sửa tên/hồ sơ tổ chức SAU lần xác minh gần nhất (hợp đồng không hủy xác minh khi sửa). Đọc từ sự kiện trên chuỗi. */
+  async function checkOrgChanges(o) {
+    if (o.status !== 2) return;
+    const p = chainProvider(), reg = await regAddress();
+    const latest = await p.getBlockNumber();
+    const idTopic = ethers.zeroPadValue(ethers.toBeHex(o.id), 32);
+    const tops = ["OrganizationRegistered", "OrganizationVerified", "OrganizationUpdated"].map((n) => REG_IFACE.getEvent(n).topicHash);
+    const logs = await getLogsChunked(p, { address: reg, fromBlock: Math.max(0, latest - LOG_MAX_RANGE), toBlock: latest, topics: [tops, idTopic] });
+    const evs = [];
+    for (const lg of logs) { try { const ev = REG_IFACE.parseLog(lg); if (ev) evs.push({ name: ev.name, args: ev.args, block: lg.blockNumber, idx: lg.index }); } catch (_) { /* log khác */ } }
+    evs.sort((a, b) => (a.block - b.block) || (a.idx - b.idx));
+    const lastV = evs.filter((x) => x.name === "OrganizationVerified").pop();
+    let warn = null;
+    if (lastV) {
+      const after = evs.filter((x) => x.name === "OrganizationUpdated" && (x.block > lastV.block || (x.block === lastV.block && x.idx > lastV.idx)));
+      const named = evs.filter((x) => x.name !== "OrganizationVerified" && (x.block < lastV.block || (x.block === lastV.block && x.idx < lastV.idx)));
+      const nameAtVerify = named.length ? named[named.length - 1].args.name : null;
+      if (after.length) warn = { count: after.length, renamed: nameAtVerify !== null && nameAtVerify !== o.name, from: nameAtVerify, to: o.name, block: lastV.block };
+    }
+    o.changeWarn = warn;
+    if (S.orgPick === o) renderOrgManage();
   }
 
   function addrCell(a) { const td = el("td"); td.appendChild(addrEl(a)); return td; }
@@ -8446,6 +8532,12 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     const al = $("omAlert"); clear(al);
     if (!verified) al.appendChild(el("div", "alert warn", "Tổ chức chưa được xác minh nên chưa quản lý được thành viên và người duyệt, và chưa tạo được cuộc bầu cử." + (isAdmin ? "" : " Hãy nhờ quản trị nền tảng xác minh.")));
     else if (!isMgr) al.appendChild(el("div", "alert info", "Chỉ Manager mới quản lý được thành viên và người duyệt. Vai trò hiện tại của bạn: " + (o.role ? ROLE_VI[o.role] : "không có") + "."));
+    if (verified && o.changeWarn) {
+      const w = o.changeWarn;
+      al.appendChild(el("div", "alert warn", w.renamed
+        ? "Tên tổ chức đã đổi sau khi được xác minh: từ “" + w.from + "” thành “" + w.to + "” (" + w.count + " lần sửa hồ sơ sau lần xác minh gần nhất, khối " + w.block + "). Trạng thái “đã xác minh” không tự hủy khi sửa, hãy kiểm tra lại trước khi tin tổ chức này."
+        : "Hồ sơ tổ chức đã được sửa " + w.count + " lần sau lần xác minh gần nhất (khối " + w.block + "), tên không đổi."));
+    }
     const canEdit = isMgr && verified;
 
     const mb = $("omMembers"); clear(mb);
@@ -8678,7 +8770,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   function fillCreateOrgs() {
     const sel = $("cOrg");
     if (!sel) return;
-    const prev = sel.value;
+    const prev = sel.value || S.draftOrg || "";   // bản nháp nhớ tổ chức đã chọn
     clear(sel);
     const ok = (S.orgs || []).filter((o) => o.status === 2 && o.role >= 2);
     if (!S.account) sel.appendChild(new Option("Kết nối ví để tải danh sách…", ""));
@@ -8917,6 +9009,8 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     S.salts = null;
     let newId = null;
     for (const lg of rc.logs) { try { const ev = IFACE.parseLog(lg); if (ev && ev.name === "ElectionCreated") newId = ev.args.id; } catch (_) { /* log khác */ } }
+    if (newId !== null) rememberVoters(Number(newId), parseAddresses($("cVoters").value).list);   // người tạo nhớ sẵn danh sách cử tri của cuộc vừa tạo
+    clearCreateDraft();
     const box = $("cResult");
     clear(box); box.classList.remove("hidden");
     const a = el("div", "alert ok");
@@ -9051,7 +9145,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     $("btnRelease").onclick = () => run("btnRelease", "Đang xử lý…", () => doRelease(S.election.id));
     $("btnShare").onclick = openShareModal;
     $("btnVerifyMeta").onclick = () => run("btnVerifyMeta", "Đang đối chiếu…", refreshMetaVerify);
-    $("cOrg").onchange = () => run("btnBuild", "Đang tải…", loadCreateCtx);
+    $("cOrg").onchange = () => { S.draftOrg = $("cOrg").value; run("btnBuild", "Đang tải…", loadCreateCtx); };
     $("cNames").oninput = () => { clearTimeout(S._candT); S._candT = setTimeout(renderCandEditors, 400); };
     $("btnDownloadMeta").onclick = () => {
       if (!S.lastBuilt || !S.lastBuilt.meta) return;
@@ -9059,12 +9153,64 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       downloadJson("votechain-metadata.json", { election: m.election, electionHash: m.electionHash, candidates: m.candidates, candidateHashes: m.candidateHashes });
     };
   }
+  /* ----- Bản nháp form tạo cuộc: tự lưu trong trình duyệt này (file ảnh thì không lưu được) ----- */
+  const DRAFT_KEY = () => "votechain:createDraft:v1:" + CHAIN_ID;
+  const DRAFT_IDS = ["cTitle", "cDesc", "cPurpose", "cEligibility", "cNames", "cVoters", "cQuorum", "cReg", "cCommit", "cReveal", "cVisInfo", "cVisCands", "cVisRes"];
+  const DRAFT_DEFAULTS = { cTitle: "Bầu Ban cán sự lớp", cDesc: "", cPurpose: "", cEligibility: "", cNames: "Nguyễn Văn A\nTrần Thị B", cVoters: "", cQuorum: "5000", cReg: "5", cCommit: "10", cReveal: "10", cVisInfo: "public", cVisCands: "public", cVisRes: "public" };
+  const CAND_KEYS = ["bio", "experience", "achievements", "manifesto", "wallet"];
+  function draftSnapshot() {
+    const d = { t: Date.now(), f: {}, org: ($("cOrg") && $("cOrg").value) || S.draftOrg || "", save: $("cSave").checked, mgr: !!($("cVisMgr") && $("cVisMgr").checked), pro: !!($("cVisPro") && $("cVisPro").checked) };
+    DRAFT_IDS.forEach((id) => { const n = $(id); if (n) d.f[id] = n.value; });
+    d.cand = (S.candForm || []).map((c) => c ? CAND_KEYS.reduce((o, k) => { o[k] = String(c[k] || ""); return o; }, {}) : null);
+    return d;
+  }
+  function saveCreateDraftSoon() {
+    clearTimeout(S._draftT);
+    S._draftT = setTimeout(() => { try { LS.set(DRAFT_KEY(), JSON.stringify(draftSnapshot())); } catch (_) { /* bỏ qua */ } }, 500);
+  }
+  function clearCreateDraft() { clearTimeout(S._draftT); LS.del(DRAFT_KEY()); }
+  function applyDraftFields(f, cand, extra) {
+    for (const id of DRAFT_IDS) if (typeof f[id] === "string" && $(id)) $(id).value = f[id];
+    S.candForm = (Array.isArray(cand) ? cand.slice(0, LIMITS.MAX_CANDIDATES) : []).map((c) => c && typeof c === "object" ? Object.assign(CAND_KEYS.reduce((o, k) => { o[k] = typeof c[k] === "string" ? c[k].slice(0, 2000) : ""; return o; }, {}), { avatar: null }) : null);
+    if (extra) {
+      S.draftOrg = extra.org || "";
+      $("cSave").checked = extra.save !== false;
+      if ($("cVisMgr")) $("cVisMgr").checked = !!extra.mgr;
+      if ($("cVisPro")) $("cVisPro").checked = !!extra.pro;
+    }
+    if ($("cVisInfo")) $("cVisInfo").onchange();
+    $("cQuorum").oninput(); $("cVoters").oninput();
+    S.timeAbs = false;
+    renderCandEditors();
+    syncTimeFields();
+  }
+  function restoreCreateDraft() {
+    let d = null;
+    try { d = JSON.parse(LS.get(DRAFT_KEY()) || "null"); } catch (_) { d = null; }
+    if (!d || typeof d !== "object" || !d.f || Date.now() - Number(d.t) > 7 * 86400000) return false;
+    applyDraftFields(d.f, d.cand, d);
+    return true;
+  }
+  function resetCreateForm() {
+    clearCreateDraft();
+    applyDraftFields(DRAFT_DEFAULTS, [], { org: "", save: true, mgr: false, pro: false });
+    $("cOrg").value = "";
+    loadCreateCtx().catch(() => {});
+    toast("info", "Đã xóa bản nháp và đặt lại form.");
+  }
+
   async function initPlatform() {
     sbRestore();
     renderLoginState();
     mountVisFields("cVisBox", "c", false);
     mountVisFields("moVisBox", "mo", true);
+    const restored = restoreCreateDraft();
     renderCandEditors();
+    const cv = $("view-create");
+    cv.addEventListener("input", saveCreateDraftSoon);
+    cv.addEventListener("change", saveCreateDraftSoon);
+    $("btnClearDraft").onclick = resetCreateForm;
+    if (restored) toast("info", "Đã khôi phục bản nháp form tạo cuộc (ảnh bìa và ảnh ứng viên cần chọn lại).");
     if (reader()) {
       try { await loadOrgs(); } catch (e) { console.warn("loadOrgs", e); }
     }
@@ -9086,6 +9232,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     });
     window.addEventListener("hashchange", () => showRoute(currentRoute()));
     $("menuBtn").onclick = () => document.body.classList.toggle("nav-open");
+    $("ctxPick").onchange = () => { const v = $("ctxPick").value; if (v !== "") openElection(Number(v), S.route); };
     $("homeNavHow").onclick = () => { const s = $("homeSteps"); if (s) s.scrollIntoView({ behavior: "smooth", block: "center" }); };
     $("scrim").onclick = () => document.body.classList.remove("nav-open");
 
@@ -9123,7 +9270,17 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     };
     const refreshProof = () => { try { renderProofState(); renderRoles(); renderVoteFlow(); } catch (_) { /* bỏ qua */ } };
     $("proofInput").oninput = refreshProof;
-    $("voterListInput").oninput = refreshProof;
+    $("voterListInput").oninput = () => {
+      refreshProof();
+      const f = safeFindProof();   // danh sách dán vào khớp Merkle root thì nhớ lại theo cuộc này
+      if (S.election && f.source === "list" && f.rootOk && !f.remembered && f.list) { rememberVoters(S.election.id, f.list); refreshProof(); }
+    };
+    $("btnCopyVoters").onclick = async () => {
+      const f = safeFindProof();
+      if (!(f.source === "list" && f.list)) return;
+      try { await navigator.clipboard.writeText(f.list.join("\n")); toast("ok", "Đã sao chép " + f.list.length + " ví. Gửi danh sách này cho cử tri (Zalo, email…)."); }
+      catch (_) { toast("warn", "Trình duyệt không cho sao chép tự động. Hãy mở mục nhập danh sách và sao chép thủ công."); }
+    };
 
     // form tạo cuộc bầu cử: gợi ý trực tiếp
     $("cQuorum").oninput = () => { const v = Number($("cQuorum").value); $("cQuorumHelp").textContent = Number.isFinite(v) ? "= " + bpsStr(v) + " (100 bps = 1%)" : ""; };
