@@ -132,7 +132,7 @@ const cors = { "access-control-allow-origin": "*", "access-control-allow-headers
   await p.evaluate(() => { location.hash = "#/home"; });
   await p.waitForTimeout(400);
   const home = await p.evaluate(() => document.querySelector("#view-home h1").textContent.replace(/\s+/g, " "));
-  check("(4b) trang chu: slogan Lá phiếu số – Niềm tin thật", home === "Lá phiếu số – Niềm tin thật", home);
+  check("(4b) trang chu: slogan Lá phiếu số Niềm tin thật", home === "Lá phiếu số Niềm tin thật", home);
   await p.evaluate(() => { location.hash = "#/dashboard"; });
   await p.waitForTimeout(500);
   check("(5) 4 o so lieu khong con dong chu thich nho", hero.kpiSub === 0 && (await p.evaluate(() => document.querySelectorAll("#kpis .kpi").length)) === 4);
