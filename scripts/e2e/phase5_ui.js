@@ -321,7 +321,11 @@ async function sbHandler(route) {
     await idle(pv);
     await pv.evaluate(() => { const d = document.getElementById("voterListInput").closest("details"); if (d) d.open = true; });
     await pv.fill("#voterListInput", voteList);
-    await pv.click('#candList input[value="' + cand + '"]', { force: true });
+    for (let k = 0; k < 4; k++) {   // giao diện có thể vẽ lại danh sách ngay sau khi bấm: bấm lại cho tới khi lựa chọn dính
+      await pv.click('#candList input[value="' + cand + '"]', { force: true });
+      await pv.waitForTimeout(300);
+      if (await pv.evaluate((c) => String(window.__votechain.S.pick) === c, cand)) break;
+    }
     const dl = pv.waitForEvent("download", { timeout: 8000 }).catch(() => null);
     await click(pv, "#btnCommit"); await dl;
     check("vi " + i + " nop phieu kin thanh cong (UI moi)", (await core.getVoterStatus(0, accts[i])).committed === true, (await toasts(pv)).slice(0, 120));

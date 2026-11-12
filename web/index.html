@@ -2325,6 +2325,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
    * 8. TẢI & HIỂN THỊ CUỘC BẦU CỬ
    * ------------------------------------------------------------------ */
   async function loadElection(quiet) {
+    S.loadSeq = (S.loadSeq || 0) + 1;
     const addr = $("cfgAddress").value.trim();
     if (!ethers.isAddress(addr)) throw new UserError("Hãy nhập địa chỉ hợp đồng hợp lệ (0x… 42 ký tự).");
     if (addr !== S.address) {
@@ -6127,6 +6128,20 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     if (qs.has("election") && S.election && !/^#\//.test(location.hash || "")) goto("election");
   }
 
+  /** Không có ?election trên đường dẫn: tự chọn cuộc đang diễn ra (ưu tiên đang nộp/mở phiếu) thay vì cuộc mặc định đã kết thúc. */
+  async function autoPickActive(initialId) {
+    if (qs.has("election")) return;
+    const seq0 = S.loadSeq || 0;   // có ai tải cuộc khác trong lúc chờ thì thôi, không giành quyền
+    for (let i = 0; i < 40 && !S.all; i++) { if (!S.scanning) await scanAll(true); if (!S.all) await new Promise((r) => setTimeout(r, 400)); }
+    if (!S.all || $("electionId").value.trim() !== initialId || (S.loadSeq || 0) !== seq0) return;   // người dùng đã tự đổi cuộc thì giữ nguyên
+    const cur = S.election;
+    if (cur && cur.isActivated && cur.phase < 3 && !cur.closed) return;
+    const pick = S.all.find((s) => s.isActivated && !s.closed && (s.phase === 1 || s.phase === 2)) || S.all.find((s) => s.isActivated && !s.closed && s.phase === 0);
+    if (!pick || (cur && Number(cur.id) === pick.id)) return;
+    $("electionId").value = String(pick.id);
+    try { await loadElection(true); } catch (_) { /* giữ cuộc đang có */ }
+  }
+
   async function init() {
     wire();
     renderTxs();
@@ -6134,6 +6149,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     const fromUrl = qs.get("contract");
     const addr = (fromUrl || LS.get("votechain:addr") || CONFIG.CONTRACT_ADDRESS || "").trim();
     $("electionId").value = String(qs.get("election") ?? CONFIG.ELECTION_ID);
+    const initialElectionId = $("electionId").value.trim();
     setNet("gray", "Chưa kết nối ví");
     syncChain();
     if (ethers.isAddress(addr)) { setAddress(ethers.getAddress(addr), false); buildReadOnly(); }
@@ -6154,7 +6170,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       if (window.ethereum) {
         const accts = await window.ethereum.request({ method: "eth_accounts" });
         const chain = Number(await window.ethereum.request({ method: "eth_chainId" }));
-        if (accts && accts.length && chain === CHAIN_ID) { await connect(); openSharedElection(); return; }
+        if (accts && accts.length && chain === CHAIN_ID) { await connect(); openSharedElection(); autoPickActive(initialElectionId).catch(() => {}); return; }
       }
     } catch (_) { /* người dùng bấm kết nối thủ công */ }
     if (S.readContract) {
@@ -6163,6 +6179,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         openSharedElection();
       } catch (_) { /* chưa có cuộc bầu cử hoặc RPC lỗi */ }
       scanAll(true);
+      autoPickActive(initialElectionId).catch(() => {});
     }
   }
 
