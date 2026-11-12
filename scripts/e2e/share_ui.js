@@ -82,6 +82,7 @@ const check = (n, ok, x) => log.push((ok ? "PASS " : "FAIL ") + n + (x ? " :: " 
   const u = new URL(link);
   check("lien ket dung dich: ?election=0, #/election, hop dong va chain (khac mac dinh)", u.searchParams.get("election") === "0" && u.hash === "#/election" && u.searchParams.get("contract") === addr && u.searchParams.get("chain") === "31337", link);
   check("lien ket KHONG mang quyen: khong co token, vi, chu ky", !/token|access|signature|0x[0-9a-fA-F]{40}(?!$)/.test(link.replace(addr, "")) && ![...u.searchParams.keys()].some((k) => !["election", "contract", "chain"].includes(k)));
+  await p0.waitForFunction(() => /CLB Tin học/.test(document.getElementById("modal").textContent), null, { timeout: 8000 }).catch(() => {});   // tên tổ chức nạp bất đồng bộ
   const mt = await p0.textContent("#modal");
   check("xem truoc trong hop thoai: ten cuoc, ten to chuc (doc tu chuoi), gio", /Bầu BCH đã duyệt/.test(mt) && /CLB Tin học/.test(mt) && /Nộp phiếu từ/.test(mt), mt.replace(/\s+/g, " ").slice(0, 200));
   check("co Facebook, Email; ghi ro lien ket khong cap quyen; canh bao may cuc bo", (await p0.locator("#modal a[href^='https://www.facebook.com/sharer/sharer.php?u=']").count()) === 1 && (await p0.locator("#modal a[href^='mailto:']").count()) === 1 && /không cấp quyền xem nội dung hạn chế và không cho bỏ phiếu/.test(mt) && /máy cục bộ/.test(mt));

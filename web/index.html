@@ -2458,7 +2458,16 @@ body.landing .landing-nav button { border: 0; background: transparent; color: va
 body.landing .landing-nav button:hover { background: var(--brand-100); color: var(--brand); }
 body.landing.has-wallet #btnEnterApp { display: inline-flex; }
 body.landing .content { max-width: none; padding: 0; }
-#ctxBar .ctx-pick { max-width: min(360px, 100%); padding: 6px 30px 6px 10px; font-size: 0.86rem; }
+#ctxBar .ctx-picker { position: relative; }
+#ctxBar .ctx-pop { position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; width: min(380px, 86vw); background: var(--surface, #fff); border: 1px solid var(--line, #dbe3f0); border-radius: 12px; box-shadow: 0 12px 32px rgba(15, 36, 71, 0.16); padding: 10px; }
+#ctxBar .ctx-pop input { width: 100%; margin-bottom: 8px; }
+#ctxBar .ctx-list { max-height: 264px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+#ctxBar .ctx-grp { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-3, #6b7a99); padding: 8px 8px 4px; }
+#ctxBar .ctx-opt { display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; width: 100%; border: 0; background: transparent; font: inherit; font-size: 0.88rem; color: var(--ink); padding: 8px 10px; border-radius: 8px; cursor: pointer; }
+#ctxBar .ctx-opt:hover, #ctxBar .ctx-opt:focus-visible { background: var(--brand-100); outline: none; }
+#ctxBar .ctx-opt[aria-selected="true"] { background: var(--brand-100); font-weight: 700; }
+#ctxBar .ctx-opt .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#ctxBar .ctx-empty { padding: 10px; font-size: 0.86rem; color: var(--ink-3, #6b7a99); }
 body.landing .app-foot { max-width: none; margin-top: 0; border-top: 0; padding: 48px max(26px, calc((100% - 1188px) / 2)) 0; background: #0f2447; color: #b4c3e0; }
 body.landing .app-foot .brand-name { color: #fff; }
 body.landing .app-foot .brand-name b { color: #7fb0ff; }
@@ -2655,6 +2664,9 @@ body.landing #banner { max-width: 1240px; margin: 14px auto 0 !important; }
   height: 12px;
 }
 
+/* Người dùng thường không cần thấy nhãn kỹ thuật: chỉ hiện trong mục "Chi tiết kiểm chứng" */
+.src { display: none; }
+#eeFold .src, #approveMeta .src, .src.keep { display: inline-flex; }   /* .keep: cảnh báo không khớp hash, luôn phải thấy */
 .src-legend {
   display: flex;
   align-items: center;
@@ -2723,7 +2735,7 @@ body.landing #banner { max-width: 1240px; margin: 14px auto 0 !important; }
 
 .ecard .cover {
   position: relative;
-  height: 132px;
+  height: 196px;
   background: var(--brand-50);
 }
 
@@ -2880,7 +2892,7 @@ body.landing #banner { max-width: 1240px; margin: 14px auto 0 !important; }
 .share-link { width: 100%; font-family: var(--mono, monospace); font-size: .82rem; }
 .detail-hero {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
@@ -2889,7 +2901,7 @@ body.landing #banner { max-width: 1240px; margin: 14px auto 0 !important; }
 }
 
 .detail-hero .cover {
-  min-height: 220px;
+  height: clamp(190px, 26vw, 300px);
   background: var(--brand-50);
 }
 
@@ -3735,8 +3747,14 @@ body.landing #banner { max-width: 1240px; margin: 14px auto 0 !important; }
 <div id="ctxBar" class="row hidden" style="margin-bottom:14px">
   <span class="chip"><svg class="ic sm"><use href="#i-vote"/></svg><span>Đang chọn:</span> <b id="ctxTitle" style="margin-left:3px">—</b></span>
   <span id="ctxPhase" class="badge blue">—</span>
-  <select id="ctxPick" class="ctx-pick" aria-label="Đổi sang cuộc bầu cử khác" title="Đổi sang cuộc bầu cử khác"></select>
-  <button class="btn ghost sm" data-route="elections">Danh sách</button>
+  <div class="ctx-picker">
+    <button type="button" id="ctxPickBtn" class="btn outline sm" aria-haspopup="listbox" aria-expanded="false" title="Đổi sang cuộc bầu cử khác">Đổi cuộc ▾</button>
+    <div id="ctxPop" class="ctx-pop hidden">
+      <input id="ctxSearch" type="search" placeholder="Tìm theo tên hoặc số cuộc…" autocomplete="off" aria-label="Tìm cuộc bầu cử">
+      <div id="ctxList" class="ctx-list" role="listbox" aria-label="Danh sách cuộc bầu cử"></div>
+    </div>
+  </div>
+  <button class="btn ghost sm" data-route="elections">Xem tất cả</button>
 </div>
 
 <!-- =====================================================================
@@ -3747,8 +3765,8 @@ body.landing #banner { max-width: 1240px; margin: 14px auto 0 !important; }
     <div class="home-wrap home-hero-grid">
       <div class="home-hero-text">
         <span class="chip"><span class="dot"></span><span>Bầu cử kín · Minh bạch · Ethereum Sepolia</span></span>
-        <h1>Bầu cử minh bạch – <em>Niềm tin được xác thực trên Blockchain</em></h1>
-        <p class="lead">VoteChain là nền tảng bầu cử điện tử cho lớp học và câu lạc bộ. Phiếu bầu được giữ <b>kín</b> bằng cơ chế Commit–Reveal, mỗi ví một phiếu, kết quả do hợp đồng thông minh tự tính nên ai cũng kiểm chứng được.</p>
+        <h1>Lá phiếu số – <em>Niềm tin thật</em></h1>
+        <p class="lead">VoteChain là nền tảng bầu cử điện tử dành cho lớp học, câu lạc bộ và tổ chức. Ứng dụng Blockchain và cơ chế <b>Commit–Reveal</b> giúp bảo vệ tính <b>kín</b> của lá phiếu, ngăn bỏ phiếu trùng lặp và cho phép mọi người kiểm chứng kết quả minh bạch.</p>
         <div class="hero-actions">
           <button class="btn primary lg" data-route="elections"><svg class="ic"><use href="#i-search"/></svg>Khám phá cuộc bầu cử</button>
           <button class="btn outline lg" data-route="dashboard">Vào ứng dụng</button>
@@ -3853,22 +3871,18 @@ body.landing #banner { max-width: 1240px; margin: 14px auto 0 !important; }
         <div class="kpi primary">
           <div class="top"><span class="k">Tổng số cuộc bầu cử</span><span class="ic-box sm"><svg class="ic sm"><use href="#i-list"/></svg></span></div>
           <div class="v" id="hKpiTotal"><span class="skel"></span></div>
-          <div class="s" id="hKpiTotalSub">Đọc từ hợp đồng</div>
         </div>
         <div class="kpi">
           <div class="top"><span class="k">Đang diễn ra</span><span class="ic-box teal sm"><svg class="ic sm"><use href="#i-play"/></svg></span></div>
           <div class="v" id="hKpiActive"><span class="skel"></span></div>
-          <div class="s" id="hKpiActiveSub">Đã kích hoạt, chưa kết thúc</div>
         </div>
         <div class="kpi">
           <div class="top"><span class="k">Tổng số cử tri</span><span class="ic-box amber sm"><svg class="ic sm"><use href="#i-users"/></svg></span></div>
           <div class="v" id="hKpiVoters"><span class="skel"></span></div>
-          <div class="s" id="hKpiVotersSub">Tổng voterCount khai báo</div>
         </div>
         <div class="kpi">
           <div class="top"><span class="k">Phiếu đã ghi nhận</span><span class="ic-box sm"><svg class="ic sm"><use href="#i-check-circle"/></svg></span></div>
           <div class="v" id="hKpiVotes"><span class="skel"></span></div>
-          <div class="s" id="hKpiVotesSub">Phiếu đã mở (reveal) hợp lệ</div>
         </div>
       </div>
       <div class="section-head" style="margin-top:34px">
@@ -3926,18 +3940,11 @@ body.landing #banner { max-width: 1240px; margin: 14px auto 0 !important; }
   <div class="hero">
     <div>
       <span class="chip" id="heroNetChip"><span class="dot"></span><span>Ethereum Sepolia · <span id="heroNetState">Chưa kết nối</span></span></span>
-      <h1>Bầu cử minh bạch – <em>Niềm tin được xác thực trên Blockchain</em></h1>
-      <p class="lead">VoteChain là nền tảng bầu cử điện tử cho lớp học và câu lạc bộ. Cơ chế <b>Commit–Reveal</b> giữ phiếu bầu <b>kín</b> trong pha đầu: bạn chỉ gửi mã băm cam kết, đến pha sau mới công khai lựa chọn. Mỗi ví một phiếu, kết quả do hợp đồng thông minh tự tính nên ai cũng kiểm chứng được.</p>
+      <h1>Lá phiếu số – <em>Niềm tin thật</em></h1>
+      <p class="lead">VoteChain là nền tảng bầu cử điện tử dành cho lớp học, câu lạc bộ và tổ chức. Ứng dụng Blockchain và cơ chế <b>Commit–Reveal</b> giúp bảo vệ tính <b>kín</b> của lá phiếu, ngăn bỏ phiếu trùng lặp và cho phép mọi người kiểm chứng kết quả minh bạch.</p>
       <div class="hero-actions">
         <button class="btn primary lg" data-route="elections"><svg class="ic"><use href="#i-search"/></svg>Khám phá cuộc bầu cử</button>
         <button class="btn outline lg" data-route="about"><svg class="ic"><use href="#i-info"/></svg>Cách hoạt động</button>
-      </div>
-      <div class="hero-steps" aria-hidden="true">
-        <span><svg class="ic sm"><use href="#i-lock"/></svg>Commit: gửi mã băm</span>
-        <span><svg class="ic sm"><use href="#i-chevron"/></svg></span>
-        <span><svg class="ic sm"><use href="#i-unlock"/></svg>Reveal: công khai lựa chọn</span>
-        <span><svg class="ic sm"><use href="#i-chevron"/></svg></span>
-        <span><svg class="ic sm"><use href="#i-trophy"/></svg>Hợp đồng tính kết quả</span>
       </div>
       <div class="hero-meta" aria-live="polite">
         <span class="chip"><svg class="ic sm"><use href="#i-globe"/></svg><span id="wcNet">Chưa kết nối</span></span>
@@ -4072,22 +4079,18 @@ body.landing #banner { max-width: 1240px; margin: 14px auto 0 !important; }
     <div class="kpi primary">
       <div class="top"><span class="k">Tổng số cuộc bầu cử</span><span class="ic-box sm"><svg class="ic sm"><use href="#i-list"/></svg></span></div>
       <div class="v" id="kpiTotal"><span class="skel"></span></div>
-      <div class="s" id="kpiTotalSub">Đọc từ electionCount()</div>
     </div>
     <div class="kpi">
       <div class="top"><span class="k">Đang diễn ra</span><span class="ic-box teal sm"><svg class="ic sm"><use href="#i-play"/></svg></span></div>
       <div class="v" id="kpiActive"><span class="skel"></span></div>
-      <div class="s" id="kpiActiveSub">Đã kích hoạt, chưa kết thúc</div>
     </div>
     <div class="kpi">
       <div class="top"><span class="k">Tổng số cử tri</span><span class="ic-box amber sm"><svg class="ic sm"><use href="#i-users"/></svg></span></div>
       <div class="v" id="kpiVoters"><span class="skel"></span></div>
-      <div class="s" id="kpiVotersSub">Tổng voterCount khai báo</div>
     </div>
     <div class="kpi">
       <div class="top"><span class="k">Phiếu đã ghi nhận</span><span class="ic-box sm"><svg class="ic sm"><use href="#i-check-circle"/></svg></span></div>
       <div class="v" id="kpiVotes"><span class="skel"></span></div>
-      <div class="s" id="kpiVotesSub">Phiếu đã mở (reveal) hợp lệ</div>
     </div>
   </div>
 
@@ -4217,10 +4220,10 @@ body.landing #banner { max-width: 1240px; margin: 14px auto 0 !important; }
     <div class="card" style="margin-top:16px">
       <div class="card-head"><div><h3><svg class="ic"><use href="#i-clock"/></svg>Các giai đoạn bầu cử</h3></div><span class="src on"><svg class="ic"><use href="#i-shield"/></svg>On-chain</span></div>
       <ol id="phaseSteps" class="stepper" aria-label="Các pha của cuộc bầu cử">
-        <li data-step="0" data-n="1">Đăng ký &amp; duyệt<small>Người duyệt ký xác nhận</small></li>
-        <li data-step="1" data-n="2">Nộp phiếu kín<small>Gửi mã băm (commit)</small></li>
-        <li data-step="2" data-n="3">Mở phiếu<small>Công khai lựa chọn (reveal)</small></li>
-        <li data-step="3" data-n="4">Kết thúc<small>Hợp đồng tính kết quả</small></li>
+        <li data-step="0" data-n="1">Đăng ký &amp; duyệt</li>
+        <li data-step="1" data-n="2">Nộp phiếu kín</li>
+        <li data-step="2" data-n="3">Mở phiếu</li>
+        <li data-step="3" data-n="4">Kết thúc</li>
       </ol>
       <div id="phaseBarWrap" class="hidden" style="margin-top:14px">
         <div class="bar"><i id="phaseBar" style="width:0%"></i></div>
@@ -4266,7 +4269,6 @@ body.landing #banner { max-width: 1240px; margin: 14px auto 0 !important; }
     <div class="section-head" style="margin-top:28px">
       <div>
         <h2><svg class="ic lg" style="color:var(--brand)"><use href="#i-activity"/></svg>Thống kê trực quan</h2>
-        <p>Phiếu chỉ hiện từ pha mở phiếu để không lộ kết quả sớm.</p>
       </div>
     </div>
     <div class="viz-grid">
@@ -4303,7 +4305,7 @@ body.landing #banner { max-width: 1240px; margin: 14px auto 0 !important; }
             <div class="row" style="margin-top:8px"><span>Hoàn thành Reveal</span><b id="meterRevealTxt">—</b></div>
             <div class="bar teal"><i id="meterReveal" style="width:0%"></i></div>
           </div>
-          <div class="privacy-note"><svg class="ic sm" style="margin-top:2px"><use href="#i-lock"/></svg><span>Nhật ký và số liệu trên đây không gắn ví với lựa chọn. Dữ liệu thô trên blockchain vẫn công khai theo bản chất của chuỗi khối.</span></div>
+          <div class="privacy-note"><svg class="ic sm" style="margin-top:2px"><use href="#i-lock"/></svg><span>Số liệu chỉ cho biết có bao nhiêu người đã tham gia. Không ai biết người khác đã chọn ai.</span></div>
         </div>
 
         <!-- quorum + kỹ thuật -->
@@ -4313,15 +4315,15 @@ body.landing #banner { max-width: 1240px; margin: 14px auto 0 !important; }
         </div>
 
         <div class="card">
-          <div class="card-head"><h3><svg class="ic"><use href="#i-shield"/></svg>Thông tin kỹ thuật</h3></div>
+          <div class="card-head"><h3><svg class="ic"><use href="#i-shield"/></svg>Mốc thời gian và người duyệt</h3></div>
           <dl class="kv">
             <dt>Ban tổ chức</dt><dd id="kvAdmin" class="mono"></dd>
-            <dt>Merkle root</dt><dd id="kvRoot" class="mono"></dd>
-            <dt>Hết pha đăng ký</dt><dd id="kvReg"></dd>
-            <dt>Hết pha nộp phiếu</dt><dd id="kvCommit"></dd>
-            <dt>Hết pha mở phiếu</dt><dd id="kvReveal"></dd>
+            <dt>Mã đối chiếu danh sách cử tri</dt><dd id="kvRoot" class="mono"></dd>
+            <dt>Hết giai đoạn đăng ký</dt><dd id="kvReg"></dd>
+            <dt>Hết giai đoạn nộp phiếu</dt><dd id="kvCommit"></dd>
+            <dt>Hết giai đoạn mở phiếu</dt><dd id="kvReveal"></dd>
             <dt>Người duyệt</dt><dd id="kvApprovers"></dd>
-            <dt>Giờ trên chuỗi</dt><dd id="kvChainTime"></dd>
+            <dt>Giờ hệ thống</dt><dd id="kvChainTime"></dd>
           </dl>
           <div class="row" style="margin-top:16px">
             <button class="btn outline sm" data-route="log"><svg class="ic sm"><use href="#i-activity"/></svg>Nhật ký</button>
@@ -4330,10 +4332,11 @@ body.landing #banner { max-width: 1240px; margin: 14px auto 0 !important; }
       </div>
     </div>
 
-    <div class="card" style="margin-top:16px">
-      <div class="card-head"><div><h3><svg class="ic"><use href="#i-hash"/></svg>Nội dung đã xác thực với chuỗi</h3><div class="sub">Mô tả và hồ sơ ứng viên lấy từ Supabase, được băm lại trong trình duyệt và so với hash trên chuỗi.</div></div></div>
+    <details class="card fold-card" id="eeFold" style="margin-top:16px">
+      <summary class="small" style="cursor:pointer;font-weight:700">Chi tiết kiểm chứng nội dung</summary>
+      <div class="small muted" style="margin:8px 0 10px">Mô tả và hồ sơ ứng viên được đối chiếu với mã đã ghi trên chuỗi để chắc chắn chưa bị sửa đổi.</div>
       <div id="eeMeta"><div class="small muted">Chưa tải.</div></div>
-    </div>
+    </details>
 
     <!-- cập nhật hồ sơ (chỉ ban tổ chức, pha Đăng ký) -->
     <div class="card hidden" style="margin-top:16px" id="metaOrg">
@@ -4404,7 +4407,7 @@ body.landing #banner { max-width: 1240px; margin: 14px auto 0 !important; }
       </div>
       <div id="cardInvite" class="alert ok hidden" style="margin-top:12px">
         <svg class="ic sm"><use href="#i-shield"/></svg>
-        <span style="flex:1">Phiếu của bạn đã được tính. Bạn có thể <b>nhận Thẻ cử tri</b> (NFT không chuyển nhượng) làm kỷ niệm đã tham gia cuộc bầu cử này. Việc này hoàn toàn tùy chọn và không ảnh hưởng đến phiếu.</span>
+        <span style="flex:1"></span>
         <button class="btn primary sm" data-route="card" type="button">Nhận thẻ</button>
       </div>
     </div>
@@ -4426,13 +4429,17 @@ body.landing #banner { max-width: 1240px; margin: 14px auto 0 !important; }
             <div id="proofDetail" class="help"></div>
             <button id="btnCopyVoters" class="btn outline sm hidden" type="button" style="margin:6px 0 4px">Sao chép danh sách cử tri</button>
             <details class="fold">
-              <summary><svg class="ic sm"><use href="#i-file"/></svg>Nhập danh sách cử tri hoặc bằng chứng thủ công</summary>
+              <summary><svg class="ic sm"><use href="#i-file"/></svg>Dán danh sách cử tri</summary>
               <div class="fold-body">
                 <label class="f" for="voterListInput">Danh sách ví cử tri do ban tổ chức công bố (mỗi dòng một địa chỉ)</label>
                 <textarea id="voterListInput" spellcheck="false" placeholder="0x…&#10;0x…"></textarea>
-                <div class="help">Trình duyệt dựng cây Merkle từ danh sách này, so root với cuộc bầu cử rồi tự tìm bằng chứng cho ví của bạn.</div>
-                <label class="f" for="proofInput" style="margin-top:12px">Hoặc dán bằng chứng dạng JSON</label>
-                <textarea id="proofInput" spellcheck="false" placeholder='["0x…","0x…"]'></textarea>
+                <details class="fold" style="margin-top:12px">
+                  <summary>Nâng cao</summary>
+                  <div class="fold-body">
+                    <label class="f" for="proofInput">Dán bằng chứng dạng JSON (nếu ban tổ chức gửi riêng cho bạn)</label>
+                    <textarea id="proofInput" spellcheck="false" placeholder='["0x…","0x…"]'></textarea>
+                  </div>
+                </details>
               </div>
             </details>
           </div>
@@ -4508,7 +4515,7 @@ body.landing #banner { max-width: 1240px; margin: 14px auto 0 !important; }
   <div class="page-head">
     <div>
       <h1>Thẻ cử tri</h1>
-      <p>NFT không chuyển nhượng (soulbound) ghi nhận bạn đã tham gia một cuộc bầu cử. Thẻ không chứa lựa chọn của bạn.</p>
+      <p>NFT không chuyển nhượng ghi nhận bạn đã tham gia một cuộc bầu cử. Thẻ không chứa lựa chọn của bạn.</p>
     </div>
   </div>
 
@@ -4516,7 +4523,6 @@ body.landing #banner { max-width: 1240px; margin: 14px auto 0 !important; }
     <div class="card-head">
       <div>
         <h3><svg class="ic"><use href="#i-link"/></svg>Hợp đồng thẻ (VoterCardSBT)</h3>
-        <div class="sub">Dán địa chỉ hợp đồng VoterCardSBT đã triển khai. Giao diện chỉ nhận hợp đồng thẻ trỏ đúng tới hợp đồng ProjectCore đang dùng.</div>
       </div>
     </div>
     <div class="row">
@@ -4604,7 +4610,7 @@ body.landing #banner { max-width: 1240px; margin: 14px auto 0 !important; }
         <div class="field"><label class="f" for="oEmail">Email liên hệ</label><input id="oEmail" type="email" maxlength="120" placeholder="ten@vi-du.vn"></div>
         <div class="field" id="oWebF"><label class="f" for="oWeb">Website / Facebook</label><input id="oWeb" type="text" maxlength="200" placeholder="https://…"></div>
       </div>
-      <div class="help" style="margin:-4px 0 12px">Hồ sơ này được băm (hash) và hash đó ghi lên chuỗi cùng tên tổ chức; nội dung lưu ở Supabase và được đối chiếu lại ngay trên trình duyệt. Email và website sẽ <b>công khai</b> khi tổ chức được xác minh. Logo thêm sau khi tổ chức được xác minh.</div>
+      <div class="help" style="margin:-4px 0 12px">Email và website sẽ <b>hiển thị công khai</b> trên trang tổ chức.</div>
       <div id="oRegStatus" class="small muted" style="margin-bottom:8px"></div>
       <button id="btnOrgRegister" class="btn primary"><svg class="ic sm"><use href="#i-send"/></svg>Đăng ký tổ chức</button>
     </div>
@@ -4699,8 +4705,11 @@ Trần Thị B</textarea><div class="help">2–20 ứng viên, mỗi tên 1–64
       </div>
 
       <div class="card">
-        <div class="card-head"><div><h3><svg class="ic"><use href="#i-lock"/></svg>4 · Phạm vi xem</h3><div class="sub">Chọn ai được xem thông tin, hồ sơ ứng viên và kết quả. Sửa được đến hết pha Đăng ký.</div></div></div>
-        <div id="cVisBox"></div>
+        <div class="card-head"><div><h3><svg class="ic"><use href="#i-lock"/></svg>4 · Ai được xem cuộc bầu cử</h3><div class="sub">Mặc định công khai: ai có liên kết đều xem được. Chỉ mở phần dưới nếu bạn muốn giới hạn.</div></div></div>
+        <details id="cVisFold" class="fold">
+          <summary>Tùy chọn nâng cao: giới hạn người xem</summary>
+          <div class="fold-body"><div id="cVisBox"></div></div>
+        </details>
       </div>
 
       <div class="card">
@@ -4717,11 +4726,11 @@ Trần Thị B</textarea><div class="help">2–20 ứng viên, mỗi tên 1–64
       <div class="card">
         <div class="card-head"><div><h3><svg class="ic"><use href="#i-users"/></svg>6 · Cử tri và Merkle root</h3><div class="sub">Dán danh sách ví; trình duyệt dựng cây Merkle và số lượng cử tri.</div></div></div>
         <div class="field"><label class="f" for="cVoters">Danh sách cử tri (mỗi dòng một địa chỉ)</label><textarea id="cVoters" spellcheck="false" placeholder="0x…&#10;0x…"></textarea><div class="help" id="cVotersHelp">Tối đa 1.000.000 ví.</div></div>
-        <div class="field" style="margin-bottom:0"><label class="f" for="cQuorum">Quorum (basis points)</label><input id="cQuorum" type="number" min="0" max="10000" value="5000"><div class="help" id="cQuorumHelp">= 50,00% (100 bps = 1%)</div></div>
+        <div class="field" style="margin-bottom:0"><label class="f" for="cQuorum">Quorum (tỷ lệ cử tri tối thiểu)</label><input id="cQuorum" type="number" min="0" max="10000" value="5000"><div class="help" id="cQuorumHelp">= 50,00% số cử tri phải mở phiếu thì kết quả mới có hiệu lực. Nhập 5000 là 50%, 10000 là 100%.</div></div>
       </div>
 
       <div class="card">
-        <div class="card-head"><div><h3><svg class="ic"><use href="#i-badge-check"/></svg>7 · Người duyệt (lấy từ tổ chức)</h3><div class="sub">Chụp lại lúc tạo. Ví của bạn và ví ứng viên bị loại để tránh xung đột lợi ích.</div></div></div>
+        <div class="card-head"><div><h3><svg class="ic"><use href="#i-badge-check"/></svg>7 · Người duyệt (lấy từ tổ chức)</h3><div class="sub">Ví của bạn và ví ứng viên không được làm người duyệt, để tránh xung đột lợi ích.</div></div></div>
         <div id="cApprovers" class="small muted">Chọn tổ chức để xem.</div>
       </div>
     </div>
@@ -4732,7 +4741,7 @@ Trần Thị B</textarea><div class="help">2–20 ứng viên, mỗi tên 1–64
         <ul id="cChecks" class="checklist"></ul>
         <div id="cPreview" class="hidden" style="margin-top:14px"></div>
         <div class="alert warn" style="margin-top:14px"><span>⚠️</span><span id="cFileWarn"><b>Tệp tải lên là công khai.</b> Ảnh bìa, ảnh đại diện lưu ở kho công khai: ai có đường dẫn đều xem được, và không thể thu hồi. Chỉ tải nội dung bạn sẵn sàng công bố.</span></div>
-        <label class="small" style="display:flex;gap:8px;align-items:flex-start;margin-top:12px"><input id="cSave" type="checkbox" checked style="margin-top:3px"><span>Lưu nội dung (bản nháp, ảnh) lên Supabase để mọi người xem và xác thực với hash trên chuỗi. Cần đăng nhập bằng ví.</span></label>
+        <label class="small" style="display:flex;gap:8px;align-items:flex-start;margin-top:12px"><input id="cSave" type="checkbox" checked style="margin-top:3px"><span>Công bố mô tả, ảnh và hồ sơ ứng viên để mọi người cùng xem và kiểm tra. Bạn cần đăng nhập bằng ví để xác nhận.</span></label>
         <div class="stack" style="margin-top:16px;gap:8px">
           <button id="btnBuild" class="btn soft block">Xem trước &amp; kiểm tra</button>
           <button id="btnClearDraft" class="btn ghost sm block" type="button" title="Form tự lưu nháp trên trình duyệt này, không lưu file ảnh">Xóa bản nháp và nhập lại</button>
@@ -4770,7 +4779,7 @@ Trần Thị B</textarea><div class="help">2–20 ứng viên, mỗi tên 1–64
   </div>
 
   <div class="card" style="margin-top:16px">
-    <div class="card-head"><div><h3><svg class="ic"><use href="#i-hash"/></svg>Xác thực nội dung với hash trên chuỗi</h3><div class="sub">Trình duyệt tự băm lại nội dung từ Supabase và so với hash đã ghi trên chuỗi. Không dựa vào kết luận của máy chủ.</div></div><button id="btnVerifyMeta" class="btn outline sm">Đối chiếu</button></div>
+    <div class="card-head"><div><h3><svg class="ic"><use href="#i-hash"/></svg>Kiểm tra nội dung chưa bị sửa đổi</h3><div class="sub">Trình duyệt tự đối chiếu mô tả và hồ sơ ứng viên với mã đã ghi trên chuỗi. Không dựa vào kết luận của máy chủ.</div></div><button id="btnVerifyMeta" class="btn outline sm">Đối chiếu</button></div>
     <div id="approveMeta"><div class="small muted">Chọn một cuộc bầu cử rồi bấm Đối chiếu.</div></div>
   </div>
 
@@ -5908,7 +5917,6 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     }
     if (f.rootOk === false) { set("alert", "amber", "Bằng chứng không khớp Merkle root của cuộc bầu cử này."); det.textContent = "Danh sách/bằng chứng thuộc cuộc bầu cử khác hoặc bị sai. Giao dịch nộp phiếu sẽ bị từ chối."; return; }
     set("check-circle", "teal", "Bằng chứng hợp lệ (" + f.proof.length + " mức).");
-    det.textContent = { manual: "Nguồn: JSON bạn dán.", list: "Nguồn: danh sách " + f.count + " ví " + (f.remembered ? "đã nhớ trên trình duyệt này" : "bạn dán") + ", root khớp cuộc bầu cử.", file: "Nguồn: proofs.json cạnh trang." }[f.source];
     if (f.source === "list" && f.rootOk && f.list) $("btnCopyVoters").classList.remove("hidden");
   }
 
@@ -6695,14 +6703,39 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
   }
 
   /** Danh sách chọn cuộc trong thanh "Đang chọn": đổi cuộc ngay tại màn hình hiện tại, không cần quay về tab Bầu cử. */
+  const norm = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d");
   function fillCtxPick() {
-    const sel = $("ctxPick");
-    if (!sel) return;
+    const box = $("ctxList");
+    if (!box) return;
     const list = S.all || [];
-    clear(sel);
-    list.forEach((x) => { const o = el("option", "", "#" + x.id + " · " + x.title); o.value = String(x.id); sel.appendChild(o); });
-    if (S.election && list.some((x) => x.id === Number(S.election.id))) sel.value = String(S.election.id);
-    sel.disabled = list.length < 2;
+    const q = norm(($("ctxSearch") && $("ctxSearch").value) || "");
+    const cur = S.election ? Number(S.election.id) : -1;
+    const hit = list.filter((x) => !q || norm("#" + x.id + " " + x.id + " " + x.title).includes(q));
+    const live = hit.filter((x) => phaseKey(x) !== "ended"), done = hit.filter((x) => phaseKey(x) === "ended");
+    clear(box);
+    const grp = (label, arr) => {
+      if (!arr.length) return;
+      box.appendChild(el("div", "ctx-grp", label));
+      arr.slice().sort((a, b) => b.id - a.id).forEach((x) => {
+        const b = el("button", "ctx-opt"); b.type = "button"; b.setAttribute("role", "option"); b.dataset.id = String(x.id);
+        b.setAttribute("aria-selected", x.id === cur ? "true" : "false");
+        b.appendChild(el("span", "nm", "#" + x.id + " · " + x.title));
+        b.appendChild(electionBadge(x));
+        box.appendChild(b);
+      });
+    };
+    grp("Đang diễn ra", live);
+    grp("Đã kết thúc", done);
+    if (!hit.length) box.appendChild(el("div", "ctx-empty", list.length ? "Không có cuộc nào khớp." : "Chưa có cuộc bầu cử."));
+    const btn = $("ctxPickBtn");
+    if (btn) btn.disabled = list.length < 2;
+  }
+  function setCtxPop(open) {
+    const pop = $("ctxPop"), btn = $("ctxPickBtn");
+    if (!pop || !btn) return;
+    pop.classList.toggle("hidden", !open);
+    btn.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) { $("ctxSearch").value = ""; fillCtxPick(); $("ctxSearch").focus(); }
   }
   function renderCtx() {
     const e = S.election;
@@ -6804,13 +6837,9 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     const votes = all.reduce((n, s) => n + s.revealedCount, 0n);
     for (const k of ["kpi", "hKpi"]) {   // Dashboard và trang chủ dùng chung số liệu
       $(k + "Total").textContent = String(S.count);
-      $(k + "TotalSub").textContent = all.length < S.count ? "Hiển thị " + all.length + " cuộc mới nhất" : "Tất cả cuộc bầu cử trong hợp đồng";
       $(k + "Active").textContent = String(active.length);
-      $(k + "ActiveSub").textContent = all.filter((s) => s.reqStatus === 0).length + " cuộc đang chờ phê duyệt";
       $(k + "Voters").textContent = voters.toLocaleString("vi-VN");
-      $(k + "VotersSub").textContent = "Tổng voterCount do ban tổ chức khai báo";
       $(k + "Votes").textContent = votes.toLocaleString("vi-VN");
-      $(k + "VotesSub").textContent = voters > 0n ? pctStr(votes, voters) + "% số cử tri đã mở phiếu" : "Chưa có cử tri";
     }
     renderFeaturedGrid();
     renderHistory();
@@ -7247,9 +7276,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       a.appendChild(el("span", "", "Cuộc bầu cử chưa kết thúc (đang ở pha “" + PHASE_VI[e.phase] + "”). Hiện có " + e.revealedCount + "/" + e.voterCount + " cử tri đã mở phiếu. Kết quả chính thức chỉ công bố sau khi hết pha Mở phiếu."));
       box.appendChild(a);
       if (e.votes) { box.appendChild(el("div", "", "")); box.lastChild.style.height = "14px"; box.appendChild(votesChart(e, null)); }
-    } else {
-      box.appendChild(el("div", "small muted", "Cuộc bầu cử đã kết thúc. Bấm “Xem kết quả” để đọc kết quả chính thức từ hợp đồng."));
-    }
+    }   // đã kết thúc: không thêm dòng nhắc, nút "Xem kết quả" ở đầu trang đã đủ rõ
   }
 
   /* ----- ghi nhận phiên hiện tại vào giao diện sau mỗi lần render() ----- */
@@ -7658,14 +7685,11 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     if (info.sub) body.appendChild(el("div", "tiny faint", info.sub));
     const desc = el("p", "desc" + (m.description ? "" : " none"), m.description || (m.infoLocked ? "Nội dung giới thiệu không công khai. " + lockMsg(s.id, "info") : "Chưa có mô tả giới thiệu (thông tin off-chain)."));
     body.appendChild(desc);
-    if (m.description) { const t = srcTag("off", "Off-chain"); t.style.alignSelf = "flex-start"; body.appendChild(t); }
 
     const facts = el("div", "facts");
     const add = (ic, text) => { const d = el("div"); d.appendChild(icon(ic, "sm")); d.appendChild(el("span", "", text)); d.title = text; facts.appendChild(d); };
     add("calendar", "Bắt đầu: " + fmtDate(s.regEnd));
     add("flag", "Kết thúc: " + fmtDate(s.revealEnd));
-    add("users", s.candidateCount + " ứng viên");
-    add("user-check", s.voterCount + " cử tri đủ điều kiện");
     body.appendChild(facts);
 
     const part = s.voterCount === 0n ? 0 : Math.min(100, Number((s.revealedCount * 10000n) / s.voterCount) / 100);
@@ -7929,9 +7953,6 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     const t = el("div");
     const h = el("h2", "", name); h.id = "modalTitle"; t.appendChild(h);
     t.appendChild(el("div", "muted", c.title || "Ứng viên #" + i));
-    const tags = el("div", "row tight"); tags.style.marginTop = "8px";
-    tags.appendChild(srcTag("on", "Tên, số thứ tự: On-chain"));
-    t.appendChild(tags);
     head.appendChild(t);
     host.appendChild(head);
 
@@ -7947,16 +7968,6 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     sec("Quá trình hoạt động", c.history);
     sec("Chương trình hành động / cam kết", c.program);
 
-    const chain = el("section");
-    const h4 = el("h4"); h4.appendChild(document.createTextNode("Dữ liệu trên chuỗi")); h4.appendChild(srcTag("on"));
-    chain.appendChild(h4);
-    const dl = el("dl", "kv");
-    const row = (k, v) => { dl.appendChild(el("dt", "", k)); dl.appendChild(el("dd", "", v)); };
-    row("Số thứ tự", "#" + i);
-    row("Tên lưu trên hợp đồng", name);
-    row("Số phiếu", e.resultsLocked ? "Không công khai trên giao diện (" + SCOPE_VI[(visOf(e.id) || {}).results || "restricted"] + "). Dữ liệu trên chuỗi vẫn công khai." : e.votes && e.phase >= 2 ? e.votes[i] + " phiếu (hiện dần theo pha Mở phiếu)" : "Chưa công bố. Số phiếu chỉ hiện sau khi cử tri mở phiếu.");
-    chain.appendChild(dl);
-    body.appendChild(chain);
 
 
     if (e.isActivated && e.phase === 1 && !e.committed) {
@@ -8700,6 +8711,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     let ok = false;
     try { ok = lc(metadataHash(p)) === lc(o.infoHash); } catch (_) { ok = false; }
     const tag = srcTag(ok ? "on" : "off", ok ? "Khớp hash trên chuỗi" : "KHÔNG khớp hash trên chuỗi, đừng tin nội dung này");
+    if (!ok) tag.classList.add("keep");
     head.appendChild(tag);
     const dl = el("dl", "kv");
     const row1 = (k, v) => { if (!v) return; dl.appendChild(el("dt", "", k)); dl.appendChild(el("dd", "", String(v))); };
@@ -9179,6 +9191,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
       if ($("cVisPro")) $("cVisPro").checked = !!extra.pro;
     }
     if ($("cVisInfo")) $("cVisInfo").onchange();
+    if ($("cVisFold")) $("cVisFold").open = ["cVisInfo", "cVisCands", "cVisRes"].some((id) => $(id) && $(id).value !== "public");   // phạm vi khác công khai thì mở sẵn
     $("cQuorum").oninput(); $("cVoters").oninput();
     S.timeAbs = false;
     renderCandEditors();
@@ -9232,7 +9245,15 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     });
     window.addEventListener("hashchange", () => showRoute(currentRoute()));
     $("menuBtn").onclick = () => document.body.classList.toggle("nav-open");
-    $("ctxPick").onchange = () => { const v = $("ctxPick").value; if (v !== "") openElection(Number(v), S.route); };
+    $("ctxPickBtn").onclick = (ev) => { ev.stopPropagation(); setCtxPop($("ctxPop").classList.contains("hidden")); };
+    $("ctxSearch").oninput = fillCtxPick;
+    $("ctxList").onclick = (ev) => {
+      const b = ev.target.closest(".ctx-opt"); if (!b) return;
+      setCtxPop(false);
+      if (b.dataset.id !== String(S.election && S.election.id)) openElection(Number(b.dataset.id), S.route);
+    };
+    document.addEventListener("click", (ev) => { const pop = $("ctxPop"); if (pop && !pop.classList.contains("hidden") && !ev.target.closest(".ctx-picker")) setCtxPop(false); });
+    document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && !$("ctxPop").classList.contains("hidden")) { setCtxPop(false); $("ctxPickBtn").focus(); } });
     $("homeNavHow").onclick = () => { const s = $("homeSteps"); if (s) s.scrollIntoView({ behavior: "smooth", block: "center" }); };
     $("scrim").onclick = () => document.body.classList.remove("nav-open");
 
@@ -9283,7 +9304,7 @@ hòa / thiếu quorum  →  (false, 0, 0)</pre>
     };
 
     // form tạo cuộc bầu cử: gợi ý trực tiếp
-    $("cQuorum").oninput = () => { const v = Number($("cQuorum").value); $("cQuorumHelp").textContent = Number.isFinite(v) ? "= " + bpsStr(v) + " (100 bps = 1%)" : ""; };
+    $("cQuorum").oninput = () => { const v = Number($("cQuorum").value); $("cQuorumHelp").textContent = Number.isFinite(v) ? "= " + bpsStr(v) + " số cử tri phải mở phiếu thì kết quả mới có hiệu lực. Nhập 5000 là 50%, 10000 là 100%." : ""; };
     $("cVoters").oninput = () => { const p = parseAddresses($("cVoters").value); $("cVotersHelp").textContent = p.list.length + " ví hợp lệ" + (p.errors.length ? " · " + p.errors.length + " dòng lỗi" : "") + (p.dups.length ? " · " + p.dups.length + " trùng" : ""); };
     // thời gian: chọn ngày giờ HOẶC nhập phút, hai cách đồng bộ với nhau; hợp đồng vẫn nhận số phút
     ["cReg", "cCommit", "cReveal"].forEach((id) => { $(id).oninput = () => { S.timeAbs = false; syncTimeFields(); }; });

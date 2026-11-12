@@ -149,7 +149,7 @@ const check = (n, ok, x) => log.push((ok ? "PASS " : "FAIL ") + n + (x ? " :: " 
   // ===== 3. vi 5 (da reveal, chua nhan): loi moi hien o man Bo phieu =====
   const p5 = await open(5, await sbt.getAddress(), "vote");
   await p5.waitForFunction(() => !document.querySelector("#cardInvite").classList.contains("hidden"), null, { timeout: 15000 });
-  check("vi da reveal nhung chua nhan the: hien loi moi nhan the", /nhận Thẻ cử tri/.test(await p5.textContent("#cardInvite")));
+  check("vi da reveal nhung chua nhan the: hien loi moi nhan the", /Nhận thẻ/.test(await p5.textContent("#cardInvite")));
   await shot(p5, "03_invite");
   await p5.click("#cardInvite button");
   await p5.waitForSelector("#cardAvatars .vc-pick", { timeout: 15000 });

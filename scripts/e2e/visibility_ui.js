@@ -187,6 +187,8 @@ async function sbHandler(route) {
   await p1.locator("#cCandBox details").nth(0).locator("input[type=file]").first().setInputFiles({ name: "a.png", mimeType: "image/png", buffer: PNG });
   await p1.fill("#cVoters", accts.slice(0, 6).join("\n"));
   await p1.fill("#cReg", "30");
+  check("muc quyen xem gap san (mac dinh cong khai), mo ra moi chinh duoc", (await p1.evaluate(() => document.getElementById("cVisFold").open)) === false);
+  await p1.evaluate(() => { document.getElementById("cVisFold").open = true; });
   await p1.selectOption("#cVisInfo", "internal");
   await p1.selectOption("#cVisCands", "restricted");
   await p1.selectOption("#cVisRes", "restricted");

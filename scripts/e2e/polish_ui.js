@@ -81,6 +81,7 @@ const cors = { "access-control-allow-origin": "*", "access-control-allow-headers
     return { page, ctx };
   }
 
+  const pickElection = async (pg, id) => { await pg.click("#ctxPickBtn"); await pg.click('#ctxList .ctx-opt[data-id="' + id + '"]'); };
   // ---------- (10) mọi thẻ đều có ảnh bìa ----------
   let { page: p, ctx } = await open(0);
   await p.goto("http://127.0.0.1:8099/index.html?contract=" + addr + "&chain=31337#/elections");
@@ -100,16 +101,66 @@ const cors = { "access-control-allow-origin": "*", "access-control-allow-headers
   await p.waitForTimeout(300);
   await p.click("#view-elections .ecard .btn.primary");
   await p.waitForFunction(() => document.getElementById("view-election") && !document.getElementById("view-election").hidden, null, { timeout: 10000 });
-  const pick = await p.evaluate(() => { const s = document.getElementById("ctxPick"); return { n: s.options.length, v: s.value, shown: !!s.offsetParent, dis: s.disabled }; });
-  check("(12) thanh 'Dang chon' co o chon cuoc voi 3 lua chon", pick.n === 3 && pick.shown && !pick.dis, JSON.stringify(pick));
+  const popClosed = await p.evaluate(() => document.getElementById("ctxPop").classList.contains("hidden"));
+  await p.click("#ctxPickBtn");
+  const pick = await p.evaluate(() => ({ n: document.querySelectorAll("#ctxList .ctx-opt").length, grp: [...document.querySelectorAll("#ctxList .ctx-grp")].map((g) => g.textContent), open: !document.getElementById("ctxPop").classList.contains("hidden"), maxH: getComputedStyle(document.getElementById("ctxList")).maxHeight, focus: document.activeElement && document.activeElement.id }));
+  check("(1) bang chon cuoc dong san, bam mo ra o tim kiem + danh sach co khung cuon (max-height)", popClosed && pick.open && pick.n === 3 && pick.maxH === "264px" && pick.focus === "ctxSearch", JSON.stringify(pick));
+  check("(1) cuoc chua xong nam o nhom 'Dang dien ra'", pick.grp[0] === "Đang diễn ra", JSON.stringify(pick.grp));
+  await p.fill("#ctxSearch", "cuoc 2");
+  const f1 = await p.evaluate(() => [...document.querySelectorAll("#ctxList .ctx-opt .nm")].map((x) => x.textContent));
+  check("(1) tim khong dau: 'cuoc 2' chi con dung 1 cuoc", f1.length === 1 && /Cuộc 2/.test(f1[0]), JSON.stringify(f1));
+  await p.fill("#ctxSearch", "zzzz");
+  check("(1) khong khop: bao 'Khong co cuoc nao khop'", /Không có cuộc nào khớp/.test(await p.textContent("#ctxList")));
+  await p.keyboard.press("Escape");
+  check("(1) nhan Esc thi dong bang", await p.evaluate(() => document.getElementById("ctxPop").classList.contains("hidden")));
+  await p.click("#ctxPickBtn");
   const before = await p.evaluate(() => window.__votechain.S.election.id.toString());
-  const other = await p.evaluate(() => [...document.getElementById("ctxPick").options].map((o) => o.value).find((v) => v !== document.getElementById("ctxPick").value));
-  await p.selectOption("#ctxPick", other);
+  const other = await p.evaluate(() => [...document.querySelectorAll("#ctxList .ctx-opt")].map((o) => o.dataset.id).find((v) => v !== window.__votechain.S.election.id.toString()));
+  await p.click('#ctxList .ctx-opt[data-id="' + other + '"]');
   await p.waitForFunction((b) => window.__votechain.S.election && window.__votechain.S.election.id.toString() !== b, before, { timeout: 10000 });
   await p.waitForFunction((o) => document.getElementById("ctxTitle").textContent.includes("#" + o), other, { timeout: 10000 }).catch(() => {});
-  const after = await p.evaluate(() => ({ id: window.__votechain.S.election.id.toString(), route: location.hash, title: document.getElementById("ctxTitle").textContent, sel: document.getElementById("ctxPick").value }));
-  check("(12) doi cuoc ngay tai trang hien tai (khong ve tab Bau cu)", after.id === other && /#\/election/.test(after.route) && after.sel === other && after.title.includes("#" + other), JSON.stringify(after));
+  const after = await p.evaluate(() => ({ id: window.__votechain.S.election.id.toString(), route: location.hash, title: document.getElementById("ctxTitle").textContent, closed: document.getElementById("ctxPop").classList.contains("hidden") }));
+  check("(12) doi cuoc ngay tai trang hien tai (khong ve tab Bau cu), bang tu dong", after.id === other && /#\/election/.test(after.route) && after.title.includes("#" + other) && after.closed, JSON.stringify(after));
   await p.screenshot({ path: S + "/polish_ctxpick.png" });
+
+  // ---------- chữ thân thiện, bỏ nhãn kỹ thuật ----------
+  const vis = (sel) => p.evaluate((q) => [...document.querySelectorAll(q)].filter((n) => n.offsetParent !== null).length, sel);
+  await p.evaluate(() => { location.hash = "#/dashboard"; });
+  await p.waitForTimeout(600);
+  const hero = await p.evaluate(() => ({ h1: document.querySelector("#view-dashboard .hero h1").textContent.replace(/\s+/g, " "), lead: document.querySelector("#view-dashboard .hero .lead").textContent, steps: document.querySelectorAll("#view-dashboard .hero-steps").length, kpiSub: document.querySelectorAll("#kpis .kpi .s").length }));
+  check("(4) banner Dashboard: slogan moi, mo ta moi, bo hang Commit -> Reveal", hero.h1 === "Lá phiếu số – Niềm tin thật" && /dành cho lớp học, câu lạc bộ và tổ chức/.test(hero.lead) && hero.steps === 0, JSON.stringify(hero));
+  check("(5) 4 o so lieu khong con dong chu thich nho", hero.kpiSub === 0 && (await p.evaluate(() => document.querySelectorAll("#kpis .kpi").length)) === 4);
+  const card = await p.evaluate(() => { const c = document.querySelector("#featuredGrid .ecard"); return { t: c.textContent, h: c.querySelector(".cover").getBoundingClientRect().height }; });
+  check("(6) the cuoc bau cu: bo dong ung vien/cu tri va nhan Off-chain, anh bia cao hon", !/ứng viên|đủ điều kiện|Off-chain/.test(card.t) && card.h >= 190, JSON.stringify({ h: card.h, t: card.t.slice(0, 120) }));
+  await p.evaluate(() => { location.hash = "#/election"; });
+  await p.waitForSelector("#dash:not(.hidden)", { timeout: 10000 });
+  const det = await p.evaluate(() => ({ small: document.querySelectorAll("#phaseSteps small").length, ee: document.getElementById("eeFold").open, kv: document.querySelector("#view-election .kv").parentElement.textContent, txt: document.getElementById("view-election").textContent, banner: document.querySelector(".detail-hero .cover").getBoundingClientRect().width / document.querySelector(".detail-hero").getBoundingClientRect().width }));
+  check("(7) banner chi tiet tran ngang", det.banner > 0.95, String(det.banner));
+  check("(8) bo chu nho duoi cac moc, an nhan On-chain/Off-chain/Da khop hash", det.small === 0 && (await vis("#view-election .src:not(#eeFold .src)")) === 0);
+  check("(9) khoi noi dung da xac thuc gap vao 'Chi tiet kiem chung'", det.ee === false && /Chi tiết kiểm chứng nội dung/.test(det.txt) && !/Nội dung đã xác thực với chuỗi/.test(det.txt));
+  check("(10) 'Thong tin ky thuat' doi thanh 'Moc thoi gian va nguoi duyet', nhan than thien", /Mốc thời gian và người duyệt/.test(det.txt) && !/Thông tin kỹ thuật/.test(det.txt) && /Mã đối chiếu danh sách cử tri/.test(det.txt));
+  check("(11) cau mo ta so lieu cu tri than thien", /Không ai biết người khác đã chọn ai/.test(det.txt) && !/không gắn ví với lựa chọn/.test(det.txt));
+  check("(12) bo dong 'Phieu chi hien tu pha mo phieu...'", !/Phiếu chỉ hiện từ pha mở phiếu/.test(det.txt));
+  await p.click("#candGrid > *");
+  await p.waitForSelector("#modal:not(.hidden) #modalContent", { timeout: 5000 });
+  const modal = await p.innerText("#modalContent");
+  check("(13) ho so ung vien: khong con nhan Off-chain/On-chain va khoi 'Du lieu tren chuoi'", !/Off-chain|On-chain|Dữ liệu trên chuỗi|chưa xác minh/.test(modal), modal.replace(/\s+/g, " ").slice(0, 200));
+  await p.keyboard.press("Escape");
+  await p.evaluate(() => { location.hash = "#/create"; });
+  await p.waitForSelector("#cQuorum", { state: "visible" });
+  const cr = await p.evaluate(() => ({ t: document.getElementById("view-create").textContent, help: document.getElementById("cQuorumHelp").textContent }));
+  check("(19) tao cuoc: bo 'basis points' va 'chup lai', quorum co cau giai thich, o luu noi dung than thien", !/basis points|Chụp lại lúc tạo|lên Supabase/.test(cr.t) && /phải mở phiếu thì kết quả mới có hiệu lực/.test(cr.help) && /Công bố mô tả, ảnh/.test(cr.t), cr.help);
+  await p.evaluate(() => { location.hash = "#/card"; });
+  await p.waitForTimeout(400);
+  const cd = await p.evaluate(() => ({ lead: document.querySelector("#view-card .page-head p").textContent, t: document.getElementById("view-card").textContent }));
+  check("(18) the cu tri: bo chu '(soulbound)' va dong 'Dan dia chi hop dong ... dang dung'", !/\(soulbound\)/i.test(cd.lead) && !/Dán địa chỉ hợp đồng VoterCardSBT/.test(cd.t), cd.lead);
+  await p.evaluate(() => { location.hash = "#/approve"; });
+  await p.waitForTimeout(400);
+  const ap = await p.textContent("#view-approve");
+  check("(20) phe duyet: khoi xac thuc doi chu de hieu, bo cuc ky duyet giu nguyen", /Kiểm tra nội dung chưa bị sửa đổi/.test(ap) && !/hash trên chuỗi/.test(ap) && (await p.locator("#btnApprove").count()) === 1);
+  await p.evaluate(() => { location.hash = "#/org"; });
+  await p.waitForSelector("#view-org:not([hidden])", { timeout: 5000 });
+  check("(17) to chuc: bo thong bao 'Ho so nay duoc bam (hash)...'", !/được băm \(hash\)/.test(await p.textContent("#view-org")));
 
   // ---------- (7) cảnh báo đổi tên tổ chức ----------
   await p.evaluate(() => { location.hash = "#/org"; });
@@ -133,6 +184,8 @@ const cors = { "access-control-allow-origin": "*", "access-control-allow-headers
   const bios = p.locator("#cCandBox details").nth(2).locator("textarea").first();
   await bios.fill("Tiểu sử của Cường");
   await p.fill("#cVoters", voters.join("\n"));
+  check("(3) muc quyen xem gap san luc moi vao", (await p.evaluate(() => document.getElementById("cVisFold").open)) === false);
+  await p.evaluate(() => { document.getElementById("cVisFold").open = true; });
   await p.selectOption("#cVisInfo", "internal");
   await p.fill("#cReg", "7");
   await p.waitForTimeout(900);   // chờ lưu nháp (debounce 500 ms)
@@ -153,6 +206,7 @@ const cors = { "access-control-allow-origin": "*", "access-control-allow-headers
   check("(4) sau khi mo lai: ten, 3 ung vien, danh sach cu tri, pham vi xem, thoi gian deu con", rest.title === "Bầu liên chi đoàn" && rest.names === "An\nBình\nCường" && rest.cands === 3 && rest.voters === 3 && rest.visInfo === "internal" && rest.reg === "7", JSON.stringify(rest));
   check("(4) ho so ung vien thu 3 con nguyen", rest.bio3 === "Tiểu sử của Cường", String(rest.bio3));
   check("(4) goi y so vi hop le duoc cap nhat", /3 ví hợp lệ/.test(rest.help), rest.help);
+  check("(3) nhap nhap co pham vi khong cong khai thi muc quyen xem tu mo", await p.evaluate(() => document.getElementById("cVisFold").open));
   await p.screenshot({ path: S + "/polish_draft.png" });
   await p.click("#btnClearDraft");
   await p.waitForTimeout(600);
@@ -171,7 +225,7 @@ const cors = { "access-control-allow-origin": "*", "access-control-allow-headers
   await p.click("#view-elections .ecard .btn.primary");   // mở một cuộc bất kỳ để có S.election
   await p.waitForFunction(() => window.__votechain.S.election && location.hash === "#/election", null, { timeout: 10000 });
   // đổi sang cuộc #0 bằng ô chọn rồi sang trang Bỏ phiếu
-  await p.selectOption("#ctxPick", FIRST).catch(() => {});
+  await pickElection(p, FIRST).catch(() => {});
   await p.waitForFunction((FIRST) => window.__votechain.S.election && window.__votechain.S.election.id.toString() === FIRST && location.hash === "#/election", FIRST, { timeout: 10000 });
   await p.evaluate(() => { location.hash = "#/vote"; });
   await p.waitForSelector("#voterListInput", { state: "attached" });
@@ -181,7 +235,9 @@ const cors = { "access-control-allow-origin": "*", "access-control-allow-headers
   await p.fill("#voterListInput", voters.join("\n"));
   await p.waitForTimeout(300);
   const st1 = await p.textContent("#proofState"), d1 = await p.textContent("#proofDetail");
-  check("(8) dan danh sach khop root: bang chung hop le", /Bằng chứng hợp lệ/.test(st1) && /bạn dán/.test(d1), st1 + " | " + d1);
+  check("(8) dan danh sach khop root: bang chung hop le", /Bằng chứng hợp lệ/.test(st1) && d1 === "", st1 + " | " + d1);
+  check("(14) khong con dong 'Nguon: danh sach ... ban dan' va dong giai thich dung cay Merkle", !/Nguồn:/.test(await p.textContent("#view-vote")) && !/dựng cây Merkle/.test(await p.textContent("#view-vote")));
+  check("(2) o dan JSON nam trong muc 'Nang cao' (gap san)", await p.evaluate(() => { const t = document.getElementById("proofInput"); const d = t.closest("details"); return !!d && d.querySelector("summary").textContent.trim() === "Nâng cao" && !d.open; }));
   const stored = await p.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("votechain:voters:v1:")).map((k) => JSON.parse(localStorage.getItem(k))));
   check("(8) danh sach duoc nho theo cuoc (3 vi)", stored.length === 1 && stored[0].length === 3, JSON.stringify(stored));
   // mở lại trang: ô trống nhưng vẫn có bằng chứng từ danh sách đã nhớ
@@ -190,14 +246,14 @@ const cors = { "access-control-allow-origin": "*", "access-control-allow-headers
   await p.evaluate(async () => { document.getElementById("electionId").value = "1"; });
   await p.evaluate(() => { location.hash = "#/elections"; });
   await p.waitForTimeout(300);
-  await p.selectOption("#ctxPick", FIRST).catch(() => {});
+  await pickElection(p, FIRST).catch(() => {});
   await p.evaluate(() => document.querySelectorAll("#view-elections .ecard")[2] && true);
   await p.evaluate(async (F) => { const b = [...document.querySelectorAll("#view-elections .ecard")].find((c) => new RegExp("#" + F + "\\b").test(c.querySelector(".idtag").textContent)); b.querySelector(".btn.primary").click(); }, FIRST);
   await p.waitForFunction((FIRST) => window.__votechain.S.election && window.__votechain.S.election.id.toString() === FIRST && location.hash === "#/election", FIRST, { timeout: 10000 });
   await p.evaluate(() => { location.hash = "#/vote"; });
   await p.waitForTimeout(600);
   const empty = await p.inputValue("#voterListInput"), st2 = await p.textContent("#proofState"), d2 = await p.textContent("#proofDetail");
-  check("(8) mo lai trang: o danh sach de trong nhung bang chung van hop le (tu danh sach da nho)", empty === "" && /Bằng chứng hợp lệ/.test(st2) && /đã nhớ trên trình duyệt này/.test(d2), st2 + " | " + d2);
+  check("(8) mo lai trang: o danh sach de trong nhung bang chung van hop le (tu danh sach da nho)", empty === "" && /Bằng chứng hợp lệ/.test(st2) && d2 === "", st2 + " | " + d2);
   const copyVisible = await p.evaluate(() => !document.getElementById("btnCopyVoters").classList.contains("hidden"));
   check("(8) co nut 'Sao chep danh sach cu tri'", copyVisible);
   await p.click("#btnCopyVoters");
