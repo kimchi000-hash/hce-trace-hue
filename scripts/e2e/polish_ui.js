@@ -141,7 +141,7 @@ const cors = { "access-control-allow-origin": "*", "access-control-allow-headers
   await p.evaluate(() => { location.hash = "#/election"; });
   await p.waitForSelector("#dash:not(.hidden)", { timeout: 10000 });
   const det = await p.evaluate(() => ({ small: document.querySelectorAll("#phaseSteps small").length, ee: document.getElementById("eeFold").open, kv: document.querySelector("#view-election .kv").parentElement.textContent, txt: document.getElementById("view-election").textContent, banner: document.querySelector(".detail-hero .cover").getBoundingClientRect().width / document.querySelector(".detail-hero").getBoundingClientRect().width }));
-  check("(7) banner chi tiet tran ngang", det.banner > 0.95, String(det.banner));
+  check("(7) banner chi tiet: anh ben trai chiem ~60% (rong hon phan thong tin)", det.banner > 0.55 && det.banner < 0.65, String(det.banner));
   check("(8) bo chu nho duoi cac moc, an nhan On-chain/Off-chain/Da khop hash", det.small === 0 && (await vis("#view-election .src:not(#eeFold .src)")) === 0);
   check("(9) khoi noi dung da xac thuc gap vao 'Chi tiet kiem chung'", det.ee === false && /Kiểm tra tính toàn vẹn nội dung/.test(det.txt) && !/Nội dung đã xác thực với chuỗi/.test(det.txt));
   check("(10) 'Thong tin ky thuat' doi thanh 'Moc thoi gian va nguoi duyet', nhan than thien", /Thông tin kỹ thuật & đối chiếu/.test(det.txt) && /Mã danh sách cử tri/.test(det.txt) && !/Merkle/.test(det.txt), String((det.txt.match(/.{30}Merkle.{20}/)||[])[0]));

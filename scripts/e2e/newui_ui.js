@@ -85,7 +85,7 @@ const cors = { "access-control-allow-origin": "*", "access-control-allow-headers
   await p.evaluate(() => { location.hash = "#/dashboard"; });
   await p.waitForFunction(() => document.querySelectorAll("#hubList .hub-item").length >= 1, null, { timeout: 10000 });
   const hub = await p.evaluate(() => ({ title: document.getElementById("hubTitle").textContent, items: [...document.querySelectorAll("#hubList .hub-item")].map((n) => n.textContent) }));
-  check("(hub) co ket noi vi: tieu de 'Viec can lam' + muc 'Can ban ky duyet' cho cuoc #2", /Việc cần làm/.test(hub.title) && hub.items.some((t) => /Cần bạn ký duyệt/.test(t) && /Cuộc 2/.test(t)), JSON.stringify(hub));
+  check("(hub) co ket noi vi: loi chao Chao mung + muc 'Can ban ky duyet' cho cuoc #2", /Chào mừng/.test(hub.title) && hub.items.some((t) => /Cần bạn ký duyệt/.test(t) && /Cuộc 2/.test(t)), JSON.stringify(hub));
   await p.click("#hubList .hub-item.approve button");
   await p.waitForFunction(() => location.hash === "#/approve", null, { timeout: 8000 });
   check("(hub) bam 'Xem & Ky duyet' -> sang trang Phe duyet, nut Ky duyet co mat", (await p.locator("#btnApprove").count()) === 1);

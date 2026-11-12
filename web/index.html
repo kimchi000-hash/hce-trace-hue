@@ -515,7 +515,7 @@ body.landing #banner { max-width: 1200px; margin: 14px auto 0 !important; }
 }
 .home-hero-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 40px; align-items: center; min-height: min(540px, calc(100vh - var(--topbar-h) - 104px)); }
 .home-hero-text h1 { margin: 16px 0 14px; font-size: 3rem; font-weight: 800; line-height: 1.12; letter-spacing: -0.03em; max-width: 17ch; }
-.home-hero-text h1 em { font-style: normal; color: var(--brand); }
+.home-hero-text h1 em { font-style: normal; color: var(--brand); white-space: nowrap; }
 .home-hero-text .lead { max-width: 54ch; font-size: 1.08rem; color: var(--muted); }
 .home-hero-text .lead b { color: var(--ink-2); }
 .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; }
@@ -601,6 +601,11 @@ body.landing #banner { max-width: 1200px; margin: 14px auto 0 !important; }
 .share-link { width: 100%; font-family: var(--mono); font-size: .82rem; }
 
 .detail-hero { display: grid; grid-template-columns: minmax(0, 1fr); overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-lg); background: #fff; box-shadow: var(--shadow-sm); }
+@media (min-width: 900px) {
+  .detail-hero { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); }
+  .detail-hero .cover { height: auto; min-height: 380px; }
+  .detail-hero .info { justify-content: space-between; }
+}
 .detail-hero .cover { height: clamp(180px, 24vw, 280px); background: var(--brand-50); }
 .detail-hero .cover svg, .detail-hero .cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .detail-hero .info { display: flex; flex-direction: column; gap: 10px; padding: 22px 24px; }
@@ -3252,7 +3257,7 @@ Trần Thị B</textarea></div>
     const link = electionShareLink(e.id);
     const host = $("modalContent");
     clear(host);
-    const h = el("h2", "", "Chia sẻ cuộc bầu cử"); h.id = "modalTitle"; host.appendChild(h);
+    const h = el("h2", "", "Chia sẻ cuộc bầu cử"); h.id = "modalTitle"; h.style.cssText = "position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap"; host.appendChild(h);
     const body = el("div", "modal-body");
     // bản xem trước trong ứng dụng: chỉ dữ liệu công khai trên chuỗi (+ ảnh bìa nếu bạn đang xem được)
     const prev = el("div", "share-prev");
@@ -3510,8 +3515,8 @@ Trần Thị B</textarea></div>
       const b = el("button", "btn primary sm", "Kết nối ví MetaMask"); b.type = "button"; b.onclick = () => run("btnConnect", "Đang kết nối…", connect);
       item.appendChild(b); listBox.appendChild(item); return;
     }
-    $("hubTitle").textContent = "Việc cần làm (" + shortAddr(S.account) + ")";
-    $("hubSub").textContent = "Các thao tác ưu tiên được tổng hợp tự động cho ví của bạn.";
+    $("hubTitle").textContent = "Chào mừng đến với VoteChain";
+    $("hubSub").textContent = "Các việc cần làm được tổng hợp tự động cho ví " + shortAddr(S.account) + ".";
     const items = [];
     for (const s of all) {
       if (s.committed && !s.revealed && s.phase === 2 && s.isActivated) {
