@@ -86,6 +86,19 @@ const check = (n, ok, x) => log.push((ok ? "PASS " : "FAIL ") + n + (x ? " :: " 
   const mt = await p0.textContent("#modal");
   check("xem truoc trong hop thoai: ten cuoc, ten to chuc (doc tu chuoi), gio", /Bầu BCH đã duyệt/.test(mt) && /CLB Tin học/.test(mt) && /Nộp phiếu từ/.test(mt), mt.replace(/\s+/g, " ").slice(0, 200));
   check("co Facebook, Email; ghi ro lien ket khong cap quyen; canh bao may cuc bo", (await p0.locator("#modal a[href^='https://www.facebook.com/sharer/sharer.php?u=']").count()) === 1 && (await p0.locator("#modal a[href^='mailto:']").count()) === 1 && /không cấp quyền xem nội dung hạn chế và không cho bỏ phiếu/.test(mt) && /máy cục bộ/.test(mt));
+  // QR: dựng sẵn trong trình duyệt, giải mã lại phải ra đúng liên kết; có nút tải ảnh và dòng nhắc MetaMask
+  check("QR co trong hop chia se + dong nhac mo bang app MetaMask", (await p0.locator("#modal .share-qr .qr-box svg").count()) === 1 && /app MetaMask/.test(await p0.textContent("#modal .share-qr")));
+  try {
+    const dec = "/tmp/qrdec/node_modules/";
+    const jsQR = require(dec + "jsqr"), { PNG } = require(dec + "pngjs");
+    const png = PNG.sync.read(await p0.locator("#modal .qr-box").screenshot());
+    const r = jsQR(new Uint8ClampedArray(png.data), png.width, png.height);
+    check("QR giai ma ra dung lien ket chia se", !!r && r.data === link, r ? r.data : "khong giai ma duoc");
+  } catch (err) { check("QR giai ma ra dung lien ket chia se", false, String(err.message).slice(0, 120)); }
+  const dlp = p0.waitForEvent("download", { timeout: 8000 }).catch(() => null);
+  await p0.click("#btnQrDownload");
+  const dl = await dlp;
+  check("nut 'Tai anh QR' tai ve file PNG", !!dl && /\.png$/.test(dl.suggestedFilename()), dl ? dl.suggestedFilename() : "khong co download");
   const fbHref = await p0.getAttribute("#modal a[href*='facebook']", "href");
   check("lien ket Facebook ma hoa dung lien ket", new URL(fbHref).searchParams.get("u") === link);
   await p0.click("#modal .btn.primary");
@@ -101,6 +114,7 @@ const check = (n, ok, x) => log.push((ok ? "PASS " : "FAIL ") + n + (x ? " :: " 
   check("nguoi nhan (vi la, khong co quyen): van thay du lieu cong khai nhung KHONG tu dong thanh cu tri", (await pn.evaluate(() => window.__votechain.S.election.committed)) === false && (await pn.locator("#btnCommit").isDisabled()));
   // ===== 4. lien ket day du (co hash) cung hoat dong =====
   const pf = await open(6, new URL(link).search, "#/election");
+  await pf.waitForFunction(() => /Bầu BCH đã duyệt/.test(document.querySelector("#elTitle").textContent), null, { timeout: 15000 }).catch(() => {});
   check("lien ket co #/election: dung cuoc", /Bầu BCH đã duyệt/.test(await pf.textContent("#elTitle")));
 
   await browser.close();
